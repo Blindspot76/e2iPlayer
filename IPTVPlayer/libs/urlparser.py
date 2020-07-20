@@ -12587,8 +12587,20 @@ class pageParser(CaptchaHelper):
         sts, data = self.cm.getPage(url)
         if not sts:
             return []
-        
+
+        #<script>window.location = "/e/952om2mbm9oqc?k=1a8724a6fc293ed495a0cd33921cb4a7&t=1595245658&referrer=";</script>
+        redirectUrl = self.cm.ph.getSearchGroups(data, '''<script>\s?window\.location\s?=\s?['"]([^"^']+?)['"]''')[0]
+        if redirectUrl:
+            redirectUrl = self.cm.getFullUrl(redirectUrl,baseUrl)
+            if redirectUrl != baseUrl:
+                url = redirectUrl
+                sts, data = self.cm.getPage(url)
+                if not sts:
+                    return []
+                
+        printDBG("--------------------------")
         printDBG(data)
+        printDBG("--------------------------")
         
         error = self.cm.ph.getDataBeetwenNodes(data, '<div class="tb error">', '</p>')[1]
 
@@ -14068,10 +14080,10 @@ class pageParser(CaptchaHelper):
                 'Accept-Encoding': 'gzip',
                 'Referer' : baseUrl.meta.get('Referer', baseUrl)
             }, 
-            #'use_cookie':True,
-            #'load_cookie':True,
-            #'save_cookie':True,
-            #'cookiefile': GetCookieDir("dood.cookie")
+            'use_cookie':True,
+            'load_cookie':True,
+            'save_cookie':True,
+            'cookiefile': GetCookieDir("dood.cookie")
         }
 
         urlsTab = []
@@ -14084,8 +14096,45 @@ class pageParser(CaptchaHelper):
             printDBG("-----------------------")
 
 
+        subTracks=[]
+        #<track kind="captions" src="https://doodstream.com/srt/00705/s72n7d5hi6qc_Serbian.vtt" srclang="en" label="Serbian" default>
+        tracks = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '>', withMarkers=True)
+        for track in tracks:
+            track_kind = self.cm.ph.getSearchGroups(track, '''kind=['"]([^'^"]+?)['"]''')[0]
+            if 'caption' in track_kind:
+                srtUrl = self.cm.ph.getSearchGroups(track, '''src=['"]([^'^"]+?)['"]''')[0]
+                srtLabel= self.cm.ph.getSearchGroups(track, '''label=['"]([^'^"]+?)['"]''')[0]
+                srtFormat = srtUrl[-3:]
+                params = {'title': srtLabel, 'url': srtUrl, 'lang': srtLabel.lower()[:3], 'format': srtFormat}
+                printDBG(str(params))
+                subTracks.append(params)
 
+        #$.get('/pass_md5/3526522-87-9-1595176733-d1cadb0bad545cdcc61809e26c0ccf93/p3yuk59uqm525k1zc9boovu4'
+        #function makePlay(){for(var a="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",n=t.length,o=0;10>o;o++)a+=t.charAt(Math.floor(Math.random()*n));return a+"?token=p3yuk59uqm525k1zc9boovu4&expiry="+Date.now();};
+        pass_md5_url = self.cm.ph.getSearchGroups(data, "\$\.get\('(/pass_md5[^']+?)'")[0]
+        makePlay= self.cm.ph.getSearchGroups(data, "(function makePlay\(\)\{.*?\};)")[0]
+        if pass_md5_url and makePlay:        
+            pass_md5_url = self.cm.getFullUrl(pass_md5_url, self.cm.getBaseUrl(baseUrl))
+            sts, new_url = self.cm.getPage(pass_md5_url, httpParams)
 
+            if sts:
+                code =  "var url = '%s';\n%s\nconsole.log(url + makePlay());" % (new_url, makePlay)
+                
+                printDBG("-----------------------")
+                printDBG(code)
+                printDBG("-----------------------")
+
+                ret = js_execute(code)
+                newUrl = ret['data'].replace("\n","")
+                if newUrl:
+                    if subTracks:
+                        newUrl = urlparser.decorateUrl(newUrl, {'Referer': baseUrl,'external_sub_tracks':subTracks})
+                    else:
+                        newUrl = urlparser.decorateUrl(newUrl, {'Referer': baseUrl})
+                    params = {'name': 'link' , 'url': newUrl}
+                    printDBG(str(params))
+                    urlsTab.append(params)
+        
         return urlsTab
         
 
