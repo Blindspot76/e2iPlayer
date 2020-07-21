@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-07-19 by Blindspot - modified iptvhostgroups
+# 2020-07-21 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -149,8 +149,7 @@ class IPTVHostsGroups:
         'francetv' : [ 'french'] ,
         'freediscpl' : [ 'moviesandseries', 'others', 'polish'] ,
         'gamatocom' : [ 'greek', 'moviesandseries'] ,
-        'gamatotvme' : [ 'greek', 'moviesandseries'] ,
-        'gledalica' : [ 'balkans', 'moviesandseries'] ,
+        'gamatotvme' : [ 'greek', 'moviesandseries'] ,      
         'greekdocumentaries3' : [ 'documentary', 'greek'] ,
         'guardaserie' : [ 'italian', 'moviesandseries'] ,
         'hd1080online' : [ 'moviesandseries', 'russian'] ,
