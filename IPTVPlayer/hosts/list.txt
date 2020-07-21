@@ -63,6 +63,7 @@ hostfilmeonlineto
 hostfilmezz
 hostfilmgo
 hostfilmixco
+hostfilmoviplex
 hostfilmovizijastudio
 hostfilmpalast
 hostfilmpertutti
@@ -74,7 +75,6 @@ hostfreediscpl
 hostfullmatchtvcom
 hostgamatocom
 hostgamatotvme
-hostgledalica
 hostgreekdocumentaries3
 hostguardaserie
 hosthd1080online
