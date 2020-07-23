@@ -599,7 +599,10 @@ class YouTubeParser():
             #url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s&page=%s' % (pattern, searchType, sortBy, page) 
 
             nextPage = {}
-
+            nP = {}
+            nP_new = {}
+            r2 = []
+            
             if url:
                 # next page search
                 sts, data =  self.cm.getPage(url, self.http_params, self.postdata)
@@ -618,10 +621,24 @@ class YouTubeParser():
 
                     if not rr:
                         return []
+                    
+                    try:    
+                        r1 = rr["response"]["continuationContents"]["itemSectionContinuation"]
+                        r2 = r1["itemSectionRenderer"].get("contents",[])
+                        nP = r1.get('continuations','')
+                    except:
+                        try:
+                            r1 = rr["response"]["onResponseReceivedCommands"][0]["appendContinuationItemsAction"]["continuationItems"]
+                            r2 = []
+                            for i in range(len(r1)):
+                                if 'itemSectionRenderer' in r1[i]:
+                                    r2.extend(r1[i]['itemSectionRenderer']['contents'])
+                                if "continuationItemRenderer" in r1[i]:
+                                    nP_new = r1[1]["continuationItemRenderer"]
                         
-                    r1 = rr["response"]["continuationContents"]["itemSectionContinuation"]
-                    r2 = r1.get("contents",[])
-                    nP = r1.get('continuations','')
+                        except:
+                            printExc()
+                    
             else:
                 # new search
                 url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s' % (pattern, searchType, sortBy) 
@@ -634,13 +651,20 @@ class YouTubeParser():
                     
                     r1 = response['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents']
                     r2 = []
-                
+                    
+                    printDBG(json_dumps(r1))
                     for i in range(len(r1)):
-                        r2.extend(r1[i]['itemSectionRenderer']['contents'])
-                    try:
-                        nP = r1[i]['itemSectionRenderer'].get('continuations','')
-                    except:
-                        pass
+                        if 'itemSectionRenderer' in r1[i]:
+                            r2.extend(r1[i]['itemSectionRenderer']['contents'])
+                            try:
+                                if 'continuations' in r1[i]['itemSectionRenderer']:
+                                    nP = r1[i]['itemSectionRenderer'].get('continuations','')
+                            except:
+                                pass
+                        
+                        if "continuationItemRenderer" in r1[i]:
+                            nP_new = r1[1]["continuationItemRenderer"]
+                            
 
             if not sts:
                 return []
@@ -677,6 +701,21 @@ class YouTubeParser():
                     label = nextPage["nextContinuationData"]["label"]["runs"][0]["text"]
                 except:
                     label = _("Next Page")
+                
+                urlNextPage = self.updateQueryUrl(url, {'pbj':'1', 'ctoken': ctoken, 'continuation': ctoken, 'itct': itct}) 
+                params = {'type':'more', 'category': "search_next_page", 'title': label, 'page': str(int(page) + 1), 'url': urlNextPage}
+                printDBG(str(params))
+                currList.append(params)
+
+            if nP_new:
+                printDBG("-------------------------------------------------")
+                printDBG(json_dumps(nP_new))
+                printDBG("-------------------------------------------------")
+
+                
+                ctoken = nP_new["continuationEndpoint"]["continuationCommand"]["token"]
+                itct = nP_new["continuationEndpoint"]["clickTrackingParams"]
+                label = _("Next Page")
                 
                 urlNextPage = self.updateQueryUrl(url, {'pbj':'1', 'ctoken': ctoken, 'continuation': ctoken, 'itct': itct}) 
                 params = {'type':'more', 'category': "search_next_page", 'title': label, 'page': str(int(page) + 1), 'url': urlNextPage}
