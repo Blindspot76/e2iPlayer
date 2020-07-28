@@ -134,7 +134,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.07.20"
+    infoversion = "2020.07.26"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -1858,6 +1858,10 @@ class Host:
             if 'BRAK-WIDEO-DODAJ' in data:
                msg = _("Last error:\n%s" % 'BRAK WIDEO')
                GetIPTVNotify().push('%s' % msg, 'info', 10)
+            if 'POSZUKIWANA STRONA NIE ISTNIEJE' in data:
+               msg = _("Last error:\n%s" % 'POSZUKIWANA STRONA NIE ISTNIEJE LUB JEST OBECNIE NIEDOSTĘPNA')
+               GetIPTVNotify().push('%s' % msg, 'info', 10)
+               return []
             pusty = ''
             phImage = self.cm.ph.getSearchGroups(data, '''<link href=['"]([^"^']+?\.jpg)['"]''', 1, True)[0] 
             desc = self.cm.ph.getDataBeetwenMarkers(data, "'metaDescription': '", "'", False)[1].replace('\n','')
@@ -1865,7 +1869,7 @@ class Host:
             for item in data2:
                phUrl = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('\n','').replace('&amp;','&') 
                if phUrl.startswith('//'): phUrl = 'http:' + phUrl
-               if 'amazon' in phUrl: phUrl = ''
+               if 'amazon' in phUrl: continue
                if phUrl:
                   pusty = ' '
                   valTab.append(CDisplayListItem(catUrl,decodeHtml(desc),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
@@ -1875,7 +1879,6 @@ class Host:
                      pusty = ' '
                      if phUrl.startswith('//'): phUrl = 'http:' + phUrl
                      valTab.append(CDisplayListItem(catUrl,decodeHtml(desc),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
-            printDBG( 'Host listsItems phUrl:%s' % phUrl )
             if pusty == '':
                valTab.append(CDisplayListItem(catUrl,'',CDisplayListItem.TYPE_CATEGORY, [url],'filmypolskie999-clips', '', None)) 
             return valTab
