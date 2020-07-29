@@ -1,3 +1,5 @@
+#2020.07.29.01
+-Mecz Replay hozzáadva (POL- InfoVersion)
 #2020.07.28.01
 -InfoVersion frissítve
 #2020.07.24.01
