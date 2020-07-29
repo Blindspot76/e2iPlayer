@@ -10,7 +10,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir, 
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser 
 from Plugins.Extensions.IPTVPlayer.libs.m3uparser import ParseM3u
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl, getDirectM3U8Playlist, unpackJSPlayerParams, TEAMCASTPL_decryptPlayerParams
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl, getDirectM3U8Playlist, unpackJSPlayerParams, TEAMCASTPL_decryptPlayerParams, getMPDLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html 
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.libs import ph
@@ -134,7 +134,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.07.26"
+    infoversion = "2020.07.28"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -233,6 +233,7 @@ class Host:
            valTab.append(CDisplayListItem('Repozytorium Kinematografii Polskiej',     'http://filmypolskie999.blogspot.com', CDisplayListItem.TYPE_CATEGORY, ['http://filmypolskie999.blogspot.com'],'filmypolskie999', '', None)) 
            valTab.append(CDisplayListItem('IPLAX', '', CDisplayListItem.TYPE_CATEGORY, ['https://iplax.eu/'], 'iplax', 'https://iplax.eu/themes/youplay/img/logo-light.png', None)) 
            valTab.append(CDisplayListItem('Milanos', 'https://milanos.pl', CDisplayListItem.TYPE_CATEGORY, ['https://milanos.pl'], 'milanos', 'http://www.userlogos.org/files/logos/zolw_podroznik/milanos.png', None)) 
+           valTab.append(CDisplayListItem('Mecz Replay', 'http://meczreplay.blogspot.com/', CDisplayListItem.TYPE_CATEGORY, ['http://meczreplay.blogspot.com/'], 'replay', 'https://logos-download.com/wp-content/uploads/2019/01/Replay_Logo-700x342.png', None)) 
 
            if config.plugins.iptvplayer.religia.value:
               valTab.append(CDisplayListItem('Religijne', 'Religijne', CDisplayListItem.TYPE_CATEGORY, ['Religijne'], 'Religijne', 'http://wakcji24.pl/wp-content/uploads/2019/01/RELIGIA-e1548150968793.png', None)) 
@@ -2011,6 +2012,18 @@ class Host:
             sts, data = self.get_Page(url)
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
+            mpd = self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?\.mpd)['"]''', 1, True)[0]
+            if mpd:
+                mpd = strwithmeta(mpd, {'Referer':url})
+                sts, data = self.get_Page(mpd)
+                if not sts: return valTab
+                printDBG( 'Host listsItems data: '+data )
+                printDBG( 'Host meta:%s ' % self.cm.meta['url'])
+
+                tmp = getMPDLinksWithMeta(self.cm.meta['url'], checkExt=False, sortWithMaxBandwidth=999999999)
+                printDBG( 'Host tmp:%s ' % tmp )
+                for item in tmp:
+                    valTab.append(CDisplayListItem('Echo24    '+str(item['name']), 'Echo24    '+str(item['name']),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', str(item['url']), 0)], 0, 'http://www.echo24.tv/bundles/echo24web/favicons-assets/favicon-152.png', None))
             Url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
             videoUrls = self.getLinksForVideo(Url)
             if videoUrls:
@@ -2417,6 +2430,52 @@ class Host:
                     if next.startswith('/'): next = mainurl + next
                     valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', None))
             return valTab
+
+        if 'replay' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'replay.cookie')
+            mainurl = 'http://meczreplay.blogspot.com/'
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'replay.cookie', 'meczreplay.blogspot.com', self.defaultParams)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+            next = self.cm.ph.getDataBeetwenMarkers(data, "id='blog-pager'", "</div>", False)[1]
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<article', '</article>')
+            for item in data:
+                Url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                Title = self.cm.ph.getSearchGroups(item, '''<b>([^"^']+?)</b>''', 1, True)[0]  
+                Image = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+                if Url.startswith('//'): Url = 'http:' + Url
+                if Image.startswith('//'): Image = 'http:' + Image
+                if Image.startswith('g'): Image = mainurl + Image
+                if  not 'http' in Url: Url = mainurl + Url
+                Image = strwithmeta(Image, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+                valTab.append(CDisplayListItem(decodeHtml(Title), decodeHtml(Title), CDisplayListItem.TYPE_CATEGORY, [item], 'replay-clips', Image, None))
+            if next:
+                link = self.cm.ph.getSearchGroups(next, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                if link:
+                    next = link.replace('&amp;','&')
+                    if next.startswith('/'): next = mainurl + next
+                    valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', None))
+            self.SEARCH_proc='replay-search'
+            #valTab.insert(0,CDisplayListItem('Historia wyszukiwania', 'Historia wyszukiwania', CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
+            #valTab.insert(0,CDisplayListItem('Szukaj',  'Szukaj filmów',                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
+            return valTab
+        if 'replay-search' == name:
+            printDBG( 'Host name='+name )
+            valTab = self.listsItems(-1, 'http://meczreplay.blogspot.com/search?q='+url.replace(' ','+'), 'replay')
+            return valTab    
+        if 'replay-clips' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            if len(url)>100:
+                printDBG( 'Host url:%s ' % url )
+                data = self.cm.ph.getAllItemsBeetwenMarkers(str(url), '<br>', '</a>')
+                for item in data:
+                    Url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                    Title = self.cm.ph.getSearchGroups(item, '''<br>([^"^']+?)<a''', 1, True)[0].replace('<br>','').replace(':','')
+                    valTab.append(CDisplayListItem(decodeHtml(Title), decodeHtml(Url),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, '', None))
+            return valTab    
 
         if 'task' == name:
             printDBG( 'Host listsItems begin name='+name )
@@ -5348,6 +5407,7 @@ def decodeHtml(text):
 	text = text.replace('&#8211;', '-')
 	text = text.replace('&#039;', "'")
 	text = text.replace('&#8217;', "'")
+	text = text.replace('&#160;', " ")
 
 	return text	
 def decodeNat1(text):
