@@ -1,3 +1,6 @@
+#2020.08.02.01
+-Magyarítás frissítve (Köszönet Alec-nek)
+-DailyMotion javítva
 #2020.08.01.01
 -InfoVersion frissítve
 -USTVGo javítva
