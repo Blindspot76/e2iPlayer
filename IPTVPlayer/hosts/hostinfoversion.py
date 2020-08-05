@@ -134,7 +134,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.07.29"
+    infoversion = "2020.08.01"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -321,6 +321,8 @@ class Host:
            valTab.append(CDisplayListItem('Echo24', 'http://www.echo24.tv/', CDisplayListItem.TYPE_CATEGORY, ['http://www.echo24.tv/'], 'echo24', 'http://www.echo24.tv/bundles/echo24web/favicons-assets/favicon-152.png', None)) 
            valTab.append(CDisplayListItem('Popler TV', 'http://www.popler.tv/live', CDisplayListItem.TYPE_CATEGORY, ['http://www.popler.tv/live'], 'poplertv', 'http://www.popler.tv/oferta_new/images/logo.png', None)) 
            valTab.append(CDisplayListItem('Galicja TV', 'Galicja TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UC0wRIobYwfHvugdAGIZ1j0g/live', 1)], 'Galicja', 'https://i.ytimg.com/vi/lPjeomL5RPk/maxresdefault.jpg', None)) 
+           valTab.append(CDisplayListItem('TVK SM Grudziądz', 'https://tvksm.pl/', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://tvksm.pl/', 1)], 'tvksm', 'http://salesupport.pl/strona/wp-content/uploads/2015/01/TVSM.png', None)) 
+
            #valTab.append(CDisplayListItem('LUBACZÓW TV', 'LUBACZÓW TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UCB5tN7RbpyWws1zVn4Sy85Q/live', 1)], 'LUBACZÓW', 'http://lubaczow.tv/wp-content/uploads/2018/02/logoTV-white.png', None)) 
            valTab.append(CDisplayListItem('Relax TV', 'Relax TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UCZvmZep3wknWdBPcKnwsPHA/live', 1)], 'Relax', 'http://tvrelax.pl/templates/srem_tv/themes/red-color/images/logo.png', None)) 
            #valTab.append(CDisplayListItem('LTVM TV MIĘDZYRZEC PODL.', 'LTVM TV MIĘDZYRZEC PODL. ', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UCU7uwCYami150L_lydp2OHQ/live', 1)], 'LTVM', 'https://yt3.ggpht.com/a/AGF-l79SsBAwCM8wWJq12NdFFYLrWlJKjAEWaV93Jg=s288-c-k-c0xffffffff-no-rj-mo', None)) 
@@ -3852,6 +3854,22 @@ class Host:
         #printDBG( 'Host getResolvedURL url: '+url )
         videoUrl = ''
         valTab = []
+
+        if 'tvksm' in url:
+            COOKIEFILE = os_path.join(GetCookieDir(), 'tvksm.cookie')
+            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            self.defaultParams['header']['User-Agent']='Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0'
+            self.defaultParams['header']['Upgrade-Insecure-Requests']='1'
+            sts, data = self.get_Page(url)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            videoUrl = self.cm.ph.getSearchGroups(data, '''loadSource\(['"]([^"^']+?)['"]''', 1, True)[0] 
+            videoUrl = strwithmeta(videoUrl, {'Referer':url, 'Origin':"https://www.kukaj.sk"})
+            tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
+            for item in tmp:
+                return item['url']
+            return ''
 
         if 'kukaj' in url:
             COOKIEFILE = os_path.join(GetCookieDir(), 'kukaj.cookie')
