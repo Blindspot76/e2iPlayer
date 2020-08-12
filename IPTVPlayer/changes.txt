@@ -1,3 +1,7 @@
+#2020.08.12.01
+-DixMax frissítve (Saját lista támogatása)
+-YMovies javítva
+-TubePorn Classic javítva (XXX)
 #2020.08.10.01
 -AutoHU frissítve (Köszönet Alec-nek)
 -USTVGo javítva
