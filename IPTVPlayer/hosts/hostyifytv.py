@@ -40,7 +40,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://ymovies.to/'
+    return 'https://ymovies.se/'
 
 class YifyTV(CBaseHostClass):
     def __init__(self):
@@ -48,28 +48,28 @@ class YifyTV(CBaseHostClass):
         self.filterCache = {}
         self.cacheLinks = {}
         self.VIDEO_HOSTINGS_MAP = {
-			"rpd":"https://www.rapidvideo.com/embed/{0}", 
-			"vza":"https://vidoza.net/embed-{0}.html", 
-			"akv":"https://akvideo.stream/embed-{0}.html", 
-			"rpt":"https://www.raptu.com/e/{0}", 
-			"lox":"https://vidlox.tv/embed-{0}.html", 
-			"vsh":"http://vshare.eu/embed-{0}.html"
-		}
-        
-        self.DEFAULT_ICON_URL = 'https://superrepo.org/static/images/icons/original/xplugin.video.yifymovies.hd.png.pagespeed.ic.ZC96NZE8Y2.jpg'
-        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+            "akv":"https://akvideo.stream/embed-{0}.html", 
+            "lox":"https://vidlox.tv/embed-{0}.html",
+            "meg":"https://mega.nz/embed/{0}",
+            "rpd":"https://www.rapidvideo.com/embed/{0}", 
+            "rpt":"https://www.raptu.com/e/{0}", 
+            "vsh":"http://vshare.eu/embed-{0}.html",
+            "vza":"https://vidoza.net/embed-{0}.html" 
+        }
+        self.DEFAULT_ICON_URL="https://ymovies.se/wp-content/themes/yifybootstrap3/img/logo.svg"
+        self.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
         
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
         
-        self.MAIN_URL    = 'https://ymovies.to/'
+        self.MAIN_URL    = 'https://ymovies.se/'
         self.SRCH_URL    = self.getFullUrl('?s=')
         
         self.MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Releases'),          'url':self.getFullUrl('files/releases/') },
                              {'category':'list_popular',          'title': _('Popular'),           'url':self.getFullUrl('wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&needcap=1') },
-                             {'category':'list_items',            'title': _('Top +250'),          'url':self.getFullUrl('files/movies/?meta_key=imdbRating&orderby=meta_value&order=desc') },
+                             {'category':'list_items',            'title': _('Top +250'),          'url':self.getFullUrl('files/movies/?meta_key=imdbRating&orderby=meta_value_num&order=desc') },
                              {'category':'list_genres_filter',    'title': _('Genres'),            'url':self.getFullUrl('files/movies/') },
                              {'category':'list_languages_filter', 'title': _('Languages'),         'url':self.getFullUrl('languages/')    },
                              {'category':'list_countries_filter', 'title': _('Countries'),         'url':self.getFullUrl('countries/') },
@@ -284,7 +284,7 @@ class YifyTV(CBaseHostClass):
             page = cItem.get('page', 1)
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
-            self.addDir(params)
+            self.addMore(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("YifyTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -351,7 +351,7 @@ class YifyTV(CBaseHostClass):
             subLangs = subLangs.split(',')
             for lang in subLangs:
                 if subID != '':
-                    params = {'title':lang, 'url':'https://ymovies.to/player/bajarsub.php?%s_%s' % (subID, lang), 'lang':lang, 'format':'srt'}
+                    params = {'title':lang, 'url':'https://ymovies.se/player/bajarsub.php?%s_%s' % (subID, lang), 'lang':lang, 'format':'srt'}
                     printDBG(str(params))
                     sub_tracks.append(params)
         
@@ -422,14 +422,14 @@ class YifyTV(CBaseHostClass):
             
             for sou in souTab:
                 post_data = {'fv':'27', 'url':baseUrl, 'sou':sou}
-                url = 'https://ymovies.to/playerlite/pk/pk/plugins/player_p2.php'
+                url = 'https://ymovies.se/playerlite/pk/pk/plugins/player_p2.php'
                 sts, data = self.getPage(url, {'header':header}, post_data)
                 if not sts: 
                     return []
                 
-                #printDBG("+++++++++++++++++++++++  data  ++++++++++++++++++++++++")
-                #printDBG(data)
-                #printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG("+++++++++++    player_p2.php javascript code  +++++++++")
+                printDBG(data)
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 
                 if 'jscode' in data:
                         data = byteify(json_loads(data))[0]['jscode'][1:-1] 
@@ -449,9 +449,9 @@ class YifyTV(CBaseHostClass):
                         for iptv_direct in ["false", "true"]:
                             jsTab[0] = 'var iptv_direct = %s;' % iptv_direct
                             jscode = '\n'.join(jsTab)
-                            #printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
-                            #printDBG(jscode)
-                            #printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                            printDBG("+++++++++++++ code after replaces ++++++++++++++++++++++++")
+                            printDBG(jscode)
+                            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                             ret = js_execute( jscode )
 
                             if ret['sts']: #and 0 == ret['code']:
@@ -460,7 +460,13 @@ class YifyTV(CBaseHostClass):
 
                                 # various forms of data answer
 
-                                if 'parseRes2' in decoded:
+                                try_url = decoded.split('\n')[-1]
+                                if self.cm.isValidUrl(try_url):
+                                    urlTab.extend(self.up.getVideoLinkExt(try_url))
+
+                                    break
+
+                                elif 'parseRes2' in decoded:
                                     printDBG("Search for ParseRes2 argument")
                                     prData = self.cm.ph.getSearchGroups(decoded, "parseRes2\(\"(.*?)\"\)")[0]    
                                     printDBG("ParseRes2 function argument : %s" % prData)
