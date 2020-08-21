@@ -134,7 +134,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.08.01"
+    infoversion = "2020.08.16"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -286,6 +286,9 @@ class Host:
            valTab.append(CDisplayListItem('Stoki Rzeczka', 'https://www.nartyrzeczka.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.nartyrzeczka.com/index.php/kamery'], 'rzeczka', 'https://www.nartyrzeczka.com/templates/moanes/images/logo.png', None)) 
            valTab.append(CDisplayListItem('Stoki Skrzyczne', 'http://www.skrzyczne.cos.pl', CDisplayListItem.TYPE_CATEGORY, ['http://www.skrzyczne.cos.pl/cos-jaworzyna.html'], 'skrzyczne', 'http://www.skrzyczne.cos.pl/static/images/logo3.png', None)) 
            valTab.append(CDisplayListItem('Stoki Korbielow', 'https://korbielow.net', CDisplayListItem.TYPE_CATEGORY, ['https://korbielow.net/kamery-solisko/'], 'korbielów', 'https://korbielow.net/source_2016/img/logo-korbielow-net-w-260-4.png', None)) 
+           valTab.append(CDisplayListItem('Zagraniczne webcam-hd Francja', 'https://webcam-hd.fr/webcamsbycountry?country=france', CDisplayListItem.TYPE_CATEGORY, ['https://webcam-hd.fr/webcamsbycountry?country=france'], 'webcam-hd', 'https://webcam-hd.fr/build/images/logo.b9c8a571.png', None)) 
+           valTab.append(CDisplayListItem('Zagraniczne webcam-hd Portugalia', 'https://webcam-hd.fr/webcamsbycountry?country=portugal', CDisplayListItem.TYPE_CATEGORY, ['https://webcam-hd.fr/webcamsbycountry?country=portugal'], 'webcam-hd', 'https://webcam-hd.fr/build/images/logo.b9c8a571.png', None)) 
+           valTab.append(CDisplayListItem('Zagraniczne webcam-hd Hiszpania', 'https://webcam-hd.fr/webcamsbycountry?country=spain', CDisplayListItem.TYPE_CATEGORY, ['https://webcam-hd.fr/webcamsbycountry?country=spain'], 'webcam-hd', 'https://webcam-hd.fr/build/images/logo.b9c8a571.png', None)) 
 
            #http://e-wyciagi.pl/kamery-z-wyciagow.html
            
@@ -2582,6 +2585,31 @@ class Host:
                 if Title:
                     valTab.append(CDisplayListItem(decodeHtml(Title), decodeHtml(Title),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, Image, None))
             return valTab
+
+        if 'webcam-hd' == name:
+            #printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'webcam-hd.cookie')
+            mainurl = 'http://webcam-hd.fr'
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'webcam-hd.cookie', 'webcam-hd.fr', self.defaultParams)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+            next = self.cm.ph.getDataBeetwenMarkers(data, "id='blog-pager'", "</div>", False)[1]
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="item">', '</div>')
+            for item in data:
+                Url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
+                Title = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0]  
+                Image = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+                if Url.startswith('//'): Url = 'http:' + Url
+                if Image.startswith('//'): Image = 'http:' + Image
+                if Image.startswith('/'): Image = mainurl + Image
+                if  not 'http' in Url: Url = mainurl + Url
+                Image = strwithmeta(Image, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+                valTab.append(CDisplayListItem(decodeHtml(Title), decodeHtml(Url),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, Image, None))
+            valTab.sort(key=lambda poz: poz.name)
+            return valTab
+
 #############################################
         if len(url)>8:
            COOKIEFILE = os_path.join(GetCookieDir(), 'info.cookie')
@@ -3607,7 +3635,7 @@ class Host:
             valTab.append(CDisplayListItem('Sokół wędrowny Płock ORLEN gniazdo', 'Sokół wędrowny Płock ORLEN',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://stream.orlen.pl:443/sokol/gniazdo.stream/playlist.m3u8', 0)], 0, 'http://www.peregrinus.pl/images/comprofiler/4246_5e91d934b04fa.jpg', None))
             valTab.append(CDisplayListItem('Sokół wędrowny na kominie MPEC we Włocławku podest', 'Sokół wędrowny na kominie Miejskiego Przedsiębiorstwa Energetyki Cieplnej we Włocławku',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://53c7d208964cd.streamlock.net/mpecz/mpecpodest.stream/playlist.m3u8', 0)], 0, 'http://www.peregrinus.pl/images/comprofiler/4246_5e91d934b04fa.jpg', None))
             valTab.append(CDisplayListItem('Sokół wędrowny na kominie MPEC we Włocławku gniazdo', 'Sokół wędrowny na kominie Miejskiego Przedsiębiorstwa Energetyki Cieplnej we Włocławku',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://53c7d208964cd.streamlock.net/mpecw/mpecw.stream_aac/playlist.m3u8', 0)], 0, 'http://www.peregrinus.pl/images/comprofiler/4246_5e91d934b04fa.jpg', None))
-            valTab.append(CDisplayListItem('Czarny Bocian - Hungary', 'Czarny Bocian - Hungary',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://gemenczrt.hu/media/feketegolya-feszek/', 1)], 0, 'http://gemenczrt.hu/wp-content/uploads/2020/05/3f_1_200501.jpg', None))
+            #valTab.append(CDisplayListItem('Czarny Bocian - Hungary', 'Czarny Bocian - Hungary',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://gemenczrt.hu/media/feketegolya-feszek/', 1)], 0, 'http://gemenczrt.hu/wp-content/uploads/2020/05/3f_1_200501.jpg', None))
 
             url ='https://www.youtube.com/channel/UCwlJ4WLonGeFWeU2VFLDnig'
             COOKIEFILE = os_path.join(GetCookieDir(), 'info.cookie') 
@@ -3854,6 +3882,32 @@ class Host:
         #printDBG( 'Host getResolvedURL url: '+url )
         videoUrl = ''
         valTab = []
+
+        if 'webcam-hd' in url:
+            #printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'webcam-hd.cookie')
+            mainurl = 'http://webcam-hd.fr'
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'webcam-hd.cookie', 'webcam-hd.fr', self.defaultParams)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            videoPage = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
+            for item in videoPage:
+                if 'shakabay' in item: continue
+                if 'exosrv' in item: continue
+                printDBG( 'Host  videoPage: '+item )
+                videoUrl = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
+                if 'joada' in item: break
+            mpd = self.cm.ph.getSearchGroups(item, '''uuid=([^"^']+?)[&\n]''')[0].replace('&amp;','&')
+            if mpd:
+                mpd = 'https://deliverys2.joada.net/contents/encodings/live/'+mpd+'/mpd.mpd'
+                mpd = strwithmeta(mpd, {'Referer':url})
+                return mpd
+                tmp = getMPDLinksWithMeta(mpd, checkExt=False, sortWithMaxBandwidth=999999999)
+                for item in tmp:
+                    printDBG( 'Host item:%s ' % item )
+                return str(item['url'])
+            return ''
 
         if 'tvksm' in url:
             COOKIEFILE = os_path.join(GetCookieDir(), 'tvksm.cookie')
@@ -5153,48 +5207,29 @@ class Host:
                 portProtect = self.cm.ph.getSearchGroups(data, '''var portProtect = ['"]([^"^']+?)['"]''', 1, True)[0]
                 m3u8_url = self.cm.ph.getSearchGroups(data, '''file:['"]([^"^']+?)['"]''', 1, True)[0].replace('#2','')
                 if m3u8_url:
-                    #printDBG( 'Host m3u8_url:'+m3u8_url )
+                    printDBG( 'Host m3u8_url:'+m3u8_url )
                     link = m3u8_url.split('//')
                     m3u8_url = ''
                     wynik = ''
-
                     for part in link:
-                        #printDBG( 'Host part:%s %s' % (part, str(len(part))) )
+                        printDBG( 'Host part:%s %s' % (part, str(len(part))) )
                         if part.startswith('a'): wynik += part
-                        elif 'MzE0' in part: 
-                            MzE0 = re.sub('.+MzE0', '', part)
-                            wynik += MzE0
-                            #printDBG( 'Host MzNm-MzE0:%s %s' % (MzE0, str(len(part))) )
-                        elif '3zE0' in part: 
-                            E03z = re.sub('.+3zE0', '', part)
-                            wynik += E03z
-                            #printDBG( 'Host MzNm-3zE0:%s %s' % (E03z, str(len(part))) )
-                        elif 'N2Zh' in part: 
-                            N2Zh = re.sub('.+N2Zh', '', part)
-                            wynik += N2Zh
-                            #printDBG( 'Host M2Q-N2Zh:%s ' % N2Zh )
-                        elif 'ZmQ0' in part: 
-                            ZmQ0 = re.sub('.+ZmQ0', '', part)
-                            wynik += ZmQ0
-                            #printDBG( 'Host Y2-ZmQ0:%s %s' % (ZmQ0, str(len(part))) )
-                        elif 'OWQ3' in part: 
-                            OWQ3 = re.sub('.+OWQ3', '', part)
-                            wynik += OWQ3
-                            #printDBG( 'Host MzNm-OWQ3:%s %s' % (OWQ3, str(len(part))) )
-                    #printDBG( 'Host wynik:'+wynik )
-
+                        elif len(part)>48: 
+                            wynik += part[48:]
+                            printDBG( 'Host part>48:%s %s' % (part[48:], str(len(part))) )
+                    printDBG( 'Host wynik:'+wynik )
                     try:
                         m3u8_url = urllib.unquote(base64.b64decode(wynik))
                     except:
                         printDBG( 'nie ma' )
                     printDBG( 'Host m3u8_url po:'+m3u8_url )
                     m3u8_url = m3u8_url.replace(r'{v3}',portProtect).replace(r'{v2}', secondIpProtect)
-                    m3u8_url = urlparser.decorateUrl(m3u8_url, {'Referer': url})
+                    m3u8_url = urlparser.decorateUrl(m3u8_url, {'Referer': url, 'Origin':'http://tv.tivix.co', 'User-Agent':"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0", 'Accept':'*/*'})
                     if self.cm.isValidUrl(m3u8_url):
                         tmp = getDirectM3U8Playlist(m3u8_url, checkContent=True, sortWithMaxBitrate=999999999)
                         if not tmp:
                             m3u8_url = m3u8_url.replace(secondIpProtect,firstIpProtect)
-                            m3u8_url = urlparser.decorateUrl(m3u8_url, {'Referer': url})
+                            m3u8_url = urlparser.decorateUrl(m3u8_url, {'Referer': 'http://tv.tivix.co'})
                             if self.cm.isValidUrl(m3u8_url):
                                 tmp = getDirectM3U8Playlist(m3u8_url, checkContent=True, sortWithMaxBitrate=999999999)
                                 #printDBG( 'Host tmp:%s ' % tmp )
