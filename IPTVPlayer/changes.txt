@@ -1,3 +1,5 @@
+#2020.08.21.01
+-InfoVersion frissítve (Kamerák)
 #2020.08.14.01
 -Vidoza.Co tárhely támogatás hozzáadva
 #2020.08.12.01
