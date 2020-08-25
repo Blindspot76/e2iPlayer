@@ -1,3 +1,5 @@
+#2020.08.25.02
+-YouTube linkkezelő javítva
 #2020.08.25.01
 -YouTube formátumkezelő javítva
 #2020.08.24.01
