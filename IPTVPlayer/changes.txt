@@ -1,3 +1,5 @@
+#2020.08.27.01
+-KinoX javítva
 #2020.08.25.02
 -YouTube linkkezelő javítva
 #2020.08.25.01
