@@ -38,12 +38,12 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://kinox.to/'
+    return 'https://kinos.to/'
 
 class Kinox(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'kinox.to', 'cookie':'kinox.to.com.cookie'})
+        CBaseHostClass.__init__(self, {'history':'kinos.to', 'cookie':'kinos.to.com.cookie'})
         self.DEFAULT_ICON_URL = 'https://www.medienrecht-urheberrecht.de/images/Urteil_streaming-plattform.PNG'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
@@ -60,7 +60,7 @@ class Kinox(CBaseHostClass):
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'cookie_items':{'ListMode':'cover', 'CinemaMode':'cover'}}
         
     def selectDomain(self):
-        domains = ['https://kinox.to/', 'https://kinox.tv/', 'http://kinox.ag/', 'http://kinox.me/', 'https://kinox.am/', 'http://kinox.nu/', 'http://kinox.pe/', 'http://kinox.sg/']
+        domains = ['https://kinos.to/', 'https://kinox.tv/', 'http://kinox.ag/', 'http://kinox.me/', 'https://kinox.am/', 'http://kinox.nu/', 'http://kinox.pe/', 'http://kinox.sg/']
         domain = config.plugins.iptvplayer.kinox_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -83,7 +83,7 @@ class Kinox(CBaseHostClass):
                 break
         
         if confirmedDomain == None:
-            self.MAIN_URL = 'https://kinox.to/'
+            self.MAIN_URL = 'https://kinos.to/'
         
         self.MAIN_CAT_TAB = [{'category':'news',               'title': _('News'),              'url':self.getMainUrl()                                       },
                              {'category':'list_langs',         'title': _('Cinema movies'),     'url':self.getFullUrl('/Kino-filme.html'), 'get_list_mode':'direct'  },
