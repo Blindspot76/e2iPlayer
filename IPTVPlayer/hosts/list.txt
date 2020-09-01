@@ -69,6 +69,7 @@ hostfilmpalast
 hostfilmpertutti
 hostfilmstreamhdit
 hostfilmstreamvkcom
+hostfilmynadzis
 hostforjatn
 hostfrancetv
 hostfreediscpl
@@ -212,3 +213,4 @@ hostzalukajvip
 hostzdfmediathek
 hostwebhuplayer
 hostupdatehosts
+
