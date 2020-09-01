@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-07-21 by Blindspot - modified iptvhostgroups
+# 2020-09-01 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -144,6 +144,7 @@ class IPTVHostsGroups:
         'filmpertutti' : [ 'italian', 'moviesandseries'] ,
         'filmstreamhdit' : [ 'italian', 'moviesandseries'] ,
         'filmstreamvkcom' : [ 'french', 'moviesandseries'] ,
+        'filmynadzis': [ 'moviesandseries', 'polish'] ,
         'fokustv' : [ 'documentary', 'live', 'polish', 'science'] ,
         'forjatn' : [ 'arabic', 'english', 'french', 'moviesandseries'] ,
         'francetv' : [ 'french'] ,
