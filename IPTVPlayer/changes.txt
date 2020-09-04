@@ -1,3 +1,5 @@
+#2020.09.04.01
+-Kisebb javítások
 #2020.09.01.01
 -France TV javítva
 -Filmynadzis hozzáadva (PL)
