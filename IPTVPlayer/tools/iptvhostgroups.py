@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-09-01 by Blindspot - modified iptvhostgroups
+# 2020-09-09 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -150,7 +150,8 @@ class IPTVHostsGroups:
         'francetv' : [ 'french'] ,
         'freediscpl' : [ 'moviesandseries', 'others', 'polish'] ,
         'gamatocom' : [ 'greek', 'moviesandseries'] ,
-        'gamatotvme' : [ 'greek', 'moviesandseries'] ,      
+        'gamatotvme' : [ 'greek', 'moviesandseries'] , 
+        'govod' : [ 'moviesandseries', 'polish'] ,       
         'greekdocumentaries3' : [ 'documentary', 'greek'] ,
         'guardaserie' : [ 'italian', 'moviesandseries'] ,
         'hd1080online' : [ 'moviesandseries', 'russian'] ,
@@ -223,8 +224,7 @@ class IPTVHostsGroups:
         'redbull' : [ 'sport'] ,
         'rtbfbe' : [ 'french', 'others'] ,
         'rteieplayer' : [ 'english'] ,        
-        'serialeco' : [ 'moviesandseries', 'polish'] ,
-        'serialnet' : [ 'moviesandseries', 'polish'] ,
+        'serialeco' : [ 'moviesandseries', 'polish'] ,       
         'serienstreamto' : [ 'german', 'moviesandseries'] ,
         'seriesonline' : [ 'english', 'moviesandseries'] ,
         'serijeonline' : [ 'balkans', 'moviesandseries'] ,
@@ -280,7 +280,6 @@ class IPTVHostsGroups:
         'yesmoviesto' : [ 'english', 'moviesandseries'] ,
         'yifytv' : [ 'english', 'moviesandseries'] ,
         'youtube' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'swedish'] ,
-        'zalukajvip' : [ 'moviesandseries', 'polish'] ,
         }        
         
         for h in HOST_AND_GROUPS:
