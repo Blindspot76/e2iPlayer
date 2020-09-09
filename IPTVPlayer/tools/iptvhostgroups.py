@@ -151,7 +151,7 @@ class IPTVHostsGroups:
         'freediscpl' : [ 'moviesandseries', 'others', 'polish'] ,
         'gamatocom' : [ 'greek', 'moviesandseries'] ,
         'gamatotvme' : [ 'greek', 'moviesandseries'] , 
-        'govod' : [ 'moviesandseries', 'polish'] ,       
+        'govodtv' : [ 'moviesandseries', 'polish'] ,       
         'greekdocumentaries3' : [ 'documentary', 'greek'] ,
         'guardaserie' : [ 'italian', 'moviesandseries'] ,
         'hd1080online' : [ 'moviesandseries', 'russian'] ,
