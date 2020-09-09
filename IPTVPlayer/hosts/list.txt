@@ -76,6 +76,7 @@ hostfreediscpl
 hostfullmatchtvcom
 hostgamatocom
 hostgamatotvme
+hostgovodtv
 hostgreekdocumentaries3
 hostguardaserie
 hosthd1080online
@@ -153,7 +154,6 @@ hostrtbfbe
 hostrteieplayer
 hostrtlmost
 hostserialeco
-hostserialnet
 hostserienstreamto
 hostseriesonline
 hostserijeonline
@@ -209,7 +209,6 @@ hostxrysoise
 hostyesmoviesto
 hostyifytv
 hostyoutube
-hostzalukajvip
 hostzdfmediathek
 hostwebhuplayer
 hostupdatehosts
