@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: IPTVPlayer v1.6\n"
+"Project-Id-Version: IPTVPlayer v1.7\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-06-26 19:33+0200\n"
 "PO-Revision-Date: \n"
@@ -7350,3 +7350,15 @@ msgstr "%d óra"
 
 msgid "%dmin"
 msgstr "%d perc"
+
+msgid "Created by:  "
+msgstr "Készítette:  "
+
+msgid ""
+"No more videos!\n"
+"\n"
+" Go back to the previous page!"
+msgstr ""
+"Nincs több videó!\n"
+"\n"
+" Lépj vissza az előző oldalra!"
