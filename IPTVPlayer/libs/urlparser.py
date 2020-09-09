@@ -616,7 +616,8 @@ class urlparser:
                        'yukons.net':            self.pp.parserYUKONS        ,
                        'zalaa.com':             self.pp.parserZALAACOM      ,
                        'zerocast.tv':           self.pp.parserZEROCASTTV    ,
-                       'zstream.to':            self.pp.parserZSTREAMTO      
+                       'zstream.to':            self.pp.parserZSTREAMTO     ,
+                       'govod.tv':             self.pp.parserWIIZTV         ,
         }
         return
     
