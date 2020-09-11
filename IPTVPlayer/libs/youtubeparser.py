@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Alec - 2020-09-09
+# Alec - 2020-09-10
 ###################################################
 # LOCAL import
 ###################################################
@@ -627,14 +627,14 @@ class YouTubeParser():
 			printDBG('YouTubeParser.getSearchResult pattern[%s], searchType[%s], page[%s]' % (pattern, searchType, data))
 			if sts:
 				if data:
-					data2 = self.cm.ph.getAllItemsBeetwenMarkers(data, '{"videoRenderer"', 'enableOverlay":true}}}}')
+					data2 = self.cm.ph.getAllItemsBeetwenMarkers(data, '{"videoRenderer"', ',"ownerText":')
 					if len(data2) > 0:
 						for item in data2:
 							vid = self.cm.ph.getSearchGroups(item, '''"videoId"\s*:\s*"([^"]+?)"''')[0]
 							url = 'https://www.youtube.com/watch?v=%s' % vid
 							icon = self.cm.ph.getSearchGroups(item, '''"url"\s*:\s*"([^"]+?)"''')[0]
 							temp_desc = _shortdesc(url)
-							tmp = item.replace('\u0026','&')
+							tmp = item.replace('\u0026','&').replace(',"ownerText":','') + '}}'
 							data = json_loads(tmp)
 							title = data['videoRenderer']['title']['runs'][0]['text']
 							if temp_desc == '':
@@ -642,37 +642,42 @@ class YouTubeParser():
 							desc = []
 							try:
 								duration = data['videoRenderer']['lengthText']['simpleText']
-								if duration:
-									desc.append(_("Duration: %s") % duration)
 							except:
 								pass
 							try:
 								views = data['videoRenderer']["viewCountText"]["simpleText"]
-								if views:
-									desc.append(views)
 							except:
-								pass
+								views = ''
+								try:
+									views_live = data['videoRenderer']["viewCountText"]['runs'][0]['text']
+								except:
+									views_live = ''
 							try:
 								time = data['videoRenderer']['publishedTimeText']['simpleText']
-								if time:
-									desc.append(time)
 							except:
-								time = ''
+								pass
 							try:
 								owner = data['videoRenderer']["ownerText"]["runs"][0]["text"]
 							except:
 								try:
 									owner = data['videoRenderer']["longBylineText"]["runs"][0]["text"]
 								except:
-									owner = ""
+									owner = ''
+							if views != '':							
+								if duration:
+									desc.append(_("Duration: %s") % duration)
+								if views:
+									desc.append(views)
+								if time:
+									desc.append(time)
 							if desc:
 								desc = "  |  ".join(desc) + "\n" + _("Created by:  ") + owner
 							else:
-								desc = owner
+								desc = _('LIVE')
 							try:
 								desc = desc + "\n\n" + temp_desc
 							except:
-								pass	
+								desc = ''
 							params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': icon.replace('&amp;', '&'), 'time': time, 'desc': desc}
 							currList.append(params)
 						if len(currList) > 0:
