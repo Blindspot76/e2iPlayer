@@ -1,3 +1,5 @@
+#2020.09.21.01
+-EuroSport Player, TantiFilm javítva
 #2020.09.17.01
 -Kisebb javítások
 #2020.09.13.01
