@@ -35,9 +35,9 @@ class EskaGo(CBaseHostClass):
         self.MAIN_ESKAPL_URL = 'http://www.eska.pl/'
         self.DEFAULT_ICON_URL = self.MAIN_URL + 'html/img/fb.jpg'
         
-        self.MAIN_CAT_TAB = [{'category':'list_vod_casts',          'title': 'VOD',                      'url':self.getFullUrl('vod')     },
+        self.MAIN_CAT_TAB = [#{'category':'list_vod_casts',          'title': 'VOD',                      'url':self.getFullUrl('vod')     },
                              {'category':'list_radio_cats',         'title': 'Radio Eska Go',            'url':self.getFullUrl('radio')   },
-                             #{'category':'list_radio_eskapl',       'title': 'Radio Eska PL',            'url':self.MAIN_ESKAPL_URL,       'icon':'https://www.press.pl/images/contents/photo_51546_1515158162_big.jpg'},
+                             {'category':'list_radio_eskapl',       'title': 'Radio Eska PL',            'url':self.MAIN_ESKAPL_URL,       'icon':'https://www.press.pl/images/contents/photo_51546_1515158162_big.jpg'},
                              ]
                             # {'category':'search',                  'title': _('Search'),                'search_item':True,              },
                             # {'category':'search_history',          'title': _('Search history'),                                         } 
@@ -269,13 +269,14 @@ class EskaGo(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
-        data = ph.find(data, ('<div', '>', '__cities'), '</div>')[1]
+        data = ph.find(data, ('<div', '>', '__cities'), '</ul>')[1]
         data = ph.findall(data, '<li', '</li>')
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, '''data-link=['"]([^'^"]+?)['"]''')[0]
             if url == '': continue
             if not self.cm.isValidUrl(url):
                 url = self.MAIN_URL + '/radio/' + url
+            url = url + self.cm.ph.getSearchGroups(item, '''value\s*=\s*['"](timestamp[^'^"]+?)['"]''')[0]
             icon   = cItem.get('icon', '')
             title  = self.cleanHtmlStr(item)
             desc   = ''

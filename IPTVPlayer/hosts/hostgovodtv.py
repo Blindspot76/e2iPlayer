@@ -63,7 +63,7 @@ class govodtv(CBaseHostClass):
                         {'category':'list_items',      'title': _('News'),           'url':self.getFullUrl('/najnowsze')},
 #                        {'category':'list_items',     'title': _('Highlights'),     'url':self.getFullUrl('/polecane/')},
 #                        {'category':'list_years',     'title': _('Movies by year'), 'url':self.MAIN_URL},
-#                        {'category':'list_cats',      'title': _('Categories'),     'url':self.MAIN_URL},
+                        {'category':'list_cats',      'title': _('Categories'),     'url':self.MAIN_URL},
 #                        {'category':'list_az',        'title': _('Alphabetically'), 'url':self.MAIN_URL},
                         {'category':'search',         'title': _('Search'),         'search_item':True}, 
                         {'category':'search_history', 'title': _('Search history')},]
@@ -86,10 +86,10 @@ class govodtv(CBaseHostClass):
 #        if not sts: return
         
         # fill cats
-#        dat = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="nav__dropdown-menu sub-menu">', '</ul>', False)[1]
-#        dat = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>(.+?)</a>').findall(re.sub('\s+', ' ', dat))
-#        for item in dat:
-#            self.cacheMovieFilters['cats'].append({'title': self.cleanHtmlStr(item[1]), 'url': self.getFullUrl(item[0])})
+        dat = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="sub-menu">', '</ul>', False)[1]
+        dat = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>(.+?)</a>').findall(re.sub('\s+', ' ', dat))
+        for item in dat:
+            self.cacheMovieFilters['cats'].append({'title': self.cleanHtmlStr(item[1]), 'url': self.getFullUrl(item[0])})
             
         # fill years
 #        dat = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="dropdown-menu year-dropdown"', '</ul>', False)[1]
@@ -129,7 +129,9 @@ class govodtv(CBaseHostClass):
         page = cItem.get('page', 1)
 
         url = cUrl = cItem['url']
-        if page > 1: url = url + '?page={0}'.format(page)
+        if '?' in url: url += '&'
+        else: url += '?'
+        if page > 1: url = url + 'page={0}'.format(page)
         sts, data = self.getPage(url)
         if not sts: return
         self.setMainUrl(data.meta['url'])
@@ -280,7 +282,7 @@ class govodtv(CBaseHostClass):
             rm(self.COOKIE_FILE)
             self.listMainMenu({'name':'category'})
         elif 'list_cats' == category:
-            self.listMovieFilters(self.currItem, 'list_sort')
+            self.listMovieFilters(self.currItem, 'list_items')
         elif 'list_years' == category:
             self.listMovieFilters(self.currItem, 'list_sort')
         elif 'list_az' == category:
