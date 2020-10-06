@@ -1,3 +1,6 @@
+#2020.10.06.01
+-NGolos, EFilmy, FilmyNadzis, WebStream (CrackStream) javítva
+-Kisebb módosítások
 #2020.10.04.01
 -MyFreeMP3 javítva, Kisebb módosítások
 #2020.09.29.01
