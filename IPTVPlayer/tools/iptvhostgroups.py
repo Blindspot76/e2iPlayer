@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-09-09 by Blindspot - modified iptvhostgroups
+# 2020-10-06 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -76,7 +76,6 @@ class IPTVHostsGroups:
         'videa' : [ 'hungarian'] ,
         'mytvtelenor' : [ 'hungarian', 'live'] ,
         '123movieshd' : [ 'english', 'moviesandseries'] ,
-        '3filmy' : [ 'moviesandseries', 'polish'] ,
         '3player' : [ 'english'] ,
         '3sktv' : [ 'arabic', 'moviesandseries'] ,
         '7tvde' : [ 'german'] ,
