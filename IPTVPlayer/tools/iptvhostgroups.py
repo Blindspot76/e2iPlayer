@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-10-06 by Blindspot - modified iptvhostgroups
+# 2020-10-07 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -148,6 +148,7 @@ class IPTVHostsGroups:
         'forjatn' : [ 'arabic', 'english', 'french', 'moviesandseries'] ,
         'francetv' : [ 'french'] ,
         'freediscpl' : [ 'moviesandseries', 'others', 'polish'] ,
+        'fullmatchtvcom' : ['sport'] ,
         'gamatocom' : [ 'greek', 'moviesandseries'] ,
         'gamatotvme' : [ 'greek', 'moviesandseries'] , 
         'govodtv' : [ 'moviesandseries', 'polish'] ,       
@@ -173,13 +174,11 @@ class IPTVHostsGroups:
         'kinopokaz' : [ 'moviesandseries', 'russian'] ,
         'kinotan' : [ 'moviesandseries', 'russian'] ,
         'kinox' : [ 'german', 'moviesandseries'] ,
-        'kissanimeto' : [ 'cartoonsandanime', 'english'] ,
         'kisscartoonme' : [ 'cartoonsandanime', 'english'] ,
         'kkiste' : [ 'german', 'moviesandseries'] ,
         'kreskoweczki' : [ 'cartoonsandanime', 'polish'] ,
         'kreskowkazone' : [ 'cartoonsandanime', 'polish'] ,
-        'la7it' : [ 'italian'] ,
-        'laola1tv' : [ 'english', 'german', 'sport'] ,
+        'la7it' : [ 'italian'] ,       
         'librestream' : [ 'french', 'moviesandseries'] ,
         'liveleak' : [ 'english', 'others'] ,
         'localmedia' : [ 'others', 'userdefined'] ,
@@ -211,7 +210,6 @@ class IPTVHostsGroups:
         'otakufr' : [ 'cartoonsandanime', 'french'] ,
         'ourmatchnet' : [ 'english', 'sport'] ,
         'pinkbike' : [ 'english', 'others', 'sport'] ,
-        'planetstreamingcom' : [ 'french', 'moviesandseries'] ,
         'playpuls' : [ 'polish'] ,
         'playrtsiw' : [ 'english', 'french', 'german', 'italian', 'others'] ,
         'plusdede' : [ 'latino', 'moviesandseries'] ,
