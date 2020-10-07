@@ -1,4 +1,6 @@
 #2020.10.06.01
+-Javítások, frissítések
+#2020.10.06.01
 -NGolos, EFilmy, FilmyNadzis, WebStream (CrackStream) javítva
 -Kisebb módosítások
 #2020.10.04.01
