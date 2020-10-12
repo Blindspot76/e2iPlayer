@@ -1,3 +1,7 @@
+#2020.10.12.01
+-123Movies, RedBull TV javítva
+-Hibás oldalak törölve
+-Kisebb módosítások
 #2020.10.06.01
 -Javítások, frissítések
 #2020.10.06.01
