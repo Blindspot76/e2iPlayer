@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-10-12 by Blindspot - modified iptvhostgroups
+# 2020-10-14 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -98,7 +98,6 @@ class IPTVHostsGroups:
         'cartoonhd' : [ 'english', 'moviesandseries'] ,
         'cb01' : [ 'italian', 'moviesandseries'] ,
         'cdapl' : [ 'moviesandseries', 'others', 'polish'] ,
-        'cdafilmy' : ['polish'] ,
         'chomikuj' : [ 'others', 'polish'] ,
         'christusvincit' : [ 'polish'] ,
         'cimaclubcom' : [ 'arabic', 'moviesandseries'] ,
@@ -167,6 +166,7 @@ class IPTVHostsGroups:
         'ipla' : [ 'polish'] ,
         'iptvplayerinfo' : [ 'others'] ,
         'itvcom' : [ 'english'] ,
+        'joemonsterorg' : [ 'polish'] ,
         'kabarety' : [ 'others', 'polish'] ,
         'kijknl' : [ 'others'] ,
         'kinogo' : [ 'moviesandseries', 'russian'] ,
