@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
@@ -12,6 +12,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 # FOREIGN import
 ###################################################
 import re
+import urllib
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigText, getConfigListEntry
@@ -45,7 +46,7 @@ class JoeMonster(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'joemonster.org', 'cookie':'joemonster.cookie'})
         
-        self.DEFAULT_ICON_URL = 'https://joemonster.org/images/logo/jm-logo-1450873307.png'
+        self.DEFAULT_ICON_URL = 'https://www.wykop.pl/cdn/c3201142/comment_9zW8PMFygvZKj5pcy3ZW8Q6OfePZ4JpW,w400.jpg'
         self.HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -84,7 +85,7 @@ class JoeMonster(CBaseHostClass):
         data = self.cm.ph.rgetAllItemsBeetwenNodes(data, ('</div', '>'), ('<div id', '>', 'mtv-row'))
         for item in data:
             url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^"^']+?)['"]''')[0] )
-            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'mtv-desc'), ('</b', '>'))[1])
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'mtv-desc'), ('</a', '>'))[1])
             time  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<time', '>', 'video-time'), ('</time', '>'))[1])
             if len(time) > 0: time = '[%s] ' % time
             desc  = time + self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'mtv-desc-text'), ('</div', '>'))[1])
@@ -112,10 +113,11 @@ class JoeMonster(CBaseHostClass):
         nextPage = self.cm.ph.getSearchGroups(nextPage, '''href=['"]([^"^']+?)['"]''')[0]
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'mtv-poczekalnia-container'), ('<br', '>'))[1]
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'mtvPoczekalniaFilm'), ('</h2', '>'))
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'mtvPoczekalniaFilm'), ('<!--', '>'))
         for item in data:
             url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^"^']+?)['"]''')[0] )
             title  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<h2', '>'), ('</h2', '>'))[1])
+            if title == "": title  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<a', '>', 'movie-title-link'), ('</a', '>'))[1])
             time  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<time', '>', 'video-time'), ('</time', '>'))[1])
             if len(time) > 0: time = '[%s] ' % time
             if not self.cm.isValidUrl(url): continue
@@ -154,6 +156,8 @@ class JoeMonster(CBaseHostClass):
             tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<iframe', '>'), ('</iframe', '>'))
             for item in tmp:
                 url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+                if 'joe.pl' in url:
+                    url = urllib.unquote(self.cm.ph.getSearchGroups(url + '&', '[\?&]v=([^&]+?)&')[0])
                 urlTab.append({'name':'name', 'url':self.getFullUrl(url), 'need_resolve':1})
 
         return urlTab
