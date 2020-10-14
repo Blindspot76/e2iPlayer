@@ -1,3 +1,6 @@
+#2020.10.14.01
+-WebStream, JoeMonster, DokumentalNet javítva
+-EKino, TVPVOD, DPlay.it frissítve
 #2020.10.12.01
 -123Movies, RedBull TV javítva
 -Hibás oldalak törölve
