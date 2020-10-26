@@ -1,3 +1,5 @@
+#2020.10.26.01
+-BongaCams javítva (XXX)
 #2020.10.14.01
 -WebStream, JoeMonster, DokumentalNet javítva
 -EKino, TVPVOD, DPlay.it frissítve
