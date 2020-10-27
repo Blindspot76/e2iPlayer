@@ -1,3 +1,6 @@
+#2020.10.27.01
+-Javítások: 123Movies, WebStream, EKinoManiak, Extraklasa TV, GuardaSerie, LosMovies
+-Frissítések: Ikonok és Logók
 #2020.10.26.01
 -BongaCams javítva (XXX)
 #2020.10.14.01
