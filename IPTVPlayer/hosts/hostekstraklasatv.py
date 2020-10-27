@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 ###################################################
 # LOCAL import
@@ -27,20 +27,20 @@ from Components.config import config, ConfigText, ConfigSelection, ConfigYesNo, 
 # Config options for HOST
 ###################################################
 
-#config.plugins.iptvplayer.ekstraklasa_defaultformat = ConfigSelection(default = "450", choices = [("0", "bitrate: najgorszy"), ("200", "bitrate: 200p"), ("450", "bitrate: 450p"),("900", "bitrate: 900"),("1800", "bitrate: 1800"), ("9999", "bitrate: najlepszy")])
 #config.plugins.iptvplayer.ekstraklasa_usedf = ConfigYesNo(default = False)
 #config.plugins.iptvplayer.ekstraklasa_proxy = ConfigYesNo(default = False)
 
+config.plugins.iptvplayer.ekstraklasa_defaultres = ConfigSelection(default = "0", choices = [("0", _("Ask")),("800", "800 kbps"), ("1000", "1000 kbps"),("1800", "1800 kbps"),("3600", "3600 kbps"), ("6000", "6000 kbps"), ("99999", "Max")])
 config.plugins.iptvplayer.ekstraklasa_login    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.ekstraklasa_password = ConfigText(default = "", fixed_size = False)
 
 
 def GetConfigList():
     optionList = []
+    optionList.append( getConfigListEntry( _("Max bitrate:"), config.plugins.iptvplayer.ekstraklasa_defaultres ) )
     optionList.append( getConfigListEntry( _("Username"), config.plugins.iptvplayer.ekstraklasa_login))
     optionList.append( getConfigListEntry( _("Password"), config.plugins.iptvplayer.ekstraklasa_password))
     
-    #optionList.append( getConfigListEntry( "Domyślny format video:", config.plugins.iptvplayer.ekstraklasa_defaultformat ) )
     #optionList.append( getConfigListEntry( "Używaj domyślnego format video:", config.plugins.iptvplayer.ekstraklasa_usedf ) )
     #optionList.append( getConfigListEntry( "Ekstraklasa korzystaj z proxy?", config.plugins.iptvplayer.ekstraklasa_proxy) )
     return optionList
@@ -60,7 +60,7 @@ class Ekstraklasa(CBaseHostClass):
         self.AUTH_URL = "https://core.oz.com/oauth2/token"
         #self.CHANNELS_JSON_URL = 'https://core.oz.com/channels'
         
-        self.DEFAULT_ICON_URL = "https://d3pwgdagcpl4mv.cloudfront.net/oz/image/upload/f_auto,fl_progressive,w_300/v1565967880/gbtbw0hwdthy72jknsct.png"
+        self.DEFAULT_ICON_URL = "https://ekstraklasa.org/img/ESA_LOGO_1_etv_transparent_white.png"
 
 
         #self.HEADER = {'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
@@ -150,7 +150,10 @@ class Ekstraklasa(CBaseHostClass):
             date_time_obj = datetime.datetime.strptime(date_time_str, '%Y-%m-%dT%H:%M:%S.%fZ') + self.timeoffset #"2020-06-09T15:55:00.000Z"
             date_time_text = date_time_obj.strftime("%d/%m/%Y, %H:%M")
             title = title + " (" + date_time_text + ")"
-
+            
+            scheduleDate = date_time_text
+        else:
+            scheduleDate = ""
 
         icon = video_json.get('posterUrl','')
 
@@ -179,7 +182,10 @@ class Ekstraklasa(CBaseHostClass):
 
         desc = '|'.join(descStr)
         
-        params = {'url':url, 'title':title, 'icon':icon, 'desc': desc}
+        if url:
+            params = {'url': url, 'title':title, 'icon':icon, 'desc': desc}
+        else:
+            params = {'url': '', 'title':title, 'icon':icon, 'desc': desc, 'schedule_date': scheduleDate}
         
         return params
     
@@ -221,18 +227,31 @@ class Ekstraklasa(CBaseHostClass):
 
             if sts:
                 
-                response = json_loads(data)
-                
-                for item in response['data']['data']:
+                try:
+                    response = json_loads(data)
 
-                    v_json = item.get('video','')
-                    if v_json:
-                        params2= self.getVideoInfo(v_json)
-                        params = dict(cItem)
-                        params.update(params2)
-                        printDBG(str(params))
-                        self.addVideo(params)
+                    for item in response['data']['data']:
+                        tmp = item.get('_meta',{})
+                        playing = tmp.get('isNowPlaying', False)
+                        
+                        v_json = item.get('video','')
+                        
+                        if v_json:
+                            params2= self.getVideoInfo(v_json)
 
+                            if playing:
+                                params2['title'] = '\c00????00 ' + params2['title'] + ' [Live]'
+                                params2['url'] = item['_links']['streamUrl']
+                                params2['desc'] = params2['desc'] + "|" + _("Now playing") 
+
+                            params = dict(cItem)
+                            params.update(params2)
+                            printDBG(str(params))
+                            self.addVideo(params)
+
+                except Exception:
+                    printExc()
+                    
         
     def listCategories(self,cItem):
         printDBG("Ekstraklasa.listCategories")
@@ -249,19 +268,23 @@ class Ekstraklasa(CBaseHostClass):
             
             if sts:
                 
-                response = json_loads(data)
+                try:
+
+                    response = json_loads(data)
+
+                    for item in response['data']:
+                        
+                        c_json = item.get('collection','')
+                        
+                        if c_json:
+                            params2 = self.getCollectionInfo(c_json)
+                            params = dict(cItem)
+                            params.update(params2)    
+                            printDBG(str(params))
+                            self.addDir(params)
                 
-                for item in response['data']:
-                    
-                    c_json = item.get('collection','')
-                    
-                    if c_json:
-                        params2 = self.getCollectionInfo(c_json)
-                        params = dict(cItem)
-                        params.update(params2)    
-                        printDBG(str(params))
-                        self.addDir(params)
-   
+                except Exception:
+                    printExc()
    
     def exploreCategory(self, cItem):
         printDBG("Ekstraklasa.exploreCategory '%s'" % cItem)
@@ -279,39 +302,47 @@ class Ekstraklasa(CBaseHostClass):
         
         if sts:
             
-            response = json_loads(data)
-            
-            for item in response['data']:
+            try:
+                response = json_loads(data)
 
-                c_json = item.get('collection','')
-                if c_json:
-                    params2 = self.getCollectionInfo(c_json)
-                    params = dict(cItem)
-                    params.update(params2)    
-                    printDBG(str(params))
-                    self.addDir(params)
-                
-                v_json = item.get('video','')
-                if v_json:
-                    params2 = self.getVideoInfo(v_json)
+                for item in response['data']:
+
+                    c_json = item.get('collection','')
+                    if c_json:
+                        params2 = self.getCollectionInfo(c_json)
+                        params = dict(cItem)
+                        params.update(params2)    
+                        printDBG(str(params))
+                        self.addDir(params)
                     
+                    v_json = item.get('video','')
+                    if v_json:
+                        params2 = self.getVideoInfo(v_json)
+                        
+                        params = dict(cItem)
+                        params.update(params2)
+                        printDBG(str(params))
+                        self.addVideo(params)
+                  
+                if len(response['data']) >= 25:
+                    page = page + 1
                     params = dict(cItem)
-                    params.update(params2)
+                    params.update({'title': _("Next page") , 'page' : page })
                     printDBG(str(params))
-                    self.addVideo(params)
-              
-            if len(response['data']) >= 25:
-                page = page + 1
-                params = dict(cItem)
-                params.update({'title': _("Next page") , 'page' : page })
-                printDBG(str(params))
-                self.addMore(params)      
+                    self.addMore(params)      
+
+            except Exception:
+                printExc()
 
     def getLinksForVideo(self, cItem):
         printDBG("Ekstraklasa.getLinksForVideo '%s'" % cItem)
         
         url = cItem.get('url','')
         if not url:
+            scheduleDate = cItem.get('schedule_date','')
+            if scheduleDate:
+                msg = _("Stream starts from %s") % scheduleDate 
+                GetIPTVNotify().push(msg, 'info', 10)
             return []
             
         if not self.loggedIn:
@@ -344,8 +375,21 @@ class Ekstraklasa(CBaseHostClass):
             response = json_loads(data)
             url = response['data']['url']
         
-            linksTab.extend(getDirectM3U8Playlist(url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)) 
-        
+            playlist = getDirectM3U8Playlist(url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
+            if (config.plugins.iptvplayer.ekstraklasa_defaultres.value == None) or (config.plugins.iptvplayer.ekstraklasa_defaultres.value == '') or (config.plugins.iptvplayer.ekstraklasa_defaultres.value == "0"):
+                linksTab.extend(playlist) 
+            else:
+                def_res = int(config.plugins.iptvplayer.ekstraklasa_defaultres.value)
+                printDBG(json_dumps(playlist))
+                for track in playlist:
+                    if int(track.get("bitrate","0")) < (def_res * 1000):
+                        linksTab.append(track)
+                        break
+                
+        else:
+            msg = _("You are not allowed to play this video")
+            GetIPTVNotify().push(msg, 'info', 10)
+            
         return linksTab
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
