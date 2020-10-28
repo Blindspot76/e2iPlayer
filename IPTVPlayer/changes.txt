@@ -1,3 +1,6 @@
+#2020.10.28.01
+-YouTube javítva
+-YouTube 4K támogatás hozzáadva
 #2020.10.27.01
 -Javítások: 123Movies, WebStream, EKinoManiak, Extraklasa TV, GuardaSerie, LosMovies
 -Frissítések: Ikonok és Logók
