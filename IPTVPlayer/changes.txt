@@ -1,3 +1,6 @@
+#2020.11.02.01
+-Youtube aláírás visszafejtési hiba javítva
+-Kisebb módosítások (Setup)
 #2020.10.28.01
 -YouTube javítva
 -YouTube 4K támogatás hozzáadva
