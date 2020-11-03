@@ -24,7 +24,7 @@ class HoofootCom(CBaseHostClass):
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
     MAIN_URL   = 'https://hoofoot.com/'
-    DEFAULT_ICON_URL  = "http://th.hoofoot.com/pics/default.jpg"
+    DEFAULT_ICON_URL  = "https://ae01.alicdn.com/kf/HTB1SajMSpXXXXc8XVXXq6xXFXXXz/8x8FT-Spots-Light-Night-Time-boisko-do-pi-ki-no-nej-stadion-platforma-niestandardowe-t-o.jpg"
     
     MAIN_CAT_TAB = [{'category':'list_cats',       'title': _('Main'),              'url':MAIN_URL,},
                     {'category':'list_cats2',      'title': _('Popular'),           'url':MAIN_URL,},
