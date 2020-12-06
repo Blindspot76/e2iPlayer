@@ -407,7 +407,9 @@ class YouTubeParser():
                 self.checkSessionToken(data)
 
                 data2 = self.cm.ph.getDataBeetwenMarkers(data,"window[\"ytInitialData\"] =", "};", False)[1]
-                
+                if len(data2) == 0:
+                    data2 = self.cm.ph.getDataBeetwenMarkers(data,"var ytInitialData =", "};", False)[1]
+
                 try:
                     response = json_loads(data2 + "}")
                 
@@ -491,7 +493,7 @@ class YouTubeParser():
 
         currList = []
         try:
-            sts,data =  self.cm.getPage(url, {'host': self.HOST})
+            sts,data =  self.cm.getPage(url, self.http_params)
             if sts:
                 sts,data = CParsingHelper.getDataBeetwenMarkers(data, 'class="playlist-videos-container', '<div class="watch-sidebar-body">', False)
                 data = data.split('class="yt-uix-scroller-scroll-unit')
@@ -516,6 +518,8 @@ class YouTubeParser():
                 self.checkSessionToken(data)
 
                 data2 = self.cm.ph.getDataBeetwenMarkers(data,"window[\"ytInitialData\"] =", "};", False)[1]
+                if len(data2) == 0:
+                    data2 = self.cm.ph.getDataBeetwenMarkers(data,"var ytInitialData =", "};", False)[1]
                 
                 response = json_loads(data2 + "}")
                 
@@ -581,6 +585,8 @@ class YouTubeParser():
                     # first page of videos
                     self.checkSessionToken(data)
                     data2 = self.cm.ph.getDataBeetwenMarkers(data,"window[\"ytInitialData\"] =", "};", False)[1]
+                    if len(data2) == 0:
+                        data2 = self.cm.ph.getDataBeetwenMarkers(data,"var ytInitialData =", "};", False)[1]
 
                     response = json_loads(data2 + "}")
 
@@ -779,7 +785,7 @@ class YouTubeParser():
 
         currList = []
         if baseUrl != '':
-            sts, data =  self.cm.getPage(baseUrl, {'host': self.HOST})
+            sts, data =  self.cm.getPage(baseUrl, self.http_params)
             try:
                 data = json_loads(data)['video']
                 for item in data:
