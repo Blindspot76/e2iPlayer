@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
@@ -232,7 +232,6 @@ class YouTubeParser():
                 for x in self.findKeys(j, kv):
                     yield x
 
-
     def getThumbnailUrl(self, thumbJson, maxWidth = 1000, hq=False):
         
         url = ''
@@ -246,23 +245,24 @@ class YouTubeParser():
                 thumbJson2 = thumbJson["thumbnails"][0]['thumbnails']
                 print(thumbJson2)
             thumbJson = thumbJson2
-
-
             width = 0
             i = 0
-            
+        
             while i < len(thumbJson):
                 img = thumbJson[i]
                 width = img['width']
                 if width < maxWidth:
                     url = img['url']
                 i = i + 1
-            
+        
             if hq or (not config.plugins.iptvplayer.allowedcoverformats.value) or config.plugins.iptvplayer.allowedcoverformats.value !='all':
                 if 'hqdefault' in url:
                     url = url.replace('hqdefault','hq720')
+                if '?' in url:
+                    url = url.split('?')[0]
         except Exception:
             printExc()
+
         return url
         
     def getVideoData(self, videoJson):
@@ -337,7 +337,7 @@ class YouTubeParser():
 
         chId = chJson.get("channelId","")
         if chId:
-            url = 'http://www.youtube.com/channel/%s' % chId
+            url = 'https://www.youtube.com/channel/%s' % chId
             title = chJson['title']['simpleText'] 
 
             icon = self.getThumbnailUrl(chJson)
@@ -635,8 +635,6 @@ class YouTubeParser():
     #def getVideosFromSearch(self, pattern, page='1'):
     def getSearchResult(self, pattern, searchType, page, nextPageCategory, sortBy='', url = ''):
         printDBG('YouTubeParser.getSearchResult pattern[%s], searchType[%s], page[%s]' % (pattern, searchType, page))
-        
-        
         currList = []
               
         try:
@@ -653,7 +651,7 @@ class YouTubeParser():
                 
                 if sts:
                     response = json_loads(data)
-
+                    
             else:
                 # new search
                 # url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s' % (pattern, searchType, sortBy) 
@@ -675,11 +673,11 @@ class YouTubeParser():
                     if len(data2) == 0:
                         data2 = self.cm.ph.getDataBeetwenMarkers(data,"var ytInitialData =", "};", False)[1]
 
-                    response = json_loads(data2 + "}")                    
-            
+                    response = json_loads(data2 + "}")
+
             if not sts:
                 return []
-
+                    
             #printDBG("--------------------")
             #printDBG(json_dumps(response))
             #printDBG("--------------------")
@@ -731,13 +729,13 @@ class YouTubeParser():
 
             nP = list(self.findKeys(response, "nextContinuationData"))
             nP_new = list(self.findKeys(response, "continuationEndpoint"))
-            
-            
+
+
             if nP:
                 nextPage = nP[0]
-                printDBG("-------------------------------------------------")
-                printDBG(json_dumps(nextPage))
-                printDBG("-------------------------------------------------")
+                #printDBG("-------------------------------------------------")
+                #printDBG(json_dumps(nextPage))
+                #printDBG("-------------------------------------------------")
 
                 ctoken = nextPage["continuation"]
                 itct = nextPage["clickTrackingParams"]
@@ -765,7 +763,7 @@ class YouTubeParser():
                 params = {'type':'more', 'category': "search_next_page", 'title': label, 'page': str(int(page) + 1), 'url': urlNextPage}
                 printDBG(str(params))
                 currList.append(params)
-            
+         
         except Exception:
             printExc()
 
