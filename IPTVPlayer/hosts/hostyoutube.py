@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-# Blindspot - 2020-10-28
+﻿# -*- coding: utf-8 -*-
+# Blindspot - 2020-12-06
 ###################################################
 # LOCAL import
 ###################################################
@@ -16,7 +16,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 ###################################################
 try:    import json
 except Exception: import simplejson as json
-import  re, urllib
+import re, urllib
 import zlib
 import base64
 from Components.config import config, ConfigDirectory, getConfigListEntry
@@ -57,7 +57,7 @@ class Youtube(CBaseHostClass):
         self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLzTUystRLzs/Vz8xNTE8t1q/MLy0pTUrVTSotKcnP0y0oTtE1MTUwMjDWK8hLBwBj7xQv'))
         self.MAIN_GROUPED_TAB = [{'category': 'from_file',             'title': _("User links"),     'desc': _("User links stored in the ytlist.txt file.")}, \
                                  {'category': 'search',                'title': _("Search"),         'desc': _("Search youtube materials "), 'search_item':True}, \
-                                 {'category': 'feeds',                 'title': _("Felkapott videók"), 'desc': _("Népszerű videók böngészése")}, \
+                                 {'category': 'feeds',                 'title': _("Felkapott Videók"), 'desc': _("Népszerű videók böngészése")}, \
                                  {'category': 'search_history',        'title': _("Search history"), 'desc': _("History of searched phrases.")}]
         
         self.SEARCH_TYPES = [  (_("Video"),    "video"   ), 
