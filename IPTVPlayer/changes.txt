@@ -1,3 +1,6 @@
+#2020.12.06.01
+-WebStream javítva
+-Kisebb módosítások (YouTube)
 #2020.11.03.01
 -Ikonok, markerek frissítve
 -Movs4U, RedBull TV, GreekDocumentaries javítva
