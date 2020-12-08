@@ -1,4 +1,6 @@
-#2020.12.09.01
+#2020.12.08.02
+-Kisebb javítások
+#2020.12.08.01
 -Kisebb javítások
 #2020.12.06.02
 -Kisebb javítások (YouTube)
