@@ -1,3 +1,5 @@
+#2020.12.09.01
+-Kisebb javítások
 #2020.12.06.02
 -Kisebb javítások (YouTube)
 #2020.12.06.01
