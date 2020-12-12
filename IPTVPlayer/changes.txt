@@ -1,3 +1,6 @@
+#2020.12.12.02
+-LiveSpotting, VideoStar, WebCamera.pl javítva (WebStream)
+-Ikonok frissítve
 #2020.12.12.01
 -Kisebb javítások (YouTube)
 -Lejátszó kinézetének váltása támogatva (Külső médialejátszó beállításai)
