@@ -1,3 +1,6 @@
+#2020.12.12.01
+-Kisebb javítások (YouTube)
+-Lejátszó kinézetének váltása támogatva (Külső médialejátszó beállításai)
 #2020.12.08.03
 -Linkparaméterezési hiba javítva (YouTube)
 #2020.12.08.02
