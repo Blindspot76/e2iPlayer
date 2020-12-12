@@ -4,7 +4,7 @@
 #
 #  $Id$
 #
-# 2019-08-06 - Modified by Alec
+# 
 ###################################################
 # LOCAL import
 ###################################################
@@ -29,8 +29,8 @@ import stat
 import codecs
 import datetime
 
-SERVER_DOMAINS = {'vline':'http://iptvplayer.vline.pl/', 'gitlab':'http://zadmario.gitlab.io/', 'private':'http://www.e2iplayer.gitlab.io/'}
-SERVER_UPDATE_PATH = {'vline':'update2/', 'gitlab':'update2/', 'private':'update2/'}
+SERVER_DOMAINS = {'vline':'http://iptvplayer.vline.pl/', 'gitlab':'https://gitlab.com/maxbambi/e2iplayer/', 'private':'http://www.e2iplayer.gitlab.io/'}
+SERVER_UPDATE_PATH = {'vline':'download/update2/', 'gitlab':'raw/master/IPTVPlayer/iptvupdate/', 'private':'update2/'}
 
 def GetServerKey(serverNum=None):
     if serverNum == None:
@@ -53,7 +53,7 @@ def GetUpdateServerUri(file='', serverNum=None):
 
 def GetResourcesServerUri(file='', serverNum=None):
     serverKey = GetServerKey(serverNum)
-    uri = SERVER_DOMAINS[serverKey] + 'resources/' + file
+    uri = 'http://iptvplayer.vline.pl/resources/' + file
     printDBG("GetResourcesServerUri -> %s" % uri)
     return uri
 
@@ -448,6 +448,8 @@ def GetExtensionsDir(file = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/') + file
 def GetSkinsDir(path = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/skins/') + path
+def GetPlayerSkinDir(path = ''):
+    return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/playerskins/') + path
 def GetConfigDir(path = ''):
     return resolveFilename(SCOPE_CONFIG, path)
 def IsExecutable(fpath):
@@ -598,9 +600,9 @@ def printDBG( DBGtxt ):
                 print("======================EXC printDBG======================")
                 print("printDBG(II): %s" % traceback.format_exc())
                 print("========================================================")
-                
-#####################################################
-                
+        
+     #####################################################
+     
 def GetTextInList(lista,text):
     in_lista = False
     if len(lista) > 0:
@@ -635,6 +637,8 @@ def hour_min_text(l=0):
         return _("%dhour") % (vhour)
     else:
         return _("%dmin") % (vmins)
+
+
 
 #####################################################
 # get host list based on files in /hosts folder
