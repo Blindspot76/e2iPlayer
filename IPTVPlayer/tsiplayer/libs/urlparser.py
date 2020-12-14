@@ -249,14 +249,12 @@ class urlparser:
 						'vudeo.net'	      : self.pp.parserUNI01,	
 						'streamwire.net'  : self.pp.parserUNI01,
 						'vidshare.tv'     : self.pp.parserUNI01,
-						'vidshar.tv'     : self.pp.parserUNI01,
 						'videobin.co'     : self.pp.parserUNI01,
 						'youflix.me'      : self.pp.parserUNI01,
 						'imdb.com'        : self.pp.parserUNI01,
 						'hdup.net'        : self.pp.parserUNI01,
 						'govid.co'        : self.pp.parserUNI01,
 						'vidbm.com'       : self.pp.parserUNI01,#self.pp.parserVSTREAM,
-						'vidbem.com'      : self.pp.parserUNI01,#self.pp.parserVSTREAM,
 						'vidbom.com'      : self.pp.parserUNI01,
 						'asia2tv.cc'      : self.pp.parserUNI01,
 						'asia2tv.com'     : self.pp.parserUNI01,						
@@ -268,10 +266,6 @@ class urlparser:
 						'arabveturk.com'  : self.pp.parserUNI01,
 						'okgaming.org'    : self.pp.parserUNI01,
 						'okanime.com'     : self.pp.parserUNI01, 
-						'filesload.xyz'   : self.pp.parserUNI01,
-						'mightyupload.com': self.pp.parserUNI01,
-						'gofile.io'       : self.pp.parserGOFILE,
-						'okstream.cc'     : self.pp.parserOKSTREAM,
 						'saruch.co'       : self.pp.parserSARUCH,
 						'zimabdko.com'    : self.pp.parserZIMABDKO,
 						'abcvideo.cc'     : self.pp.parserABCVIDEO,
@@ -2410,7 +2404,6 @@ class pageParser(CaptchaHelper):
 		if 'Referer' in strwithmeta(baseUrl).meta:
 			HTTP_HEADER['Referer'] = strwithmeta(baseUrl).meta['Referer']
 		if 'arabveturk' in baseUrl: HTTP_HEADER['Referer'] = ''
-		if 'gounlimited' in baseUrl: HTTP_HEADER['Referer'] = ''
 		#printDBG("parserUNI01"+str(HTTP_HEADER))
 		COOKIE_FILE = GetCookieDir('UNI01.cookie')	
 		self.cm.clearCookie(COOKIE_FILE, ['__cfduid', 'cf_clearance'])
@@ -2442,13 +2435,11 @@ class pageParser(CaptchaHelper):
 				if not lst_data:
 					lst_data = re.findall('holaplayer.*?src:"(.*?)"', data0, re.S)
 					if not lst_data:
-						lst_data = re.findall('src\((.*?])', data0, re.S)		
+						lst_data = re.findall('src\((.*?])', data0, re.S)					
 						if not lst_data:
-							lst_data = re.findall('.setup.*?file:["\'](.*?)["\']', data0, re.S)	
+							lst_data = re.findall('file.*?"(.*?)"', data, re.S)
 							if not lst_data:
-								lst_data = re.findall('file.*?"(.*?)"', data, re.S)
-								if not lst_data:
-									lst_data = re.findall('<video.*?src="(.*?)"', data, re.S)
+								lst_data = re.findall('<video.*?src="(.*?)"', data, re.S)
 			else:
 				lst_data = re.findall('<source.*?src="(.*?)"', data, re.S)
 				if not lst_data:
@@ -2470,7 +2461,6 @@ class pageParser(CaptchaHelper):
 		printDBG('src='+'#'+src+'#')
 		src =src.replace(',]',']')
 		if ('[' not in src) and ('{' not in src): src='["'+src+'"]'
-		src = src.replace(',}','}')
 		printDBG('src='+'#'+src+'#')
 		items = json.loads(src)
 		printDBG('items='+str(items))
@@ -2656,51 +2646,6 @@ class pageParser(CaptchaHelper):
 				link = strwithmeta(link, {'User-Agent':UA})
 				videoTab.append({'name':'[MP4]', 'url':link})
 		return videoTab
-
-	def parserOKSTREAM(self, baseUrl):
-		videoTab = []
-		UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/66.0'
-		printDBG("parserOKSTREAM baseUrl[%r]" % baseUrl)
-		HTTP_HEADER= {'User-Agent':UA}
-		urlParams = {'header': HTTP_HEADER}
-		sts, data = self.cm.getPage(baseUrl, urlParams)
-		if not sts: return False
-		lst_data = re.findall('var keys="(.*?)".*?var protection="(.*?)"', data, re.S)
-		if lst_data:
-			post_data = {'morocco':lst_data[0][0],'mycountry':lst_data[0][1]}
-			urlParams['header']['referer'] = baseUrl
-			sts, data = self.cm.getPage('https://www.okstream.cc/request/', urlParams,post_data)
-			if sts :
-				link = strwithmeta(data, {'User-Agent':UA,'Referer':baseUrl})
-				videoTab.append({'name':'[MP4]', 'url':link})
-		return videoTab
-
-	def parserGOFILE(self, baseUrl):
-		videoTab = []
-		UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/66.0'
-		printDBG("parserGOFILE baseUrl[%r]" % baseUrl)
-		HTTP_HEADER= {'User-Agent':UA}
-		urlParams = {'header': HTTP_HEADER}
-		if 'c=' in baseUrl:
-			id = baseUrl.split('c=')[-1]
-		else:
-			id = baseUrl.split('/')[-1]
-		url = 'https://apiv2.gofile.io/getServer?c='+id
-		printDBG('url='+url)
-		sts, data = self.cm.getPage(url, urlParams)
-		if not sts: return False
-		lst_data = re.findall('server":"(.*?)"', data, re.S)
-		if lst_data:
-			url1 = 'https://'+lst_data[0]+'.gofile.io/getUpload?c='+id
-			urlParams['header']['referer'] = url
-			sts, data = self.cm.getPage(url1, urlParams)
-			if sts :
-				lst_data = re.findall('link":"(.*?)"', data, re.S)
-				if lst_data:
-					link = strwithmeta(lst_data[0], {'User-Agent':UA,'Referer':url1})
-					videoTab.append({'name':'[MP4]', 'url':link})
-		return videoTab
-
 		
 	def parserZIMABDKO(self, baseUrl):
 		videoTab = []

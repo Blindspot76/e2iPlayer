@@ -18,15 +18,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-#---------------------------------------------------------
-#                    From vStream Thx
-#  Repo:https://github.com/Kodi-vStream/venom-xbmc-addons
-#---------------------------------------------------------
 
 import re
 import sys
 import urllib
 import string
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools                 import printDBG
 
 class JSUnfuck(object):
     numbers = None
@@ -56,13 +53,16 @@ class JSUnfuck(object):
         '([][e+n+t+r+i+e+s]()+[])': '[object Array Iterator]',
         '([]+[])[l+i+n+k](")': '<a href="&quot;"></a>',
         '(![]+[0])[i+t+a+l+i+c+s]()': '<i>false0</i>',
-        # dummy to force array dereference
+		# dummy to force array dereference
         'DUMMY1': '6p',
         'DUMMY2': '2x',
         'DUMMY3': '%3C',
         'DUMMY4': '%5B',
         'DUMMY5': '6q',
         'DUMMY6': '4h',
+		# add rgy
+        '([][+[]]+[])[!+[]+!![]+!![]+!![]+!![]]': 'i',
+        '(+{}+[])[+!![]]': 'a',	
     }
     
     uniqs = {
@@ -79,22 +79,26 @@ class JSUnfuck(object):
     def decode(self, replace_plus=True):
         while True:
             start_js = self.js
+            printDBG('1:'+self.js)
             self.repl_words(self.words)
+            printDBG('2:'+self.js)            
             self.repl_numbers()
+            printDBG('3:'+self.js)           
             self.repl_arrays(self.words)
+            printDBG('4:'+self.js)            
             self.repl_uniqs(self.uniqs)
             if start_js == self.js:
                 break
-    
+        printDBG('5:'+self.js)      
         if replace_plus:
             self.js = self.js.replace('+', '')
         self.js = re.sub('\[[A-Za-z]*\]', '', self.js)
         self.js = re.sub('\[(\d+)\]', '\\1', self.js)
-        
+        printDBG('6:'+self.js)          
         #foutu ici pr le moment
         self.js = self.js.replace('(+)','0')
         self.js = self.js.replace('(+!!)','1')
-        
+        printDBG('7:'+self.js)          
         return self.js
     
     def repl_words(self, words):

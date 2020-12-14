@@ -36,7 +36,7 @@ class MyTheWatchseries(CBaseHostClass):
         self.cacheFiltersKeys = []
         
     def selectDomain(self):
-        self.MAIN_URL = 'https://gowatchseries.io/'
+        self.MAIN_URL = 'https://www7.series.movie'
         params = dict(self.defaultParams)
         params['with_metadata'] = True
         sts, data = self.getPage(self.getMainUrl(), params)

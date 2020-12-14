@@ -74,13 +74,13 @@ class TvnVod(CBaseHostClass):
         printDBG("TvnVod.__init__")
         CBaseHostClass.__init__(self, {'history':'TvnVod', 'history_store_type':True, 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
         self.itemsPerPage = 30 # config.plugins.iptvplayer.tvp_itemsperpage.value
-        self.DEFAULT_ICON_URL = 'http://www.programosy.pl/download/screens/13711/android-player-1_s.png' 
+        self.DEFAULT_ICON_URL = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Player_%28TVN%29.svg/480px-Player_%28TVN%29.svg.png' 
         self.platforms = {
             'Panasonic': {
                 'platform' : 'ConnectedTV',
                 'terminal' : 'Panasonic',
                 'authKey' : '064fda5ab26dc1dd936f5c6e84b7d3c2',
-                'base_url' : 'https://api.player.pl/api2',
+                'base_url' : 'http://api.tvnplayer.pl/api2',
                 'header' : {'User-Agent':'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7', 'X-Api-Version':'3.1', 'Accept-Encoding':'gzip'},
                 'api' : '3.1',
             },
@@ -88,7 +88,7 @@ class TvnVod(CBaseHostClass):
                 'platform' : 'ConnectedTV',
                 'terminal' : 'Samsung2',
                 'authKey' : '453198a80ccc99e8485794789292f061',
-                'base_url' : 'https://api.player.pl/api2',
+                'base_url' : 'http://api.tvnplayer.pl/api2',
                 'header' : {'User-Agent':'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7', 'X-Api-Version':'3.6', 'Accept-Encoding':'gzip'},
                 'api' : '3.6',
             },
@@ -120,7 +120,7 @@ class TvnVod(CBaseHostClass):
                 'platform' : 'Mobile',
                 'terminal' : 'Android',
                 'authKey' : '4dc7b4f711fb9f3d53919ef94c23890c',
-                'base_url' : 'https://api.player.pl/api2',
+                'base_url' : 'http://api.tvnplayer.pl/api2',
                 'header' : {'User-Agent':'Player/3.3.4 tablet Android/4.1.1 net/wifi', 'X-Api-Version':'3.7', 'Accept-Encoding':'gzip'},
                 'api' : '3.7',
             },
