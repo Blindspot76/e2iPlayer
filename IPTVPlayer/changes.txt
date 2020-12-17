@@ -1,3 +1,5 @@
+#2020.12.17.01
+-Hostlista frissítve
 #2020.12.15.01
 -Twitch TV, DixMax javítva
 #2020.12.14.01
