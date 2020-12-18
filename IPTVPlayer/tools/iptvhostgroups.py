@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-10-14 by Blindspot - modified iptvhostgroups
+# 2020-12-18 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -236,6 +236,7 @@ class IPTVHostsGroups:
         'streamliveto' : [ 'live'] ,
         'svtplayse' : [ 'swedish'] ,        
         'tainieskaiseirestv' : [ 'greek', 'moviesandseries'] ,
+        'tainiesonline' : [ 'greek', 'moviesandseries'] ,
         'tantifilmorg' : [ 'italian', 'moviesandseries'] ,
         'tata' : [ 'german'] ,
         'ted' : [ 'english', 'others'] ,
