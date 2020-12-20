@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-12-18 by Blindspot - modified iptvhostgroups
+# 2020-12-20 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -108,8 +108,7 @@ class IPTVHostsGroups:
         'cineto' : [ 'english', 'german', 'moviesandseries'] ,
         'classiccinemaonline' : [ 'english', 'moviesandseries'] ,
         'dailymotion' : [ 'arabic', 'balkans', 'documentary', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'science', 'swedish'] ,
-        'dancetrippin' : [ 'english', 'music'] ,
-        'dardarkomcom' : [ 'arabic', 'moviesandseries'] ,        
+        'dancetrippin' : [ 'english', 'music'] ,        
         'ddl' : [ 'english', 'german', 'moviesandseries'] ,
         'del' : [ 'german', 'sport'] ,
         'dixmax' : [ 'latino', 'moviesandseries'] ,
@@ -155,7 +154,6 @@ class IPTVHostsGroups:
         'hd1080online' : [ 'moviesandseries', 'russian'] ,
         'hdfilmetv' : [ 'german', 'moviesandseries'] ,
         'hdfull' : [ 'latino', 'moviesandseries'] ,
-        'hdkinomir' : [ 'moviesandseries', 'russian'] ,
         'hdpopcornscom' : [ 'english', 'moviesandseries'] ,
         'hdstreams' : [ 'german', 'moviesandseries'] ,
         'hitboxtv' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
@@ -177,8 +175,7 @@ class IPTVHostsGroups:
         'kkiste' : [ 'german', 'moviesandseries'] ,
         'kreskoweczki' : [ 'cartoonsandanime', 'polish'] ,
         'kreskowkazone' : [ 'cartoonsandanime', 'polish'] ,
-        'la7it' : [ 'italian'] ,       
-        'librestream' : [ 'french', 'moviesandseries'] ,
+        'la7it' : [ 'italian'] ,
         'liveleak' : [ 'english', 'others'] ,
         'localmedia' : [ 'others', 'userdefined'] ,
         'lookmovieag' : [ 'english', 'moviesandseries'] ,

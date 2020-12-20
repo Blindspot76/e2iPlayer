@@ -1,3 +1,7 @@
+#2020.12.20.01
+-CineMay javítva
+-Ikonok frissítve
+-Nem működő hostok törölve
 #2020.12.18.01
 -TainiesOnline hozzáadva (GRE)
 #2020.12.17.01

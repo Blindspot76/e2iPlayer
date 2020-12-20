@@ -32,7 +32,6 @@ hostcineto
 hostclassiccinemaonline
 hostdailymotion
 hostdancetrippin
-hostdardarkomcom
 hostddl
 hostdel
 hostdixmax
@@ -78,7 +77,6 @@ hostguardaserie
 hosthd1080online
 hosthdfilmetv
 hosthdfull
-hosthdkinomir
 hosthdpopcornscom
 hosthdstreams
 hosthitboxtv
@@ -99,7 +97,6 @@ hostkisscartoonme
 hostkkiste
 hostkreskoweczki
 hostkreskowkazone
-hostlibrestream
 hostliveleak
 hostlocalmedia
 hostlosmovies
