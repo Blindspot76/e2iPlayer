@@ -1,3 +1,5 @@
+#2020.12.27.01
+-Kisebb javítások
 #2020.12.25.01
 -Channel One hozzáadva (RUS)
 #2020.12.21.01
