@@ -14588,3 +14588,366 @@ class pageParser(CaptchaHelper):
                 retTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
 
         return retTab
+        
+    def parserUSTREAMIN(self, baseUrl):
+        printDBG('parserUSTREAMIN [baseUrl] %s' % baseUrl)
+        urlTab=[]
+
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer: HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return []
+        printDBG("parserUSTREAMIN data[%s]" % data)
+
+        token = self.cm.ph.getSearchGroups(data, r"cfg\(w\)\}\('([^']*)'\)" )[0]
+        if token:
+            printDBG("parserUSTREAMIN paramFull[%s]" % token)
+            script = '''
+            btoa = function(a){
+                return new Buffer(Duktape.enc('base64', a), 'binary').toString('base64');
+            };
+
+            atob = function(a){
+                return new Buffer(Duktape.dec('base64', a), 'base64').toString('binary');
+            };
+
+            var cip;
+            isNumeric = function(c) {
+                    var r = c;
+                    if (r) {
+                        r = String(r);
+                        var t = parseInt(r[0]);
+                        return parseInt(t > r.length ? 1 : 0 == parseInt(r[t]) ? 1 : r[t]);
+                    }
+                    return 1;
+                };
+
+            Arr = function(r) {
+                    var t = ["qsefthzxQSEFTHZX82367", "plijymknPLIJYMKN91450"];
+                        if (new Date(2020,12,31).getTime() <= (new Date()).getTime())
+                            return t;
+                        for (var n, e = [], i = 48; i < 124; )
+                            n = String.fromCharCode(i++),
+                            /[^a-z0-9]/i.test(n) || e.push(n);
+                        return r || (r = 1),
+                        function(r, t) {
+                            if ("" != r) {
+                                var n = r.length;
+                                do {
+                                    for (var e = 0; e < n; e++)
+                                        for (var i = 0; i < n; i++)
+                                            if (r[e] > r[i + 1]) {
+                                                var a = r[i];
+                                                r[i] = r[i + 1],
+                                                r[i + 1] = a
+                                            }
+                                } while (t-- > 0);
+                                return function(r) {
+
+                                    if (r) {
+                                        for (var t = new Array([],[]), n = Math.round((r.length - 1) / 2), e = 0, i = r.length; e < i; e++)
+                                            t[n > e ? 0 : 1].push(r[e]);
+
+                                        return t;
+                                    }
+
+                                    return null
+                                }(r)
+                            }
+                            return null;
+                        }(e, r + 2)
+            };
+
+            reverse = function(a) {
+                if (a) {
+                    return a.split('').reverse().join('');
+                }
+                return a;
+            };
+
+            encodeStr = function(a) {
+                if (a) {
+                    a = encodeURIComponent(a);
+                    a = btoa(a).replace(/=/g, '');
+                    var b = isNumeric(parseInt(cip));
+                    for (var i = 0, chr = Arr(b), a = reverse(a); i < chr[0].length; i++) {
+                        a = a.replace(new RegExp(chr[0][i],'g'), '__');
+                        a = a.replace(new RegExp(chr[1][i],'g'), chr[0][i]);
+                        a = a.replace(/__/g, chr[1][i]);
+                    }
+                    return a + String(b);
+                }
+                return '';
+            };
+
+            decodeStr = function(a) {
+                if (a) {
+                    var b = parseInt(a.substr(-1));
+                    a = a.substr(0, a.length - 1);
+                    for (var i = 0, chr = Arr(b); i < chr[0].length; i++) {
+                        a = a.replace(new RegExp(chr[0][i],'g'), '__');
+                        a = a.replace(new RegExp(chr[1][i],'g'), chr[0][i]);
+                        a = a.replace(/__/g, chr[1][i]);
+                    }
+                a = reverse(a.replace(/=/g, ''));
+                a = atob(a);
+                return decodeURIComponent(a);
+                }
+                return a;
+            };
+
+            encodeUrl = function(b, c) {
+                if (b) {
+                    var i = 0;
+                    var d = [];
+                    var e = 1;
+                    if (c) {
+                        if (typeof (c) != 'integer') {
+                            c = parseInt(c)
+                        }
+                    } else {
+                        c = parseInt(Math.random().toString(10).substr(2, 10))
+                    }
+                    ;c = isNumeric(c);
+
+                    do {
+                        e = c + 5;
+                        d.push(b[i].charCodeAt().toString(e > 36 ? 30 : e))
+                    } while (function(a) {
+                        return (a.length > (++i))
+                    }(b));d = btoa(d.join('!')).replace(/=/g, '');
+                    for (var i = 0, chr = Arr(c); i < chr[0].length; i++) {
+                        d = d.replace(new RegExp(chr[0][i],'g'), '__');
+                        d = d.replace(new RegExp(chr[1][i],'g'), chr[0][i]);
+                        d = d.replace(/__/g, chr[1][i])
+                    }
+                    ;return encodeStr(d + String(c))
+                }
+                ;return ''
+            };
+
+            decodeUrl = function(b) {
+                if (b) {
+                    b = decodeStr(b);
+                    var c = parseInt(b.substr(-1));
+                    b = b.substr(0, b.length - 1);
+                    for (var i = 0, chr = Arr(c); i < chr[0].length; i++) {
+                        b = b.replace(new RegExp(chr[0][i],'g'), '__');
+                        b = b.replace(new RegExp(chr[1][i],'g'), chr[0][i]);
+                        b = b.replace(/__/g, chr[1][i])
+                    }
+                    ;try {
+                        var d = c + 5;
+                        b = atob(b);
+                        return b.split('!').map(function(a) {
+                            if (a && typeof (a) != 'undefined') {
+                                return String.fromCharCode(parseInt(a, d > 36 ? 30 : d))
+                            }
+                        }).join('')
+                    } catch (e) {
+                        console.log(e.message)
+                    }
+                }
+                ;return b
+            };
+
+            fun = function(k, id, hash) {
+                    var l = hash;
+                    var f = id;
+
+                    if(k){
+                        var d = 44;
+                        var i = k.indexOf('/');
+                        var a = decodeStr(k.substr(d, i - d));
+                        a = JSON.parse(a);
+                        var f = a.media.film[0].id;
+                        cip = decodeStr(k.substr(i + 1));
+                        cip = parseInt(cip);
+                        l = decodeStr(k.substr(0, d));
+                    }
+                    var g = Math.round(new Date().getTime() / 1000);
+                    print('https://get.u-stream.in/ustGet.php?id=' + f + '&token=' + encodeUrl(l + ':' + (g + 120), cip))
+            };'''
+
+            script1 = script + " fun('%s');" % token.strip()
+            ret = js_execute(script1, ver='6')
+            url = ret['data'].strip()
+            sts, data = self.cm.getPage(url, urlParams)
+            if not sts: return []
+
+            metadata = json_loads(data)
+            printDBG(data)
+
+            for u in metadata["url"]:
+                js = script + ' print(decodeStr("%s"));' % u
+                ret = js_execute(js, ver='6')
+                url = ret['data'].strip()
+                printDBG("parserUSTREAMIN decoded url: %s" % url)
+
+                qualty = self.cm.ph.getSearchGroups(url, r"content/(\d*?)-")[0]
+                if not qualty:
+                    qualty = 'Low'
+                urlTab.append({'url':url, 'name':qualty})#strwithmeta(url, {'Referer':referer})})
+        else:
+            hash = self.cm.ph.getSearchGroups(data, r'"hash":[^:]*?"([^"]*?)"' )[0]
+            printDBG("parserUSTREAMIN hash[%s]" % hash)
+            id = self.cm.ph.getSearchGroups(data, r'"id":[^:]*?"([^"]*?)"' )[0]
+            printDBG("parserUSTREAMIN id[%s]" % id)
+
+            url = "https://get.u-stream.in/dev.php?hash=%s&id=%s" %(hash, id)
+            sts, data = self.cm.getPage(url, urlParams)
+            if not sts: return []
+
+            metadata = json_loads(data)
+
+            printDBG("----------------------")
+            printDBG(json_dumps(data))
+            printDBG("----------------------")
+
+            printDBG("parserUSTREAMIN metadata['url']: %s" % metadata["url"])
+
+            urldecoder32 ="""
+            btoa = function(a){
+                    return new Buffer(Duktape.enc('base64', a), 'base64').toString('binary');
+            };
+
+            atob= function(a){
+                    return new Buffer(Duktape.dec('base64', a), 'binary').toString('base64');
+            };
+
+            decodeUrl32 = function(param) {
+                if (param) {
+                    param = decodeUrl(param);
+                    if (param && param['indexOf']('ttp') == -1) {
+                        for (var i = 0, hashkey = generateHashKey(1); (i < hashkey[0]['length']); i++) {
+                                param = param.replace(regExpression(hashkey[0][i]), charExp());
+                                param = param.replace(regExpression(hashkey[1][i]), hashkey[0][i]);
+                                param = param.replace(charExp(1), hashkey[1][i])
+                        };
+                        return decodeC(unescape(atob(param)));
+                    }
+                };
+                return param
+            };
+
+            decodeUrl = function(param) {
+                if (param && (param[0] == '=')) {
+                    for (var i = 0, j = gethash(), param = param.substr(1); (i < j[0]['length']); i++) {
+                        param = param.replace(new RegExp(j[0][i], 'g'), '--');
+                        param = param.replace(new RegExp(j[1][i], 'g'), j[0][i]);
+                        param = param.replace(/--/g, j[1][i]);
+                    };
+                    return decodeURIComponent(atob(param.replace('=', '')));
+                };
+                return param
+            };
+
+            decodeC = function(param) {
+                if (param) {
+                    param = param.substr(0);
+                    var myVar1 = param.split('!').filter(function(param1) {
+                        if (param1 && (typeof param1  != 'undefined')) {
+                            return param1.replace(/^[a-z0-9]{1,3}/i, function(param2) {
+                                return Number.isInteger(param2) ? param1 : param2
+                                })
+                            }
+                    });
+                    var list1 = [];
+                    for (var p=0;  p < myVar1.length;p++) {
+                        var s = parseInt(myVar1[p],36);
+                        list1.push(String.fromCharCode(s));
+                    }
+                   return list1.join('');
+                }
+            };
+
+            regExpression = function(param) {
+                if (param) {
+                    try {
+                     return new RegExp(param, 'g');
+                    } catch (_0x55bc56) {}
+                }
+                return '';
+            };
+
+            charExp = function(param) {
+                var myVar = 13;
+                do {
+                    myVar++;
+                } while ((myVar < 16));
+                myVar = String.fromCharCode(myVar);
+                return param ? new RegExp(myVar, 'g') : myVar;
+            };
+
+            gethash = function() {
+                if (!((new Date(2020,10,0).getTime() + (60*(((60 * 60)* 24)* 1000))) <=  new Date().getTime())) {
+                    return ['qsefthzxQSEFTHZX82367', 'plijymknPLIJYMKN91450'];
+                }
+                return ['qwdfthzxQSEFTZHX', 'piljymknPLIJYMKN'];
+            };
+
+            generateHashKey = function(param) {
+                if (!((new Date((1950+ 70),10,0).getTime() + (60* (((60* 60)* 24)* 1000)))<= new Date().getTime())) {
+                    var list_ = [];
+                    for (var k, j = 48; (j< 124); ) {
+                        k = String.fromCharCode(j++);
+                        if (/[^a-z0-9]/i.test(k))
+                            continue;
+                        list_.push(k);
+                    }
+                    ;if (!param) {
+                        param = 1;
+                    }
+                    return shuffle(list_, param);
+                }
+                return null;
+            };
+
+            shuffle = function(param1, param2) {
+
+                if ((param1 != '')) {
+                    var tmp = param1.length;
+                    do {
+                        for (var a = 0; a < tmp; a++) {
+                            for (var b = 0; (b< tmp); b++) {
+                                    if (param1[a] > param1[b + 1]) {
+                                        var _0x2ad044 = param1[b];
+                                        param1[b] = param1[(b+ 1)];
+                                        param1[(b + 1)] = _0x2ad044;
+                                    }
+                            }
+                        }
+                    } while (param2-- > 0);return doubleArray(param1)
+                }
+                ;return null;
+            };
+
+            doubleArray = function(param) {
+                if (param) {
+                    var arr = new Array([],[]);
+                    var tmp = Math.round((param.length- 1) / 2);
+
+                    for (var a = 0, b = param.length; (a< b); a++) {
+                        arr[(tmp> a) ? 0 : 1].push(param[a])
+                    }
+                    return arr;
+                }
+                return null;
+            };"""
+
+            for u in metadata["url"]:
+                js = urldecoder32 + ' print(decodeUrl32("%s"));' % u
+                ret = js_execute(js, ver='6')
+                url = ret['data'].strip()
+                #url = decorateUrl(url)
+                #url.meta['iptv_m3u8_custom_base_link'] = '' + url
+                #urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
+
+                qualty = self.cm.ph.getSearchGroups(url, r"content/(\d*?)-")[0]
+                if not qualty:
+                    qualty = 'Low'
+                urlTab.append({'url':url, 'name':qualty})#strwithmeta(url, {'Referer':referer})})
+
+        return urlTab
