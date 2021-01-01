@@ -31,7 +31,7 @@ config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "720", cho
 config.plugins.iptvplayer.ytUseDF         = ConfigYesNo(default = True)
 config.plugins.iptvplayer.ytAgeGate       = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ytShowDash      = ConfigSelection(default = "auto", choices = [("auto", _("Auto")),("true", _("Yes")),("false", _("No"))])
-config.plugins.iptvplayer.ytSortBy        = ConfigSelection(default = "Upload date", choices = [("", _("Relevance")),("video_date_uploaded", _("Upload date")),("video_view_count", _("View count")),("video_avg_rating", _("Rating"))]) 
+config.plugins.iptvplayer.ytSortBy        = ConfigSelection(default = "date", choices = [("", _("Relevance")),("video_date_uploaded", _("Upload date")),("video_view_count", _("View count")),("video_avg_rating", _("Rating"))]) 
 
 
 class YouTubeParser():
@@ -651,7 +651,14 @@ class YouTubeParser():
                 # new search
                 # url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s' % (pattern, searchType, sortBy) 
                 url = 'https://www.youtube.com/results?search_query=' + pattern + '&sp='
-                if searchType == 'video':
+                
+                if sortBy == 'video_date_uploaded' and searchType == 'video':
+                    url += 'CAISAhAB'   
+                if sortBy == 'video_view_count' and searchType == 'video':
+                    url += 'CAMSAhAB'
+                if sortBy == 'video_avg_rating' and searchType == 'video':
+                    url += 'CAESAhAB'
+                if sortBy == 'Relevance' and searchType == 'video':
                     url += 'EgIQAQ%253D%253D'
                 if searchType == 'channel':
                     url += 'EgIQAg%253D%253D'

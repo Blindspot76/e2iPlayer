@@ -1,3 +1,5 @@
+#2021.01.01.01
+-Kisebb javítások (Youtube kereső)
 #2020.12.31.01
 -Arte.TV részben javítva, HD Full javítva
 #2020.12.29.01
