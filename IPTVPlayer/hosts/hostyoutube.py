@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Blindspot - 2020-12-29
+# Blindspot - 2021-01-02
 ###################################################
 # LOCAL import
 ###################################################
@@ -17,8 +17,6 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 try:    import json
 except Exception: import simplejson as json
 import re, urllib
-import zlib
-import base64
 from Components.config import config, ConfigDirectory, getConfigListEntry
 ###################################################
 
@@ -39,6 +37,9 @@ def GetConfigList():
     # checking should be moved to setup
     if IsExecutable('ffmpeg'): 
         optionList.append(getConfigListEntry(_("Allow dash format:"), config.plugins.iptvplayer.ytShowDash))
+    if config.plugins.iptvplayer.ytShowDash.value != 'false':
+            optionList.append(getConfigListEntry(_("Allow VP9 codec:"), config.plugins.iptvplayer.ytVP9))
+
     return optionList
 ###################################################
 ###################################################
@@ -52,7 +53,7 @@ class Youtube(CBaseHostClass):
         printDBG("Youtube.__init__")
         CBaseHostClass.__init__(self, {'history':'ytlist', 'cookie':'youtube.cookie'})
         self.UTLIST_FILE      = 'ytlist.txt'
-        self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLzTUystRLzs/Vz8xNTE8t1q/MLy0pTUrVTSotKcnP0y0oTtE1MTUwMjDWK8hLBwBj7xQv'))
+        self.DEFAULT_ICON_URL = 'https://www.mm229.com/images/youtube-button-psd-450203.png'
         self.MAIN_GROUPED_TAB = [{'category': 'from_file',             'title': _("User links"),     'desc': _("User links stored in the ytlist.txt file.")}, \
                                  {'category': 'search',                'title': _("Search"),         'desc': _("Search youtube materials "), 'search_item':True}, \
                                  {'category': 'feeds',                 'title': _("Felkapott Videók"), 'desc': _("Népszerű videók böngészése")}, \

@@ -1,3 +1,5 @@
+#2021.01.02.01
+-Kisebb módosítások
 #2021.01.01.01
 -Kisebb javítások (Youtube kereső)
 #2020.12.31.01
