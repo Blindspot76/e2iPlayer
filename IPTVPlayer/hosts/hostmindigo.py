@@ -201,7 +201,7 @@ def _getMTVATVs():
 
 def _getYTTVs():
     return [
-        {"title": "Euronews", "url": "https://www.youtube.com/channel/UC4Ct8gIf9f0n4mdyGsFiZRA/live" },
+        {"title": "Euronews", "url": "https://www.youtube.com/watch?v=gKY0KxRpXao" },
 #        {"title": "Erdély TV", "url": "https://www.youtube.com/channel//live" },
         ]
 
