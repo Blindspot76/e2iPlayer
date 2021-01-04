@@ -1,3 +1,6 @@
+#2021.01.04.01
+-CDA frissítve (PL)
+-Kisebb javítások
 #2021.01.02.01
 -Kisebb módosítások
 #2021.01.01.01
