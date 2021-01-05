@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-12-25 by Blindspot - modified iptvhostgroups
+# 2021-01-05 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -132,6 +132,7 @@ class IPTVHostsGroups:
         'fightvideo' : [ 'english', 'sport'] ,
         'filma24hdcom' : [ 'balkans', 'moviesandseries'] ,
         'filma24io' : [ 'balkans', 'moviesandseries'] ,
+        'filman' : [ 'polish', 'moviesandseries'] ,
         'filmaoncom' : [ 'balkans', 'moviesandseries'] ,
         'filmativa' : [ 'balkans', 'moviesandseries'] ,
         'filmehdnet' : [ 'balkans', 'moviesandseries'] ,
