@@ -57,6 +57,7 @@
 "hostfilisertv": "https://filmiki.tv/",
 "hostfilma24hdcom": "http://www.filmahd.cc/",
 "hostfilma24io": "https://www.filma24.ai/",
+"hostfilman": "https://filman.cc/",
 "hostfilmaoncom": "https://www.filmaon.nl/",
 "hostfilmativa": "https://filmativa.xyz/",
 "hostfilmehdnet": "https://filmehd.se/",
