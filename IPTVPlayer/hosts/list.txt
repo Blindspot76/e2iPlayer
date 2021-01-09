@@ -59,7 +59,6 @@ hostfilmativa
 hostfilmehdnet
 hostfilmeonlineto
 hostfilmezz
-hostfilmgo
 hostfilmixco
 hostfilmoviplex
 hostfilmpalast
@@ -107,6 +106,7 @@ hostm4sport
 hostmaxtvgo
 hostmeczykipl
 hostmediasetplay
+hostmediayou
 hostmindigo
 hostmindigtv
 hostmovie4kto

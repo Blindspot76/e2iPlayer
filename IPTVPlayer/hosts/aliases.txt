@@ -111,6 +111,7 @@
 "hostmaxtvgo": "https://maxtvgo.com/",
 "hostmeczykipl": "http://www.meczyki.pl/",
 "hostmediasetplay": "https://www.mediasetplay.mediaset.it/",
+"hostmediayou": "https://mediayou.net/",
 "hostmooviecc": "https://moovie.cc/",
 "hostmovie4kto": "http://movie4k.org/",
 "hostmovienightws": "http://movienight.ws/",
