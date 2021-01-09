@@ -1,3 +1,5 @@
+#2021.01.09.02
+-Kisebb módosítások
 #2021.01.09.01
 -Kisebb javítások (WebStream)
 -FilmGo törölve (Az oldal szünetel)
