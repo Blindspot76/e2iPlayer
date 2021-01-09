@@ -1,3 +1,7 @@
+#2021.01.09.01
+-Kisebb javítások (WebStream)
+-FilmGo törölve (Az oldal szünetel)
+-MediaYou hozzáadva (HU)
 #2021.01.06.01
 -EKinoManiak javítva (PL)
 -Crakstream részben javítva (Webstream)
