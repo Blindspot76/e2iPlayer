@@ -277,9 +277,11 @@ class urlparser:
                        'hdgo.cx':               self.pp.parserHDGOCC        ,
                        'hdpass.online':         self.pp.parserHDPASSONLINE  ,
                        'hdplayer.casa':         self.pp.parserHDPLAYERCASA  ,
-                       'hdvid.tv':              self.pp.parserHDVIDTV       ,
-                       'hlstester.com':         self.pp.parserHLSTESTER,
-                       'hofoot.allvidview.tk':  self.pp.parserVIUCLIPS      , 
+                       'sfdmn.eu':              self.pp.parserHDVIDTV       ,
+                       'hdvid.fun':             self.pp.parserHDVIDTV       ,
+                       'hlstester.com':         self.pp.parserHLSTESTER     ,
+                       'hofoot.90minkora.com':  self.pp.parserVIUCLIPS      ,
+                       'hofoot.allvidview.tk':  self.pp.parserVIUCLIPS      ,
                        'hofoot.koravidup.com':  self.pp.parserVIUCLIPS      ,
                        'hofoot.vidcrt.net':     self.pp.parserVIUCLIPS      ,
                        'hofoot.uprafa.com':     self.pp.parserVIUCLIPS      ,
@@ -582,6 +584,7 @@ class urlparser:
                        'vidload.co':            self.pp.parserVIDLOADCO     ,
                        'vidlox.me':             self.pp.parserVIDLOXTV      ,
                        'vidlox.tv':             self.pp.parserVIDLOXTV      ,
+                       'vidnext.net':           self.pp.parserVIDCLOUD      ,
                        'vidnode.net':           self.pp.parserVIDCLOUD      ,
                        'vidoo.tv':              self.pp.parserONLYSTREAM   ,
                        'vidoza.net':            self.pp.parserVIDOZANET     ,
@@ -13117,7 +13120,7 @@ class pageParser(CaptchaHelper):
     def parserLINKHUB(self, baseUrl):
         printDBG("parserLINKHUB baseUrl[%s]" % baseUrl)
         
-        #https://linkhub.icu/get/v7k65hI6r4
+        #https://linkhub.icu/get/K7QujZZVkn
         sts, data = self.cm.getPage(baseUrl)
 
         if sts:
@@ -13363,23 +13366,21 @@ class pageParser(CaptchaHelper):
         urlTabs=[]
         
         if sts:
-            printDBG("---------")
-            printDBG(data)
-            printDBG("---------")
+            #printDBG("---------")
+            #printDBG(data)
+            #printDBG("---------")
             
             #search url in tag like <div id="videolink" style="display:none;">//streamtape.com/get_video?id=27Lbk7KlQBCZg02&expires=1589450415&ip=DxWsE0qnDS9X&token=Og-Vxdpku4x8</div>
-            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'videolink'), ('</div', '>'), False)
-            for t in tmp:
-                printDBG(t)
-                if t.startswith('//'):
-                    t = "http:" + t
-                    if self.cm.isValidUrl(t):
-                        t = urlparser.decorateUrl(t, {'Referer': baseUrl})
-                        params = {'name': 'link' , 'url': t}
-                        printDBG(params)
-                        urlTabs.append(params)
-                        
-        return urlTabs
+            
+            t = eval(self.cm.ph.getSearchGroups(data, '''innerHTML = ([^;]+?);''')[0])
+            printDBG("parserSTREAMTAPE t[%s]" % t)
+            if t.startswith('//'): t = "https:" + t
+            if self.cm.isValidUrl(t):
+                t = urlparser.decorateUrl(t, {'Referer': baseUrl})
+                params = {'name': 'link' , 'url': t}
+                printDBG(params)
+                urlTabs.append(params)
+            return urlTabs
 
     def parserBUCKLER(self, baseUrl):
         printDBG("parserBUCKLER baseUrl[%s]" % baseUrl)

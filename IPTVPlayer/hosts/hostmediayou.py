@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 ###################################################
-# Version 1.1 - Modified by Blindspot - 2021.01.09.
+# Version 1.2 - Modified by Blindspot - 2021.01.10.
 ###################################################
 # LOCAL import
 ###################################################
@@ -125,7 +125,7 @@ class MediayouNet(CBaseHostClass):
         printDBG("MediayouNet.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
         cItem['url'] = self.getFullUrl('/embedded/Search_Website.php')
-        cItem['post_data'] = {'lan':'pol', 'kw':searchPattern}
+        cItem['post_data'] = {'lan':'hun', 'kw':searchPattern}
         cItem['category'] = 'list_items'
         self.listItems(cItem)
     
@@ -210,7 +210,7 @@ class MediayouNet(CBaseHostClass):
             cItem = dict(self.currItem)
             cItem.update({'search_item':False, 'name':'category'}) 
             self.listSearchResult(cItem, searchPattern, searchType)
-    #HISTORIA SEARCH
+    #SEARCH HISTORY
         elif category == "search_history":
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
