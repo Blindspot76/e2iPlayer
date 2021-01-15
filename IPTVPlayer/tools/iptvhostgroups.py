@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-01-09 by Blindspot - modified iptvhostgroups
+# 2021-01-15 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -63,7 +63,7 @@ class IPTVHostsGroups:
         'technika' : [ 'hungarian', 'documentary'] ,
         'updatehosts' : [ 'hungarian'] ,
         'webhuplayer' : [ 'hungarian'] ,
-        'mediayou' : [ 'hungarian'] ,
+        'mediayou' : [ 'hungarian'] ,        
         'filmezz' : [ 'hungarian', 'moviesandseries'] ,
         'nonstopmozi' : [ 'hungarian', 'moviesandseries'] ,
         'mozicsillag' : [ 'hungarian', 'moviesandseries'] ,
@@ -108,7 +108,7 @@ class IPTVHostsGroups:
         'cinemay' : [ 'french', 'moviesandseries'] ,
         'cineto' : [ 'english', 'german', 'moviesandseries'] ,
         'classiccinemaonline' : [ 'english', 'moviesandseries'] ,
-        'dailymotion' : [ 'arabic', 'balkans', 'documentary', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'science', 'swedish'] ,
+        'dailymotion' : [ 'hungarian', 'arabic', 'balkans', 'documentary', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'science', 'swedish'] ,
         'dancetrippin' : [ 'english', 'music'] ,        
         'ddl' : [ 'english', 'german', 'moviesandseries'] ,
         'del' : [ 'german', 'sport'] ,
@@ -158,7 +158,7 @@ class IPTVHostsGroups:
         'hdfull' : [ 'latino', 'moviesandseries'] ,
         'hdpopcornscom' : [ 'english', 'moviesandseries'] ,
         'hdstreams' : [ 'german', 'moviesandseries'] ,
-        'hitboxtv' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
+        'hitboxtv' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
         'hoofootcom' : [ 'english', 'sport'] ,
         'icefilmsinfo' : [ 'english', 'moviesandseries'] ,
         'iitvpl' : [ 'moviesandseries', 'polish'] ,
@@ -249,14 +249,14 @@ class IPTVHostsGroups:
         'tvproart' : [ 'polish'] ,
         'tvpvod' : [ 'polish'] ,
         'tvrepublika' : [ 'polish'] ,
-        'twitchtv' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
+        'twitchtv' : [ 'hungarian', 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
         'uktvplay' : [ 'english'] ,
         'urllist' : [ 'others'] ,
         'ustreamtv' : [ 'english', 'live', 'science'] ,
         'ustvgo' : [ 'english', 'live'] ,
         'vevo' : [ 'music'] ,
         'vidcorncom' : [ 'latino', 'moviesandseries'] ,
-        'vimeo' : [ 'arabic', 'balkans', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'music', 'others', 'polish', 'russian', 'swedish'] ,
+        'vimeo' : [ 'hungarian', 'arabic', 'balkans', 'french', 'german', 'greek', 'italian', 'latino', 'music', 'others', 'polish', 'russian', 'swedish'] ,
         'vodpl' : [ 'polish'] ,
         'vumedicom' : [ 'documentary', 'english', 'science'] ,
         'vumooch' : [ 'english', 'moviesandseries'] ,
@@ -273,7 +273,7 @@ class IPTVHostsGroups:
         'xrysoise' : [ 'greek', 'moviesandseries'] ,
         'yesmoviesto' : [ 'english', 'moviesandseries'] ,
         'yifytv' : [ 'english', 'moviesandseries'] ,
-        'youtube' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'swedish'] ,
+        'youtube' : [ 'hungarian', 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'swedish'] ,
         }        
         
         for h in HOST_AND_GROUPS:

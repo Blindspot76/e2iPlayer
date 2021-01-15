@@ -1,3 +1,5 @@
+#2021.01.15.01
+-Javítások, fejlesztések (Tárhely-támogatás)
 #2021.01.10.01
 -Kisebb javítások
 #2021.01.09.02
