@@ -1,3 +1,5 @@
+#2021.01.21.01
+-AnyVideo tárhelytámogatás hozzáadva
 #2021.01.15.01
 -Javítások, fejlesztések (Tárhely-támogatás)
 #2021.01.10.01
