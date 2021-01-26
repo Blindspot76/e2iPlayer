@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-03-27 Celeburdi
+# 2021-01-26 Blindspot (Modified Celeburdi's version)
 ###################################################
-HOST_VERSION = "2.5"
+HOST_VERSION = "2.7"
 ###################################################
 # LOCAL import
 ###################################################
@@ -201,7 +201,7 @@ def _getMTVATVs():
 
 def _getYTTVs():
     return [
-        {"title": "Euronews", "url": "https://www.youtube.com/watch?v=gKY0KxRpXao" },
+        {"title": "Euronews", "url": "https://www.youtube.com/watch?v=xddy7-kDdkE" },
 #        {"title": "Erdély TV", "url": "https://www.youtube.com/channel//live" },
         ]
 
@@ -293,7 +293,8 @@ class MindiGoHU(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {"history":"mindigo.hu", "cookie":"mindigohu.cookie"})
 
-        self.DEFAULT_ICON_URL = _gh("mindigodefault.jpg")
+        self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode(
+            "eNrLKCkpsNLXT8rJzEspLsgv0cvLSM2p1Mso1Q/JKM1NykvMzCnWzwVKZqbnx6ekpiWW5pToZRWkAwBfDRWQ"))
         self.HEADER = self.cm.getDefaultHeader()
         self.MAIN_URL = "https://tv.mindigo.hu"
 

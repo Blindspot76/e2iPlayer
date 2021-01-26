@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-01-15 by Blindspot - modified iptvhostgroups
+# 2021-01-26 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -257,6 +257,7 @@ class IPTVHostsGroups:
         'vevo' : [ 'music'] ,
         'vidcorncom' : [ 'latino', 'moviesandseries'] ,
         'vimeo' : [ 'hungarian', 'arabic', 'balkans', 'french', 'german', 'greek', 'italian', 'latino', 'music', 'others', 'polish', 'russian', 'swedish'] ,
+        'vizjerpl' : [ 'moviesandseries', 'polish'] ,
         'vodpl' : [ 'polish'] ,
         'vumedicom' : [ 'documentary', 'english', 'science'] ,
         'vumooch' : [ 'english', 'moviesandseries'] ,
