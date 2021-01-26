@@ -183,6 +183,7 @@
 "hostustreamtv": "https://video.ibm.com/",
 "hostvidcorncom": "https://vidcorn.tv/",
 "hostvimeo": "https://vimeo.com/",
+"hostvizjerpl": "https://vizjer.pl/",
 "hostvodpl": "https://vod.pl/",
 "hostvumedicom": "https://vumedi.com/",
 "hostwatchcartoononline": "https://www.wcoforever.com/",

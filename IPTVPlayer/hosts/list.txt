@@ -185,6 +185,7 @@ hostvevo
 hostvidcorncom
 hostvidea
 hostvimeo
+hostvizjerpl
 hostvodpl
 hostvumedicom
 hostwatchcartoononline
