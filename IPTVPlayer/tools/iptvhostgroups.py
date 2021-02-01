@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-01-26 by Blindspot - modified iptvhostgroups
+# 2021-01-31 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -28,9 +28,9 @@ class IPTVHostsGroups:
         self.PREDEFINED_GROUPS = ["userdefined", "moviesandseries", "cartoonsandanime", "music", "sport", "live", "documentary", "science", \
                                   "polish", "english", "german", "french", "russian", "hungarian", "arabic", "greek", "latino", "italian", \
                                   "swedish","balkans","others"]
-        self.PREDEFINED_GROUPS_TITLES = {"userdefined":      "User defined", 
-                                         "moviesandseries":  "Movies and series",
-                                         "cartoonsandanime": "Cartoons and anime",
+        self.PREDEFINED_GROUPS_TITLES = {"userdefined":      "Kedvencek", 
+                                         "moviesandseries":  "Filmek és Sorozatok",
+                                         "cartoonsandanime": "Rajzfilmek, Animék",
                                          "music":            "Music",
                                          "sport":            "Sport",
                                          "live":             "Live",

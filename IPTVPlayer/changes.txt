@@ -1,3 +1,8 @@
+#2021.02.01.01
+-Webstream frissítve
+-EskaGo, TantiFilm javítva
+#2021.01.31.01
+-Kisebb javítások
 #2021.01.30.01
 -Kisebb javítások
 #2021.01.26.01
