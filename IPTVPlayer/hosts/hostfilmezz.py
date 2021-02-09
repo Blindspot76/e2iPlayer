@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-12-19 by Alec - modified Filmezz
+# 2021-02-09 by Blindspot - modified Filmezz
 ###################################################
-HOST_VERSION = "2.2"
+HOST_VERSION = "2.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -103,25 +103,25 @@ class FilmezzEU(CBaseHostClass):
             if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
             tab_home = 'filmezz_fooldal'
-            desc_home = self.getdvdsz(tab_home, 'Főoldali felvételek megjelenítése...')
+            desc_home = self.getdvdsz(tab_home, 'Főoldali felvételek megjelenítése')
             tab_movies = 'filmezz_filmek'
-            desc_movies = self.getdvdsz(tab_movies, 'Filmek megjelenítése...')
+            desc_movies = self.getdvdsz(tab_movies, 'Filmek megjelenítése')
             tab_series = 'filmezz_sorozatok'
-            desc_series = self.getdvdsz(tab_series, 'Sorozatok megjelenítése...')
+            desc_series = self.getdvdsz(tab_series, 'Sorozatok megjelenítése')
             tab_top_movies = 'filmezz_csucs_filmek'
-            desc_top_movies = self.getdvdsz(tab_top_movies, 'Csúcsmozik megjelenítése...')
+            desc_top_movies = self.getdvdsz(tab_top_movies, 'Csúcsmozik megjelenítése')
             tab_top_series = 'filmezz_csucs_sorozatok'
-            desc_top_series = self.getdvdsz(tab_top_series, 'Legjobb sorozatok megjelenítése...')
+            desc_top_series = self.getdvdsz(tab_top_series, 'Legjobb sorozatok megjelenítése')
             tab_latest_add = 'filmezz_utoljara_hozzaadva'
-            desc_latest_add = self.getdvdsz(tab_latest_add, 'Legutóbb feltöltött felvételek megjelenítése...')
+            desc_latest_add = self.getdvdsz(tab_latest_add, 'Legutóbb feltöltött felvételek megjelenítése')
             tab_ajanlott = 'filmezz_ajanlott'
-            desc_ajanlott = self.getdvdsz(tab_ajanlott, 'Ajánlott, nézett tartalmak megjelenítése...')
+            desc_ajanlott = self.getdvdsz(tab_ajanlott, 'Ajánlott, nézett tartalmak megjelenítése')
             tab_keresett = 'filmezz_keresett_tartalom'
-            desc_keresett = self.getdvdsz(tab_keresett, 'Keresett tartalmak megjelenítése...')
+            desc_keresett = self.getdvdsz(tab_keresett, 'Keresett tartalmak megjelenítése')
             tab_search = 'filmezz_kereses'
-            desc_search = self.getdvdsz(tab_search, 'Keresés...')
+            desc_search = self.getdvdsz(tab_search, 'Keresés')
             tab_search_hist = 'filmezz_kereses_elozmeny'
-            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
+            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között')
             MAIN_CAT_TAB = [
                             #{'category':'list_filters', 'title': _('Home'), 'url':self.getFullUrl('kereses.php'), 'tps':'0', 'tab_id':tab_home, 'desc':desc_home   },
                             {'category':'list_items', 'title': _('Movies'), 'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=1&h=0&o=feltoltve'), 'tps':'1', 'tab_id':tab_movies, 'desc':desc_movies  },
@@ -187,11 +187,11 @@ class FilmezzEU(CBaseHostClass):
         try:
             self.susn('2', '2', tabID)
             tab_ams = 'filmezz_ajnlt_musor'
-            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint...')
+            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint')
             tab_adt = 'filmezz_ajnlt_datum'
-            desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
+            desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint')
             tab_anzt = 'filmezz_ajnlt_nezettseg'
-            desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
+            desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint')
             A_CAT_TAB = [{'category':'list_third', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
                          {'category':'list_third', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt},
                          {'category':'list_third', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams} 
@@ -453,6 +453,7 @@ class FilmezzEU(CBaseHostClass):
         return self.cacheLinks.get(key, [])
         
     def getVideoLinks(self, videoUrl):
+        global x
         videoUrl = strwithmeta(videoUrl)
         urlTab = []
         
@@ -466,6 +467,12 @@ class FilmezzEU(CBaseHostClass):
                         break
                         
         url = videoUrl
+        if url.startswith('https://filmezz.co'):
+            x = url.replace("https://filmezz.co", "https://vidddoza.me")
+            printDBG(x)
+            url = x
+            printDBG(x)
+        printDBG(url)		
         post_data = None
         while True:
             httpParams = dict(self.defaultParams)
