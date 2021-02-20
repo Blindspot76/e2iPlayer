@@ -12,7 +12,7 @@ def getinfo():
 	info_['name']='Embratoria.Net'
 	info_['version']='1.2 12/10/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='100'
+	info_['cat_id']='104'
 	info_['desc']='Live TV Channels'
 	info_['icon']='http://www.embratoria.net/uploads/system_logo/logo.png?1566827141'
 	info_['update']='Fix Link Extract (only beinsports work in browser - 12/10/2019)'	

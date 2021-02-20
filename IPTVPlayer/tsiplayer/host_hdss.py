@@ -17,7 +17,7 @@ def getinfo():
 	info_['name']='Hdss.To'
 	info_['version']='1.2 22/03/2020'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='301'
+	info_['cat_id']='104'
 	info_['desc']='Films & Series'
 	info_['icon']='https://i.ibb.co/f1Tw4M7/j73buveq.png'
 	info_['recherche_all']='1'

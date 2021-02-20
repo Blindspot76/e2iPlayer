@@ -14,7 +14,7 @@ def getinfo():
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='افلام و مسلسلات'
-	info_['icon']='https://www.elmstba.tv/uploads/custom-logo.png'
+	info_['icon']='https://i.ibb.co/qxM5pCV/Sans-titre.png'
 	info_['recherche_all']='0'
 	return info_
 

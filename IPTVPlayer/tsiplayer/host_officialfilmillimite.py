@@ -17,7 +17,7 @@ def getinfo():
 	info_['name']='Official-Film-Illimite'
 	info_['version']='1.2 02/09/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='301'
+	info_['cat_id']='104'
 	info_['desc']='Films & Series HD et UHD'
 	info_['icon']='https://www.official-film-illimite.to/wp-content/uploads/2016/10/official-film-illimite.png'
 	info_['recherche_all']='1'

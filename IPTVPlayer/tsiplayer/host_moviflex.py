@@ -20,14 +20,14 @@ def getinfo():
 	info_={}
 	name = 'Moviflex'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://moviflex.se'
+	if hst=='': hst = 'https://w.moviflex.net'
 	info_['host']= hst
 	info_['name']=name
-	info_['version']='1.2.01 05/07/2020'
+	info_['version']='1.2.02 22/07/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات اجنبية'
-	info_['icon']='https://cdn.moviflex.net/wp-content/uploads/2017/10/zymzJNA_22bcf2779f586340b970a361a8648be9.png'
+	info_['icon']='https://w.moviflex.net/wp-content/uploads/2017/10/logo-after_01cce74fa84f0cbbc5f4bebb6e8e2bb9.png'
 	info_['recherche_all']='0'
 	#info_['update']='Bugs Fix'
 	return info_
@@ -182,6 +182,7 @@ class TSIPHost(TSCBaseHostClass):
 			Tab_els = re.findall('play-box-iframe.*?data-src="(.*?)".*?></iframe>', data, re.S)
 			for url in Tab_els:
 				try:
+					if url.startswith('/'): url = 'http:'+url
 					if '//moviflex.net' in url:
 						sts, data = self.getPage(url,self.defaultParams)
 						url_els = re.findall('<source src="(.*?)"', data, re.S)
@@ -219,8 +220,9 @@ class TSIPHost(TSCBaseHostClass):
 
 					else:	
 						if len(url)>4:
-							url11 = url.split('https://')
-							url='https://' + url11[-1]
+							#url11 = url.split('https://')
+							#url='https://' + url11[-1]
+							
 							urlTab.append({'name':gethostname(url), 'url':url, 'need_resolve':1})
 				except:
 					a=''						

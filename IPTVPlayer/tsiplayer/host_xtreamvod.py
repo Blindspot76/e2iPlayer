@@ -48,7 +48,7 @@ class TSIPHost(TSCBaseHostClass):
 			data = json_loads(data)
 			self.addDir({'import':cItem['import'],'category' : 'host2','category_id':'','title':'All','desc':'','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'21','icon':cItem['icon']} )
 			for elm in data:
-				self.addDir({'import':cItem['import'],'category' : 'host2','category_id': elm['category_id'],'title':elm['category_name'].strip(),'desc':'','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'21','icon':cItem['icon']} )	
+				self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','category_id': elm['category_id'],'title':elm['category_name'].strip(),'desc':'','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'21','icon':cItem['icon']} )	
 		except:
 			pass					
 		try:	
@@ -58,7 +58,7 @@ class TSIPHost(TSCBaseHostClass):
 			data = json_loads(data)
 			self.addDir({'import':cItem['import'],'name':'categories','category' : 'host2','category_id': '','title':'All','desc':'','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'22','icon':cItem['icon']} )	
 			for elm in data:
-				self.addDir({'import':cItem['import'],'name':'categories','category' : 'host2','category_id': elm['category_id'],'title':elm['category_name'].strip(),'desc':'','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'22','icon':cItem['icon']} )	
+				self.addDir({'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'host2','category_id': elm['category_id'],'title':elm['category_name'].strip(),'desc':'','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'22','icon':cItem['icon']} )	
 		except:
 			pass
 		self.addDir({'import':cItem['import'],'name':'search','category':'search'  ,'title': _('Search'),'search_item':True,'page':-1,'hst':'tshost','icon':cItem['icon']})
@@ -79,7 +79,7 @@ class TSIPHost(TSCBaseHostClass):
 			titre = elm['name']
 			if '\u' in titre: titre = str(titre.decode('unicode-escape'))
 			url_inf = cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_vod_info&vod_id='+str(elm['stream_id'])
-			self.addVideo({'import':cItem['import'],'name':'categories','category' : 'host2','url': Url,'url_inf':url_inf,'title':titre,'icon':stream_icon,'desc':desc,'hst':'direct','EPG':True})
+			self.addVideo({'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'host2','url': Url,'url_inf':url_inf,'title':titre,'icon':stream_icon,'desc':desc,'hst':'direct','EPG':True})
 		
 		
 	def showmenu_series(self,cItem):		
@@ -95,7 +95,7 @@ class TSIPHost(TSCBaseHostClass):
 			titre = elm['name']
 			if '\u' in titre: titre = str(titre.decode('unicode-escape'))
 			url_inf = cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_series_info&series_id='+str(elm['series_id'])
-			self.addDir({'import':cItem['import'],'name':'categories','category' : 'host2','url_inf':url_inf,'url': str(elm['series_id']),'title':titre,'icon':stream_icon,'desc':desc,'hst':'xtream_vod','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'23','EPG':True})
+			self.addDir({'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'host2','url_inf':url_inf,'url': str(elm['series_id']),'title':titre,'icon':stream_icon,'desc':desc,'hst':'xtream_vod','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'23','EPG':True})
 		
 	def showmenu_saisons(self,cItem):			
 		xuser=cItem['xuser']
@@ -144,7 +144,7 @@ class TSIPHost(TSCBaseHostClass):
 				if xua!='':
 					link  = strwithmeta(link,{'User-Agent' : xua})
 				if '\u' in titre: titre = str(titre.decode('unicode-escape'))
-				params = {'import':cItem['import'],'name':'categories','category' : 'video','url': link,'title':titre,'icon':img_,'desc':cItem.get('desc',''),'hst':'direct'} 
+				params = {'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'video','url': link,'title':titre,'icon':img_,'desc':cItem.get('desc',''),'hst':'direct'} 
 				self.addVideo(params)	
 
 	def getArticle(self, cItem):
@@ -191,7 +191,7 @@ class TSIPHost(TSCBaseHostClass):
 						else: stream_icon = ''
 						if elm0['rating']: rating = str(elm0['rating'])
 						else: rating = ''			
-						self.addVideo({'import':extra,'name':'categories','category' : 'video','url': Url,'title':elm0['name'],'icon':stream_icon,'desc':'Rating: '+rating,'hst':'direct'})	
+						self.addVideo({'import':extra,'good_for_fav':True,'name':'categories','category' : 'video','url': Url,'title':elm0['name'],'icon':stream_icon,'desc':'Rating: '+rating,'hst':'direct'})	
 			except:
 				pass
 			try:				
@@ -209,7 +209,7 @@ class TSIPHost(TSCBaseHostClass):
 						if elm0['genre']: genre = str(elm0['genre'])
 						else: genre = ''
 						desc = 'GENRE:'+genre+' RATING:'+rating+'/10 \nPlot: '+plot
-						self.addDir({'import':extra,'name':'categories','category' : 'host2','url': str(elm0['series_id']),'title':elm0['name'],'icon':stream_icon,'desc':desc,'xuser':elm[2],'xpass':elm[3],'xhost':xhost_,'xua':elm[4],'mode':'23'})
+						self.addDir({'import':extra,'good_for_fav':True,'name':'categories','category' : 'host2','url': str(elm0['series_id']),'title':elm0['name'],'icon':stream_icon,'desc':desc,'xuser':elm[2],'xpass':elm[3],'xhost':xhost_,'xua':elm[4],'mode':'23'})
 			except:
 				pass	
 

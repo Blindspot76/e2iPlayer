@@ -11,11 +11,11 @@ def getinfo():
 	info_['name']='Serie-Streaminghd'
 	info_['version']='1.4 17/08/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='301'
+	info_['cat_id']='104'
 	info_['desc']='Series en VF & VOSTFR'
 	info_['icon']='https://www.serie-streaminghd.org/uploads/log.png'
 	info_['recherche_all']='1'
-	info_['update']='Fix Search'	
+	info_['update']='Site out'	
 	return info_
 	
 	

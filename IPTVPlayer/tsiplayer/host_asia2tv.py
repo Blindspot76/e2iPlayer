@@ -129,6 +129,7 @@ class TSIPHost(TSCBaseHostClass):
 		
 	def SearchResult(self,str_ch,page,extra):
 		url_=self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
+		url_=self.std_url(url_)
 		sts, data = self.getPage(url_)
 		if sts:
 			cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)

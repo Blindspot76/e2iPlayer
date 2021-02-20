@@ -23,11 +23,11 @@ def getinfo():
 	info_['name']='Seehd.pl'
 	info_['version']='1.1 22/02/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='401'
+	info_['cat_id']='104'
 	info_['desc']='Movies & TV shows'
 	info_['icon']='https://i.ibb.co/mJymy06/seehd.png'
 	info_['recherche_all']='1'
-	info_['update']='Fix cloudFlare'
+	info_['update']='New cloudFlare'
 	return info_
 	
 	

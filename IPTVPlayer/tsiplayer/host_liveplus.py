@@ -20,10 +20,10 @@ def getinfo():
 class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'liveplus.cookie'})
-		self.Player_Agent ='ExoPlayerDemo/80.0 (Linux;Android 7.1.1) ExoPlayerLib/2.5.3'
+		self.Player_Agent ='ExoPlayerDemo/2.0 (Linux;Android 8.1.0) ExoPlayerLib/2.11.3'
 		self.USER_AGENT = 'okhttp/3.8.0'
 		self.MAIN_URL = 'http://www.live-plus.io'
-		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Accept':'application/json','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
+		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive','Icy-MetaData':'1', 'Accept-Encoding':'identity', 'Accept':'application/json','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
 	def get_token(self):
@@ -94,6 +94,7 @@ class TSIPHost(TSCBaseHostClass):
 		data = json_loads(data)
 		elmdata = data['all']
 		for elm in 	elmdata:
+			printDBG('elm='+str(elm))
 			text=elm['text']
 			img=elm['image']
 			data=elm['channels']
@@ -104,21 +105,24 @@ class TSIPHost(TSCBaseHostClass):
 		for elm in data:
 			titre=elm['name']
 			image=elm['image']
-			servers=elm['servers']
+			servers=elm['sources']
 			self.addDir({'import':cItem['import'],'category' : 'host2','title':titre,'url':servers,'icon':image,'mode':'32'})
 
 	def getchan(self,cItem):
 		list_=[]
 		data=cItem.get('url', '')
-		for serv in data:
-			titre=serv['title']
-			url=serv['secure_url']
-			params = dict(self.defaultParams)
-			params['no_redirection'] = True
-			sts,data=self.getPage(url,params)
-			red=self.cm.meta.get('location', '')
-			url = strwithmeta(red.replace('/_definst_/','/'), {'User-Agent':self.Player_Agent})
-			self.addVideo({'import':cItem['import'],'title':titre,'url':url,'icon':cItem['icon'],'hst':'direct'})			
+		printDBG('serverssssss='+str(data))
+		for elm in data:
+			data_0 = elm.get('servers',{})
+			for serv in data_0:
+				titre=serv['title']
+				url=serv['secure_url']
+				params = dict(self.defaultParams)
+				params['no_redirection'] = True
+				sts,data=self.getPage(url,params)
+				red=self.cm.meta.get('location', '')
+				url = strwithmeta(red.replace('/_definst_/','/'), {'User-Agent':self.Player_Agent})
+				self.addVideo({'import':cItem['import'],'title':titre,'url':url,'icon':cItem['icon'],'hst':'direct'})			
 		return list_
 		
 		

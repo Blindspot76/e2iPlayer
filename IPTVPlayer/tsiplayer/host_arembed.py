@@ -53,11 +53,17 @@ class TSIPHost(TSCBaseHostClass):
 	def getVideos(self,videoUrl):
 		urlTab = []	
 		sts, data = self.getPage(videoUrl)
-		url_data = re.findall("channel='(.*?)'.*?src='(.*?\..*?)/", data, re.S)
-		if url_data:
-			hst=url_data[0][1]
-			link=hst+'/embedplayer/'+url_data[0][0]+'/1/700/400'
-			urlTab.append((resolve_liveFlash(link,videoUrl),'0'))
+		if sts:
+			if "src='https://embed.telerium.tv/embed.js" in data:
+				url_data = re.findall("<script>id='(.*?)'", data, re.S)
+				if url_data:
+					URL = 'https://telerium.tv/embed/' + url_data[0] + '.html'
+		else:
+			url_data = re.findall("channel='(.*?)'.*?src='(.*?\..*?)/", data, re.S)
+			if url_data:
+				hst=url_data[0][1]
+				link=hst+'/embedplayer/'+url_data[0][0]+'/1/700/400'
+				urlTab.append((resolve_liveFlash(link,videoUrl),'0'))
 
 		return urlTab
 

@@ -11,7 +11,7 @@ def getinfo():
 	info_={}
 	name = 'Movizland.Com'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://on.movizland.com'
+	if hst=='': hst = 'https://sa.movizland.online'
 	info_['host']= hst
 	info_['name']=name
 	info_['version']='1.2.01 05/07/2020'
@@ -185,6 +185,7 @@ class TSIPHost(TSCBaseHostClass):
 	def SearchResult(self,str_ch,page,extra):
 		if self.defaut_mobile:
 			url_=self.MAIN_URL_MOBILE+'/?s='+str_ch+'&page='+str(page)
+			url_=self.std_url(url_)			
 			sts, data = self.getPage(url_)
 			if sts:
 				Liste_films_data = re.findall('<li class="grid-item.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<', data, re.S)
@@ -194,6 +195,7 @@ class TSIPHost(TSCBaseHostClass):
 					self.addVideo({'import':extra,'category' : 'video','title':titre,'url':url1,'icon':image,'desc':desc,'good_for_fav':True,'hst':'tshost'})					
 		else:
 			url_=self.MAIN_URL+'/search/'+str_ch+'/page/'+str(page)+'/'
+			url_=self.std_url(url_)				
 			sts, data = self.getPage(url_)
 			if sts:
 				Liste_films_data = re.findall('BlockItem">.*?href="(.*?)".*?<img.*?src="(.*?)"(.*?)RestInformation">(.*?)</ul.*?InfoEndBlock">(.*?)</ul.*?Title">(.*?)<', data, re.S)

@@ -16,7 +16,7 @@ def getinfo():
 	info_['name']='TeleQuebec.Tv'
 	info_['version']='1.0 16/04/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='303'
+	info_['cat_id']='104'
 	info_['desc']='Jeunesse VF'
 	info_['icon']='https://www.telequebec.tv/apple-touch-icon.png'
 	info_['recherche_all']='0'

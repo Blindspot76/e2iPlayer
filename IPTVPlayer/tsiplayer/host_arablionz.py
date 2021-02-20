@@ -12,7 +12,7 @@ def getinfo():
 	if hst=='': hst = 'https://w.arblionz.tv'
 	info_['host']= hst
 	info_['name']=name
-	info_['version']='1.1.01 05/07/2020'
+	info_['version']='1.1.02 27/08/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
@@ -47,7 +47,7 @@ class TSIPHost(TSCBaseHostClass):
 							{'category':hst, 'sub_mode':'music','title': 'اغاني وكليبات',          'mode':'21'},							
 							{'category':hst, 'sub_mode':'other','title': 'برامج تليفزيونية',       'mode':'30','url':self.MAIN_URL+'/category/%D8%A8%D8%B1%D8%A7%D9%85%D8%AC-%D8%AA%D9%84%D9%8A%D9%81%D8%B2%D9%8A%D9%88%D9%86%D9%8A%D8%A9/','page':1},
 							{'category':hst, 'sub_mode':'other','title': 'رياضة و مصارعه',         'mode':'30','url':self.MAIN_URL+'/category/%D8%B9%D8%B1%D9%88%D8%B6-%D8%A7%D9%84%D9%85%D8%B5%D8%A7%D8%B1%D8%B9%D8%A9/','page':1},
-							{'category':hst,'title': tscolor('\c0000????') + 'حسب التصنيف'   , 'mode':'20','count':1,'data':'none','code':self.MAIN_URL+'/getposts?'},						  
+							#{'category':hst,'title': tscolor('\c0000????') + 'حسب التصنيف'   , 'mode':'20','count':1,'data':'none','code':self.MAIN_URL+'/getposts?'},						  
 							{'category':'search'  ,'title':tscolor('\c00????30') + _('Search'),'search_item':True,'page':1,'hst':'tshost'},
 							]		
 		self.listsTab(self.Arablionz_TAB, {'import':cItem['import'],'icon':cItem['icon']})	
@@ -116,8 +116,9 @@ class TSIPHost(TSCBaseHostClass):
 		#url=url.replace('://','rgysoft')
 		#url=urllib.quote(url).replace('rgysoft','://')
 		#printDBG('url='+url)
-		url =url.replace('category/افلام-عربية/','category/افلام-عربية-1').replace('category/افلام-اجنبية-افلام-اون-لاين/','category/افلام-اجنبية-افلام-اون-لاين-1')
+		url =url.replace('category/افلام-عربية/','category/افلام-عربية-1').replace('category/افلام-اجنبية-افلام-اون-لاين/','category/افلام-اجنبية-افلام-اون-لاين-2')
 		if gnr=='items':
+			printDBG('1111')
 			sts, data = self.getPage(url)
 			desc=''
 			if sts:
@@ -140,6 +141,7 @@ class TSIPHost(TSCBaseHostClass):
 						if '/season/' not in url_:
 							self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url_,'title':'E'+titre_,'desc':url_,'icon':img_,'hst':'tshost'})	
 		elif gnr=='item_filter':
+			printDBG('2222')
 			sts, data = self.getPage(url)	
 			if sts:	 
 				cat_data=re.findall('content-box">.*?href="(.*?)".*?data-src="(.*?)".*?<h3>(.*?)<', data, re.S)
@@ -147,6 +149,7 @@ class TSIPHost(TSCBaseHostClass):
 					desc0,name_eng = self.uniform_titre(name_eng)
 					self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url1,'title':name_eng,'desc':desc0,'icon':image,'sub_mode':'items','mode':'30'})			
 		else: 
+			printDBG('3333')
 			page=cItem['page']
 			sUrl=url+'?page='+str(page)
 			sts, data = self.getPage(sUrl)
@@ -154,12 +157,12 @@ class TSIPHost(TSCBaseHostClass):
 				cat_data=re.findall('<div class="row">(.*?)class="pagination">', data, re.S)
 				if cat_data:
 					data=cat_data[0]
-					cat_data=re.findall('src="(.*?)".*?href="(.*?)".*?">(.*?)<.*?<h3>(.*?)<', data, re.S)
-					for (image,url1,desc,name_eng) in cat_data:
+					cat_data=re.findall('content-box">.*?href="(.*?)".*?data-src="(.*?)"(.*?)<h3>(.*?)</h3>', data, re.S)
+					for (url1,image,desc,name_eng) in cat_data:
 						desc0,name_eng = self.uniform_titre(name_eng)
 						if desc.strip()!='':
 							desc = tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+desc
-						desc=desc0+desc
+						desc=desc0#+desc
 						self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'hst':'tshost','category' : 'host2','url': url1,'title':name_eng,'desc':desc,'icon':image,'sub_mode':'items','mode':'30'})			
 					self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':'Page Suivante','page':page+1,'desc':'Page Suivante','icon':img_,'sub_mode':gnr,'mode':'30'} )	
 	

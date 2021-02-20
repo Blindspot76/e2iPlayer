@@ -16,7 +16,7 @@ def getinfo():
 	info_['name']='Zimabdko.Com'
 	info_['version']='1.1 20/10/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='202'
+	info_['cat_id']='104'
 	info_['desc']='انمي + دراما اسياوية'
 	info_['icon']='https://www.zimabdko.com/wp-content/themes/zimabdk/images/logo.png'
 	info_['recherche_all']='0'

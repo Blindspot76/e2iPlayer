@@ -22,7 +22,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'cimanow.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://cima-now.com'
+		self.MAIN_URL = 'https://cimanow.cam'
 		self.MAIN_URL = 'https://new.cima-now.com'		
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -163,7 +163,7 @@ class TSIPHost(TSCBaseHostClass):
 		return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo1}]
 
 	def get_links(self,cItem): 	
-		url=str(cItem['url'])
+		url=str(cItem['url'])+'watch/'
 		printDBG('url='+url)
 		urlTab = self.cacheLinks.get(url, [])
 		printDBG('Cache='+str(urlTab))

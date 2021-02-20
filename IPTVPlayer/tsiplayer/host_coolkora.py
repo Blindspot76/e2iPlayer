@@ -11,7 +11,7 @@ def getinfo():
 	info_['name']='Coolkora.Com'
 	info_['version']='1.0 17/06/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='100'#2
+	info_['cat_id']='104'#2
 	info_['desc']='موقع للبث المباشر ونقل المباريات'
 	info_['icon']='https://i.ibb.co/BnQ90Gt/coolkora-logo.png'
 	info_['recherche_all']='0'

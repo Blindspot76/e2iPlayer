@@ -3,6 +3,7 @@
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters.hoster import iHoster
 import re
+
 UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0'
 
 class cHoster(iHoster):
@@ -30,7 +31,7 @@ class cHoster(iHoster):
         return True
 
     def setUrl(self, sUrl):
-        self.__sUrl = str(sUrl)
+        self.__sUrl = str(sUrl).replace('https://mystream.to/watch/', 'https://embed.mystream.to/')
 
     def checkUrl(self, sUrl):
         return True
@@ -52,17 +53,14 @@ class cHoster(iHoster):
 
         api_call = False
 
-        sPattern =  '([$]=.+?\(\)\)\(\);)'
-        aResult = re.findall(sPattern, sHtmlContent, re.DOTALL)
+        sPattern =  '(\$=.+?;)\s*<'
+        aResult = re.search(sPattern, sHtmlContent, re.DOTALL)
         if aResult:
-
-            for i in aResult:
-                decoded = temp_decode(i)
-
-                if decoded:
-                    r = re.search("setAttribute\(\'src\', *\'([^']+)\'\)", decoded, re.DOTALL)
-                    if r:
-                        api_call = r.group(1)
+            decoded = temp_decode(aResult.group(1))
+            if decoded:
+                r = re.search("setAttribute\(\'src\', *\'([^']+)\'\)", decoded, re.DOTALL)
+                if r:
+                    api_call = r.group(1)
 
         if (api_call):
             return True, api_call + '|User-Agent=' + UA + '&Referer=' + self.__sUrl + '&Origin=https://embed.mystream.to'
@@ -70,55 +68,50 @@ class cHoster(iHoster):
         return False, False
 
 def temp_decode(data):
-    startpos = data.find('"\\""+') + 5
-    endpos = data.find('"\\"")())()')
+        startpos = data.find('"\\""+') + 5
+        endpos = data.find('"\\"")())()')
 
-    first_group = data[startpos:endpos]
+        first_group = data[startpos:endpos]
 
-    l = re.search("(\(!\[\]\+\"\"\)\[.+?\]\+)", first_group, re.DOTALL)
-    if l:
-        first_group = first_group.replace(l.group(1), 'l').replace('$.__+', 't').replace('$._+', 'u').replace('$._$+', 'o')
+        pos = re.search(r"(\(!\[\]\+\"\"\)\[.+?\]\+)", first_group)
+        if pos:
+            first_group = first_group.replace(pos.group(1), 'l').replace('$.__+', 't').replace('$._+', 'u').replace('$._$+', 'o')
 
-        tmplist = []
-        js = re.search('(\$={.+?});', data, re.DOTALL)
-        if js:
-            js_group = js.group(1)[3:][:-1]
+            tmplist = []
+            js = re.search(r'(\$={.+?});', data)
+            if js:
+                js_group = js.group(1)[3:][:-1]
+                second_group = js_group.split(',')
 
-            second_group = js_group.split(',')
+                i = -1
+                for x in second_group:
+                    a, b = x.split(':')
 
-            i = -1
+                    if b == '++$':
+                        i += 1
+                        tmplist.append(("$.{}+".format(a), i))
 
-            for x in second_group:
-                a, b = x.split(':')
+                    elif b == '(![]+"")[$]':
+                        tmplist.append(("$.{}+".format(a), 'false'[i]))
 
-                if b == '++$':
-                    i += 1
-                    tmplist.append(("{}{}{}".format('$.', a, '+'), i))
+                    elif b == '({}+"")[$]':
+                        tmplist.append(("$.{}+".format(a), '[object Object]'[i]))
 
-                elif b == '(![]+"")[$]':
-                    tmplist.append(("{}{}{}".format('$.', a, '+'), 'false'[i]))
+                    elif b == '($[$]+"")[$]':
+                        tmplist.append(("$.{}+".format(a), 'undefined'[i]))
 
-                elif b == '({}+"")[$]':
-                    tmplist.append(("{}{}{}".format('$.', a, '+'), '[object Object]'[i]))
+                    elif b == '(!""+"")[$]':
+                        tmplist.append(("$.{}+".format(a), 'true'[i]))
 
-                elif b == '($[$]+"")[$]':
-                    tmplist.append(("{}{}{}".format('$.',a,'+'),'undefined'[i]))
+                tmplist = sorted(tmplist, key=lambda z: str(z[1]))
+                for x in tmplist:
+                    first_group = first_group.replace(x[0], str(x[1]))
 
-                elif b == '(!""+"")[$]':
-                    tmplist.append(("{}{}{}".format('$.', a, '+'), 'true'[i]))
+                first_group = first_group.replace('\\"', '\\').replace("\"\\\\\\\\\"", "\\\\") \
+                                         .replace('\\"', '\\').replace('"', '').replace("+", "")
 
-
-            tmplist = sorted(tmplist, key=lambda x: x[1])
-
-            for x in tmplist:
-                first_group = first_group.replace(x[0], str(x[1]))
-
-            first_group = first_group.replace(r'\\"' , '\\').replace("\"\\\\\\\\\"", "\\\\").replace('\\"', '\\').replace('"', '').replace("+", "")
-
-
-
-    try:
-        final_data = unicode(first_group, encoding = 'unicode-escape')
-        return final_data
-    except:
-        return False
+            try:
+                final_data = first_group.encode('ascii').decode('unicode-escape').encode('ascii').decode('unicode-escape')
+                return final_data
+            except:
+                return False

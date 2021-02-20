@@ -7,6 +7,16 @@ import re,urllib
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters.hoster import iHoster
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.parser import cParser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import VSlog,Unquote,dialog,cPremiumHandler
+
+
+
+
+# -*- coding: utf-8 -*-
+# vStream https://github.com/Kodi-vStream/venom-xbmc-addons
+#
+
+
 
 
 class cHoster(iHoster):
@@ -41,6 +51,8 @@ class cHoster(iHoster):
         return ''
 
     def __getIdFromUrl(self):
+        if self.__sUrl[-4:] in '.mp4.avi.mkv':
+            return self.__sUrl.split('/')[3]
         return self.__sUrl.split('/')[-1]
 
     def setUrl(self, sUrl):
@@ -80,10 +92,8 @@ class cHoster(iHoster):
         return self.__sUrl
 
     def getMediaLink(self):
-        return self.__getMediaLinkForGuest()
-
-    def __getMediaLinkForGuest(self, premium=False):
-
+        self.oPremiumHandler = cPremiumHandler('uptobox')
+        premium = self.oPremiumHandler.isPremiumModeAvailable()
         api_call = False
         SubTitle = ''
 
@@ -98,6 +108,8 @@ class cHoster(iHoster):
                     token = token.group(1)
 
                 SubTitle = self.checkSubtitle(sHtmlContent)
+        else:
+            VSlog('no Premium')
 
         if token:
             sUrl2 = "https://uptostream.com/api/streaming/source/get?token={}&file_code={}".format(token, self.__getIdFromUrl())
@@ -110,15 +122,15 @@ class cHoster(iHoster):
             sHtml = oRequest.request()
 
         qua, url_list = decodeur1(sHtml)
-        
         if qua and url_list:
-            i=0
-            url = ''
-            for x1 in qua:
-                if url!='': url=url+'||'
-                url = url+url_list[i]+'|tag:'+x1
-                i=i+1
-            return True, url
+            api_call = dialog().VSselectqual(qua, url_list)
+
+        if (api_call):
+            if SubTitle:
+                return True, api_call.replace('\\', ''), SubTitle
+            else:
+                return True, api_call.replace('\\', '')
+
         return False, False
 
 
@@ -151,7 +163,11 @@ def decodeur1(Html):
             if test2:
                 url = ''
                 movieID = ''
-                qua_list = []
+                qua_list = set()
+                lang_list = list()
+                supportedLang = ['eng', 'eng2', 'eng3', 'eng4', 'English', 'fre', 'fre1', 'fre2', 'French',
+                                 'jap', 'jpn', 'Japanese', 'chi', 'Chinese', 'rus',
+                                 'Russian', 'spa', 'Spanish', 'ger', 'ger2', 'German']
 
                 for page in test2:
                     tableau = {}
@@ -200,9 +216,14 @@ def decodeur1(Html):
                                     Html = Html[1:]
 
                         if tableau:
-                            langFre = True  # langue par défaut si pas précisée
-                            qual = ''
+                            
+                            langFound = False
+
                             for i, j in tableau.items():
+                                
+                                if j == 'null':
+                                    continue
+                                
                                 if j.startswith('http') and j.endswith('com'):  # url
                                     url = tableau[i] if not tableau[i] in url else url
                                     continue
@@ -211,22 +232,33 @@ def decodeur1(Html):
                                     movieID = j if not j in movieID else movieID
                                     continue
 
-                                if len(test2) > 1:  # s'il y a plusieurs flux
-                                    if j == 'eng':  # on ne gere pas plusieurs langues car on sait pas l'associer à la bonne qualité
-                                        langFre = False
+                                if not langFound and len(test2) > 1:  # s'il y a plusieurs flux
+                                    if j in supportedLang:
+                                        if not j in lang_list:  # Preserve l'ordre et l'unicité
+                                            lang_list.append(j)
+                                        langFound = True
+                                        continue
 
-                                if j == '360' or j == '480' or j == '720' or j == '1080':
-                                    qual = j
+                                if j == '360' or j == '480' or j == '720' or j == '1080' or j == '2160':
+                                    qua_list.add(j)
+                                elif j == '360p' or j == '480p' or j == '720p' or j == '1080p' or j == '2160p':
+                                    qua_list.add(j[:-1])
 
-                            if langFre and qual and qual not in qua_list:
-                                qua_list.append(qual)
-
-                qua_list.sort()
+                if len(lang_list) == 0:
+                    lang_list.append('NONE')
                 url_list = []
-                for qual in qua_list:
-                    url_list.append("{}/{}/{}/0/video.mp4".format(url, movieID, qual))
+                ql_list = []
+                for qual in sorted(qua_list):
+                    idxLang = 0
+                    for lang in lang_list:
+                        url_list.append("{}/{}/{}/{}/video.mp4".format(url, movieID, qual, idxLang))
+                        ql = qual
+                        if not 'NONE' in lang:
+                            ql += ' [' + lang[:3].upper() + ']'
+                        ql_list.append(ql) 
+                        idxLang += 1
 
-                return qua_list, url_list
+                return ql_list, url_list
 
 
 def decoder(data, fn):
@@ -240,7 +272,7 @@ def decoder(data, fn):
     for i in xrange(len(data)):
         tempData += ("%" + format(ord(data[i]), '02x'))
 
-    data =  urllib.unquote(tempData)
+    data = Unquote(tempData)
 
     x = 0
     while x < 256:
