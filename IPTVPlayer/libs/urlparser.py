@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-
+###################################################
+# 2021-02-21 by Blindspot
+###################################################
 ###################################################
 # LOCAL import
 ###################################################
@@ -141,9 +143,9 @@ class urlparser:
 
     def setHostsMap(self):
         self.hostMap = {
-                       'lookmovie.ag' :         self.pp.parserLOOKMOVIE,
                        '1fichier.com':          self.pp.parser1FICHIERCOM    ,
                        '1tv.ru':                self.pp.parser1TVRU          ,
+                       '2021dogecoin.xyz':      self.pp.parserTXNEWSNETWORK  ,
                        '37.220.36.15':          self.pp.parserMOONWALKCC    ,
                        '4snip.pw':              self.pp.parser4SNIP         ,
                        '7cast.net':             self.pp.parser7CASTNET      ,
@@ -317,8 +319,10 @@ class urlparser:
                        'liveonlinetv247.info':  self.pp.parserLIVEONLINE247 ,
                        'liveonlinetv247.info':  self.pp.parserLIVEONLINETV247,
                        'liveonlinetv247.net':   self.pp.parserLIVEONLINE247 ,
-                       'livestream.com':        self.pp.parserLIVESTREAMCOM,
+                       'livestream.com':        self.pp.parserLIVESTREAMCOM ,
                        'live-stream.tv':        self.pp.parserLIVESTRAMTV   ,
+                       'lookhd.xyz':            self.pp.parserTXNEWSNETWORK ,
+                       'lookmovie.ag' :         self.pp.parserLOOKMOVIE     ,
                        'm2list.com':            self.pp.parserM2LIST        ,
                        'mastarti.com':          self.pp.parserMOONWALKCC    ,
                        'matchat.online':        self.pp.parserMATCHATONLINE  ,
@@ -488,6 +492,7 @@ class urlparser:
                        'streamplay.to':         self.pp.parserSTREAMPLAY    ,
                        'streamtape.com':        self.pp.parserSTREAMTAPE    ,
                        'streamtape.net':        self.pp.parserSTREAMTAPE    ,
+                       'streamzz.to':           self.pp.parserSTREAMZ       ,
                        'streamz.cc':            self.pp.parserSTREAMZ       ,
                        'streamz.vg':            self.pp.parserSTREAMZ       ,
                        'streamwire.net':        self.pp.parserONLYSTREAM   ,
@@ -627,6 +632,7 @@ class urlparser:
                        'vsports.pt':            self.pp.parserSAPOPT     ,
                        'vup.to':                self.pp.parserONLYSTREAM    ,
                        'waaw.tv':               self.pp.parserNETUTV         ,
+                       'filmbazis.org':         self.pp.parserNETUTV         ,
                        'wat.tv':                self.pp.parserWATTV          ,
                        'watchers.to':           self.pp.parserWATCHERSTO    ,
                        'watchvideo17.us':       self.pp.parserWATCHVIDEO17US ,
@@ -10295,8 +10301,7 @@ class pageParser(CaptchaHelper):
     def parserINDAVIDEOHU(self, baseUrl):
         printDBG("parserINDAVIDEOHU url[%s]\n" % baseUrl)
         urlTab = []
-
-        templateUrl = 'http://amfphp.indavideo.hu/SYm0json.php/player.playerHandler.getVideoData/'
+        templateUrl = 'https://amfphp.indavideo.hu/SYm0json.php/player.playerHandler.getVideoData/'
         videoId = self.cm.ph.getSearchGroups(baseUrl, 'indavideo\.hu/(?:player/video|video)/([0-9A-Za-z-_]+)')[0]
 
         url = templateUrl + videoId
@@ -10394,31 +10399,34 @@ class pageParser(CaptchaHelper):
         return False
 
     def parserVIDEAHU(self, baseUrl):
+        printDBG('START PARSER')
         printDBG("parserVIDEAHU baseUrl[%s]\n" % baseUrl)
 
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
 
-        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0', 'Referer':referer}
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36', 'Referer':referer}
         params = {'header':HTTP_HEADER}
 
         sts, data = self.cm.getPage(baseUrl, params)
-        if not sts: return []
+        printDBG('>>STS>>>>>' + sts)
+        if not sts: url = 'https://video3.videa.hu/static/480p/7.520190.318792.1.13.1.1?md5=4iL45AEiZrwcbhXWq9_cMQ&expires=1613237138'
 
         f = self.cm.ph.getSearchGroups(data, '''"/player\?f=([0-9\.]+?)&''')[0]
+        printDBG('>>>>>>>>' + f)
         if f == '': return []
-
-        sts, data = self.cm.getPage('http://videa.hu/videaplayer_get_xml.php?f={0}&start=0&enablesnapshot=0&platform=desktop&referrer={1}'.format(f, urllib.quote(baseUrl)))
+        sts, data = self.cm.getPage('http://videa.hu/videaplayer_get_xml.php?f={0}&start=0&enableSnapshotAPI=0&platform=desktop&referrer={1}'.format(f, urllib.quote(baseUrl)))
         if not sts: return []
-
+       
         urlTab = []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<video_sources', '</video_sources>', False)[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<video_source', '</video_source>')
+        
         for item in data:
             printDBG(item)
             url  = self.cm.ph.getDataBeetwenMarkers(item, '>', '<', False)[1].strip()
             if url.startswith('//'):
-                url = 'http:' + url
+               url = 'http:' + url
             if not url.startswith('http'):
                 continue
 
@@ -13299,6 +13307,11 @@ class pageParser(CaptchaHelper):
             printDBG("---------")
             printDBG(data)
             printDBG("---------")
+        
+            if "unable to find the video" in data:
+                printDBG("We are unable to find the video you're looking for")
+                SetIPTVPlayerLastHostError("We are unable to find the video you're looking for")
+                return []
 
             #search if there is an iframe with a link to mystream
             new_link = re.findall("src=\"([^\"]+mystream.premiumserver[^\"]+?)\"", data)
