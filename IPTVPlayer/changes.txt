@@ -1,3 +1,5 @@
+#2021.02.25.01
+-SkyLineWebcams, HooFoot javítva
 #2021.02.21.01
 -Tárhelytámogatás bővítve (Streamzz.to, Lookhd.xyz)
 #2021.02.20.01

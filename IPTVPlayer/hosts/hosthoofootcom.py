@@ -5,6 +5,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 
 ###################################################
@@ -24,7 +25,7 @@ class HoofootCom(CBaseHostClass):
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
     MAIN_URL   = 'https://hoofoot.com/'
-    DEFAULT_ICON_URL  = "https://ae01.alicdn.com/kf/HTB1SajMSpXXXXc8XVXXq6xXFXXXz/8x8FT-Spots-Light-Night-Time-boisko-do-pi-ki-no-nej-stadion-platforma-niestandardowe-t-o.jpg"
+    DEFAULT_ICON_URL  = "https://icdn.2cda.pl/g/286737_84647866641171280461.jpg"
     
     MAIN_CAT_TAB = [{'category':'list_cats',       'title': _('Main'),              'url':MAIN_URL,},
                     {'category':'list_cats2',      'title': _('Popular'),           'url':MAIN_URL,},
@@ -244,12 +245,16 @@ class HoofootCom(CBaseHostClass):
             return []
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'id="player"', '</div>', False)[1]
-        videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, ignoreCase=True)[0]
+        videoUrl = self.cm.ph.getSearchGroups(data, '''href=['"]([^'^"]+?)['"]''')[0]
         
         printDBG(videoUrl)
         if videoUrl.startswith('//'):
             videoUrl = 'http:' + videoUrl
         if self.cm.isValidUrl(videoUrl):
+            if self.up.checkHostSupport(videoUrl) != 1:
+                video_id  = ph.search(videoUrl, r'''https?://.*([a-zA-Z0-9]{10})''')[0]
+                if video_id != '':
+                    videoUrl = 'https://viuclips.net/&force_parserVIUCLIPS[%s]' % videoUrl
             urlTab.extend(self.up.getVideoLinkExt(videoUrl))
         return urlTab
         
