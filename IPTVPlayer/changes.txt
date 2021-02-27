@@ -1,3 +1,5 @@
+#2021.02.27.01
+-HU Telepítő frissítve
 #2021.02.25.01
 -SkyLineWebcams, HooFoot javítva
 #2021.02.21.01

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-01-09 by Blindspot - updatehosts HU host telepítő
+# 2021-02-27 by Blindspot - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "4.2"
+HOST_VERSION = "4.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -227,12 +227,12 @@ class updatehosts(CBaseHostClass):
             params = {'title':'Információ', 'desc':msg_info}
             self.addMarker(params)
             MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'E2iPlayer telepítése, frissítése, változások listája', 'tab_id': 'telepites', 'desc': msg_telepites},
-                            {'category': 'list_main', 'title': 'E2iPlayer magyarítása', 'tab_id': 'magyaritas', 'desc': msg_magyar},
-                            {'category': 'list_main', 'title': 'Magyar hostok telepítése, frissítése', 'tab_id': 'hostok', 'desc': msg_host},
+                            #{'category': 'list_main', 'title': 'E2iPlayer magyarítása', 'tab_id': 'magyaritas', 'desc': msg_magyar},
+                            #{'category': 'list_main', 'title': 'Magyar hostok telepítése, frissítése', 'tab_id': 'hostok', 'desc': msg_host},
                             {'category': 'list_main', 'title': 'Magyar hostok beállításainak mentése/visszatöltése', 'tab_id': 'beall_ment', 'desc': msg_beall_ment},
                             #{'category': 'list_main', 'title': 'E2iPlayer hibajavításai', 'tab_id': 'javitas', 'desc': msg_javitas},
                             {'category': 'list_main', 'title': 'Magyar minimál stílus', 'tab_id': 'magyar_minimal', 'desc': msg_magyar_minimal},
-                            {'category': 'list_main', 'title': 'Urllist fájl telepítése', 'tab_id': 'urllist', 'desc': msg_urllist}
+                            #{'category': 'list_main', 'title': 'Urllist fájl telepítése', 'tab_id': 'urllist', 'desc': msg_urllist}
                            ]
             self.listsTab(MAIN_CAT_TAB, cItem)
         except Exception:
