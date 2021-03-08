@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-02-21 by Blindspot
+# 2021-03-08 by Blindspot
 ###################################################
 ###################################################
 # LOCAL import
@@ -307,6 +307,7 @@ class urlparser:
                        'kingvid.tv':            self.pp.parserKINGVIDTV      ,
                        'kinoger.re':            self.pp.parserKINOGERRE     ,
                        'krakenfiles.com':       self.pp.parserKRAKENFILESCOM ,
+                       'krask.xyz':             self.pp.parserWSTREAMVIDEO   ,
                        'leton.tv':              self.pp.parserDOTSTREAMTV   ,
                        'letwatch.us':           self.pp.parserLETWATCHUS    ,
                        'life-rtmp.com':         self.pp.parserLIFERTMP      ,
@@ -547,6 +548,7 @@ class urlparser:
                        'uploadz.co':            self.pp.parserUPLOAD         ,
                        'uploadz.org':           self.pp.parserUPLOAD         ,
                        'upmela.com':            self.pp.parserVIUCLIPS       ,
+                       'uprotector.xyz':        self.pp.parserWSTREAMVIDEO   ,
                        'upstream.to':           self.pp.parserONLYSTREAM    ,
                        'uptobox.com':           self.pp.parserUPTOSTREAMCOM  ,
                        'uptostream.com':        self.pp.parserUPTOSTREAMCOM  ,
@@ -599,7 +601,7 @@ class urlparser:
                        'vidload.co':            self.pp.parserVIDLOADCO     ,
                        'vidlox.me':             self.pp.parserVIDLOXTV      ,
                        'vidlox.tv':             self.pp.parserVIDLOXTV      ,
-                       'vidnext.net':           self.pp.parserMOVCLOUD      ,
+                       'vidnext.net':           self.pp.parserVIDCLOUD9     ,
                        'vidnode.net':           self.pp.parserVIDCLOUD      ,
                        'vidoo.tv':              self.pp.parserONLYSTREAM   ,
                        'vidoza.net':            self.pp.parserVIDOZANET     ,

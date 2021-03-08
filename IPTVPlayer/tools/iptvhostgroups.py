@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-01-31 by Blindspot - modified iptvhostgroups
+# 2021-03-08 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -82,7 +82,6 @@ class IPTVHostsGroups:
         '7tvde' : [ 'german'] ,
         '9anime' : [ 'cartoonsandanime', 'english'] ,
         'akoam' : [ 'arabic', 'moviesandseries'] ,
-        'alltubetv' : [ 'moviesandseries', 'polish'] ,
         'altadefinizione' : [ 'italian', 'moviesandseries'] ,
         'altadefinizione01' : [ 'italian', 'moviesandseries'] ,
         'altadefinizione1' : [ 'italian', 'moviesandseries'] ,
@@ -120,7 +119,6 @@ class IPTVHostsGroups:
         'dsda' : [ 'documentary', 'italian', 'science'] ,
         'efilmytv' : [ 'moviesandseries', 'polish'] ,
         'egybest' : [ 'arabic', 'moviesandseries'] ,
-        'ekinomaniak' : ['moviesandseries', 'polish'], 
         'ekinotv' : [ 'moviesandseries', 'polish'] ,
         'ekstraklasatv' : [ 'polish', 'sport'] ,
         'eskago' : [ 'live', 'music', 'polish'] ,
@@ -240,11 +238,9 @@ class IPTVHostsGroups:
         'tata' : [ 'german'] ,
         'ted' : [ 'english', 'others'] ,
         'tfarjocom' : [ 'french', 'moviesandseries'] ,
-        'thewatchseriesto' : [ 'english', 'moviesandseries'] , 
         'tvgrypl' : [ 'polish'] ,      
         'tvn24' : [ 'polish'] ,
         'tvnowde' : [ 'german'] ,
-        'tvnvod' : [ 'polish'] ,
         'tvplayercom' : [ 'english'] ,
         'tvproart' : [ 'polish'] ,
         'tvpvod' : [ 'polish'] ,
