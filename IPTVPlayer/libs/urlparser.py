@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-03-08 by Blindspot
+# 2021-03-12 by Blindspot
 ###################################################
 ###################################################
 # LOCAL import
@@ -336,6 +336,7 @@ class urlparser:
                        'megadrive.tv':          self.pp.parserMEGADRIVETV    ,
                        'megom.tv':              self.pp.parserMEGOMTV        ,
                        'megustavid.com':        self.pp.parserMEGUSTAVID    ,
+                       'melbil.net':            self.pp.parserTXNEWSNETWORK ,
                        'mightyupload.com':      self.pp.parserMIGHTYUPLOAD  ,
                        'miplayer.net':          self.pp.parserMIPLAYERNET   ,
                        'mirrorace.com':         self.pp.parserMIRRORACE     ,
@@ -6516,39 +6517,23 @@ class pageParser(CaptchaHelper):
                 url = 'http:' + url
             return url
 
-        urlsTab = []
+       
 
         sts, data = self.cm.getPage(baseUrl)
-        if not sts: return urlsTab
+        if not sts: return False
 
         playerUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?webcamera\.[^'^"]+?/player/[^'^"]+?)['"]""")[0]
         if playerUrl == '': playerUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?player\.webcamera\.[^'^"]+?)['"]""")[0]
         playerUrl = _getFullUrl(playerUrl)
         if self.cm.isValidUrl(playerUrl):
             sts, tmp = self.cm.getPage(playerUrl)
-            tmp = re.compile("""['"]([^'^"]+?\.m3u8[^'^"]*?)['"]""").findall(tmp)
-            if len(tmp) == 2:
-                tmpList = getDirectM3U8Playlist(_getFullUrl(tmp[0]), checkContent=True)
-                if len(tmpList) and not 'connlimit' in tmp[0]:
-                    urlsTab.extend(tmpList)
-                else:
-                    return getDirectM3U8Playlist(_getFullUrl(tmp[1]), checkContent=True)
-            else:
-                for playerUrl in tmp:
-                    playerUrl = _getFullUrl(playerUrl)
-                    if self.cm.isValidUrl(playerUrl):
-                        urlsTab.extend(getDirectM3U8Playlist(playerUrl, checkContent=True))
+            tmp = self.cm.ph.getSearchGroups(tmp, """var\sVIDEO_SRC\s=\s['"]([^'^"]+?)['"]""")[0]
+            if tmp != '':
+                tmp = codecs.decode(tmp, 'rot13').replace('\/', '/')
+                return getDirectM3U8Playlist(_getFullUrl(tmp), checkContent=True)
+        
+        return False
 
-        data = self.cm.ph.getSearchGroups(data, """<meta itemprop="embedURL" content=['"]([^'^"]+?)['"]""")[0]
-        data = data.split('&')
-        if 2 < len(data) and data[0].startswith('http') and data[1].startswith('streamer=') and data[2].startswith('file='):
-            swfUrl = data[0]
-            url    = urllib.unquote(data[1][len('streamer='):])
-            file   = urllib.unquote(data[2][len('file='):])
-            if '' != file and '' != url:
-                url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
-                urlsTab.append({'name':'rtmp', 'url':url})
-        return urlsTab
 
     def parserFLASHXTV(self, baseUrl):
         printDBG("parserFLASHXTV baseUrl[%s]" % baseUrl)
@@ -15191,16 +15176,13 @@ class pageParser(CaptchaHelper):
         urlsTab = []
 
         sts, data = self.cm.getPage(baseUrl, httpParams)
-
         if sts:
-            printDBG("-----------------------")
-            printDBG(data)
-            printDBG("-----------------------")
-
-            r = self.cm.ph.getSearchGroups(data, r'v-bind:stream="([^"]+)')[0]
+            r = self.cm.ph.getSearchGroups(data, r'v-bind:stream="([^"]+?)"')[0].replace('&quot;', '"')
             if r:
-                data = json_loads(r.replace('&quot;', '"'))
-                url = data.get('host') + data.get('hash') + '/index.m3u8'
-                urlsTab.extend(getDirectM3U8Playlist(url))
+                data = json_loads(r)
+                hash = data.get('hash')
+                host = "".join([chr(ord(i)^50) for i in data.get('host')])
+                url = '%s%s/index.m3u8' % (host, hash)
+                urlsTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
 
         return urlsTab
