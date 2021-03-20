@@ -862,7 +862,7 @@ class common:
 
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
-        
+        printDBG('uuuuuuuuuuuurrrrrrrrrrlllllll='+url)
         # if curl should be used and can be used
         if addParams.get('return_data', True) and self.usePyCurl():
             return self.getPageWithPyCurl(url, addParams, post_data)

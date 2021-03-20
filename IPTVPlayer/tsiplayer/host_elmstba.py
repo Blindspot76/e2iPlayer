@@ -12,7 +12,7 @@ def getinfo():
 	info_['name']='Elmstba'
 	info_['version']='1.0 08/10/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='افلام و مسلسلات'
 	info_['icon']='https://i.ibb.co/qxM5pCV/Sans-titre.png'
 	info_['recherche_all']='0'

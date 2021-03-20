@@ -14,7 +14,7 @@ def getinfo():
 	info_['name']='MP3Quran.Net'
 	info_['version']='1.1 07/07/2020'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='204'
+	info_['cat_id']='24'
 	info_['desc']='Quran Audio Library'
 	info_['icon']='https://i.ibb.co/4M5FBQR/logo2.png'
 	info_['recherche_all']='0'

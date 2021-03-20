@@ -17,7 +17,7 @@ def getinfo():
 	info_['name']=name	
 	info_['version']='1.0.01 05/07/2020'
 	info_['dev']='OPESBOY'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='http://aflam06.net/wp-content/uploads/2017/12/1aa8a166848.png'
 	info_['recherche_all']='1'

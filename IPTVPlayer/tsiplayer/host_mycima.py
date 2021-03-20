@@ -6,7 +6,7 @@ def getinfo():
     info_['name']='Mycima.Tv'
     info_['version']='1.2 31/10/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='افلام و مسلسلات كرتون'
     info_['icon']='https://i.ibb.co/18mqGhF/my-cima.png'
     info_['recherche_all']='0'

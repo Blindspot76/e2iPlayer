@@ -15,7 +15,7 @@ def getinfo():
 	info_['name']='Beinmatch.Com'
 	info_['version']='1.0 18/06/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='100'#2
+	info_['cat_id']='25'#2
 	info_['desc']='موقع للبث المباشر ونقل المباريات'
 	info_['icon']='http://www.beinmatch.com/assets/images/bim/logo.png'
 	info_['recherche_all']='0'
@@ -33,7 +33,7 @@ class TSIPHost(TSCBaseHostClass):
 	
 		
 	def showmenu(self,cItem):
-		self.addDir({'import':cItem['import'],'category' : 'host2','title':'Live Matches','url':'','icon':cItem['icon'],'mode':'20'})
+		#self.addDir({'import':cItem['import'],'category' : 'host2','title':'Live Matches','url':'','icon':cItem['icon'],'mode':'20'})
 		self.addDir({'import':cItem['import'],'category' : 'host2','title':'Replay'        ,'url':'','icon':cItem['icon'],'mode':'25'})
 
 	def showmatch1(self,cItem):

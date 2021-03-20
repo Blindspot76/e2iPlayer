@@ -27,7 +27,7 @@ def getinfo():
 	info_['name']=tscolor('\c0000????')+' >●★| Ramadan 2020 |★●<'
 	info_['version']='1.0 26/04/2020'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='https://i.ibb.co/sWfG989/ramadan-2020.jpg'
 	#info_['recherche_all']='1'

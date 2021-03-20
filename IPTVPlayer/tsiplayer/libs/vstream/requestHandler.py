@@ -3,7 +3,7 @@
 #
 import urllib
 import urllib2
-
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools             import printDBG
 from urllib2 import HTTPError, URLError
 
 
@@ -124,7 +124,7 @@ class cRequestHandler:
         for aHeader in self.__aHeaderEntries:
             for sHeaderKey, sHeaderValue in aHeader.items():
                 oRequest.add_header(sHeaderKey, sHeaderValue)
-
+                printDBG('sHeaderKey:'+str(sHeaderKey)+'::sHeaderValue:'+str(sHeaderValue))
         sContent = ''
         try:
 
@@ -136,7 +136,7 @@ class cRequestHandler:
                 oResponse = urllib2.urlopen(oRequest, timeout = self.__timeout)
 
             sContent = oResponse.read()
-
+            #printDBG('sContent:'+sContent)
             self.__sResponseHeader = oResponse.info()
 
             # compressed page ?

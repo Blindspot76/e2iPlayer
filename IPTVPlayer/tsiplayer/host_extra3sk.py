@@ -10,25 +10,29 @@ def getinfo():
     info_['name']='Extra-3sk.Info'
     info_['version']='1.2 20/10/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='أفلام و مسلسلات تركية'
     info_['icon']='https://i.ibb.co/qR294FT/extra.png'
     info_['recherche_all']='0'
     #info_['update']='Fix Links extractor'	
 
     return info_
+
+
     
     
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'extra_3sk.cookie'})
-        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'https://extra3sk.info'
-        self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        #self.getPage = self.cm.getPage
+        self.USER_AGENT     = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.MAIN_URL       = 'https://extra-3sk.info'
+        self.TrySetMainUrl  = True
+        self.HEADER         = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}
+        self.defaultParams  = {'header':self.HEADER,'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE} 
+  
          
     def showmenu0(self,cItem):
+        self.set_MAIN_URL()
         sts, data = self.getPage(self.MAIN_URL)
         if sts:
             lst_data=re.findall('<li id="menu.*?href="(.*?)".*?>(.*?)<', data, re.S)
@@ -83,14 +87,8 @@ class TSIPHost(TSCBaseHostClass):
 
 
 
-
-
-
-
-
-
-
     def SearchResult(self,str_ch,page,extra):
+        self.set_MAIN_URL()
         url = self.MAIN_URL+'/search/'+str_ch
         if page>1:
             url=url+'?order='+str(page*50-50)
@@ -139,6 +137,7 @@ class TSIPHost(TSCBaseHostClass):
         
         
     def get_links(self,cItem): 	
+        self.set_MAIN_URL()
         urlTab = []
         baseUrl=cItem['url']
         post_data = {'wtchBtn':''}

@@ -11,7 +11,7 @@ def getinfo():
 	info_['name']='CimaNow'
 	info_['version']='1.0 04/03/2020'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='افلام و مسلسلات'
 	info_['icon']='https://i.ibb.co/5LnpQrZ/cimanow.png'
 	info_['recherche_all']='0'
@@ -23,7 +23,7 @@ class TSIPHost(TSCBaseHostClass):
 		TSCBaseHostClass.__init__(self,{'cookie':'cimanow.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
 		self.MAIN_URL = 'https://cimanow.cam'
-		self.MAIN_URL = 'https://new.cima-now.com'		
+		self.MAIN_URL = 'https://cimanow.tv'		
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.cacheLinks = {}

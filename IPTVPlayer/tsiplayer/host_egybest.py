@@ -21,7 +21,7 @@ def getinfo():
     info_['name']=name
     info_['version']='1.3.00 27/11/2020'
     info_['dev']='RGYSoft | Thx to >> @maxbambi & @zadmario <<'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='أفلام عربية و اجنبية + مسلسلات اجنبية'
     info_['icon']='https://i.ibb.co/z2SXTd8/souayah-Egy-Best-film.png'
     info_['recherche_all']='1'
@@ -37,6 +37,7 @@ class TSIPHost(TSCBaseHostClass):
         self.MAIN_URL =  getinfo()['host']
         self.VID_URL  = 'https://vidstream.kim'
         self.varconst = 'a0'
+        self.SiteName   = 'EgyBest'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -220,6 +221,7 @@ class TSIPHost(TSCBaseHostClass):
         
         
     def SearchResult(self,str_ch,page,extra):
+        elms = []
         printDBG('extra='+extra)
         url_=self.MAIN_URL+'/explore/?page='+str(page)+'&output_format=json&q='+str_ch+'&output_mode=movies_list'
         url_=self.std_url(url_)
@@ -227,20 +229,29 @@ class TSIPHost(TSCBaseHostClass):
         if sts:
             data=data.replace('\\"','"')	
             data=data.replace('\\/','/')				
-            lst_data=re.findall('<a href="(.*?)".*?rating">(.*?)</i>.*?src="(.*?)".*?title">(.*?)<.*?ribbon.*?<span>(.*?)<', data, re.S)			
+            printDBG('data = '+data+'#')
+            lst_data=re.findall('<a href="(.*?)"(.*?)src="(.*?)".*?title">(.*?)<.*?ribbon.*?<span>(.*?)<', data, re.S)			
             for (url1,rate,image,name_eng,qual) in lst_data:
                 #desc='Rating:'+self.cleanHtmlStr(rate)+'  Qual:'+qual
+                printDBG('name_eng = '+name_eng+'#')
+                lstr_data=re.findall('rating">(.*?)</i>', rate, re.S)
+                if lstr_data: rate= lstr_data[0]
+                else: rate = '?'
                 desc=tscolor('\c00????00')+'Rating: '+tscolor('\c00??????')+self.cleanHtmlStr(rate)+'/10 | '+tscolor('\c00????00')+'Qual: '+tscolor('\c00??????')+qual
-                x1,titre=self.uniform_titre(str(name_eng.decode('unicode_escape')))
+                x1,titre=self.uniform_titre(str(name_eng.decode('unicode_escape')),1)
+                desc = x1+desc
                 titre=titre.replace('()','')				
                 if 'series/' in url1: titre=titre+ tscolor('\c00????00')+'(SERIE)'
                 url1=self.MAIN_URL+url1
                 #url1=url1.replace('best//','best/')
-                self.addDir({'import':extra,'good_for_fav':True,'EPG':True, 'name':'categories', 'category':'host2', 'url':url1, 'title':titre, 'desc':desc, 'icon':image, 'mode':'31','hst':'tshost'} )							
-    
+                elm = {'import':extra,'good_for_fav':True,'EPG':True, 'name':'categories', 'category':'host2', 'url':url1, 'title':titre, 'desc':desc, 'icon':image, 'mode':'31','hst':'tshost'}
+                self.addDir(elm)
+                elms.append(elm)
+        return elms       
 
 
-    def MediaBoxResult(self,str_ch,year_,extra):
+
+    def MediaBoxResult1(self,str_ch,year_,extra):
         urltab=[]
         str_ch_o = str_ch
         str_ch = urllib.quote(str_ch_o+' '+year_)

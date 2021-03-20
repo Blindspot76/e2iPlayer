@@ -15,7 +15,7 @@ def getinfo():
 	info_['name']=name
 	info_['version']='1.1.02 27/08/2020'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='https://i.pinimg.com/originals/f2/67/05/f267052cb0ba96d70dd21e41a20a522e.jpg'
 	info_['recherche_all']='1'

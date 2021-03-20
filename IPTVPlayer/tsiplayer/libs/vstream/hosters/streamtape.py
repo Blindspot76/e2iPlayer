@@ -1,8 +1,8 @@
 #-*- coding: utf-8 -*-
 #Vstream https://github.com/Kodi-vStream/venom-xbmc-addons
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters.hoster import iHoster
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.parser import cParser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import cParser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters.hoster import iHoster
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import VSlog
 
 UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0'

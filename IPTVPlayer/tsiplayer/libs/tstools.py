@@ -183,7 +183,7 @@ def VidStream(script):
     PostUrl = str(tmp[0])
     print('PostUrl      = %s' % PostUrl)
     PostUrl = re.sub("(window\[.*?\])", "atob", PostUrl)        
-    PostUrl = re.sub("([A-F]{1,2}\()", "a0d(main_tab,step2,", PostUrl)    
+    PostUrl = re.sub("([A-Z]{1,2}\()", "a0d(main_tab,step2,", PostUrl)    
     exec(PostUrl)
     return(['/'+GetVal,f+bigString,{ PostKey : 'ok'}])
 
@@ -353,13 +353,22 @@ class TSCBaseHostClass:
         proxyURL = params.get('proxyURL', '')
         useProxy = params.get('useProxy', False)
         self.cm = common(proxyURL, useProxy)
-
         self.currList = []
         self.currItem = {}
         if '' != params.get('history', ''):
             self.history = CSearchHistoryHelper(params['history'], params.get('history_store_type', False))
         self.moreMode = False
-
+        self.TrySetMainUrl = True
+        
+    def set_MAIN_URL(self):
+        if self.TrySetMainUrl:
+            sts, data = self.getPage(self.MAIN_URL)
+            url = data.meta['url']
+            if url.endswith('/'): url = url[:-1]
+            printDBG('NEw URL = '+url)
+            self.MAIN_URL = url
+            self.TrySetMainUrl = False
+            
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         baseUrl=self.std_url(baseUrl)
         if addParams == {}: addParams = dict(self.defaultParams)
@@ -387,7 +396,7 @@ class TSCBaseHostClass:
         elif mode=='21':
             self.showelms(cItem)		
         return True
-    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}]):
+    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}],year_op=0):
         if isinstance(mode_, str):
             mode = mode_
         else:
@@ -396,7 +405,8 @@ class TSCBaseHostClass:
         page=cItem.get('page',1)
         data_out  = ''
         found = False
-        TAB0 = []
+        TAB0  = []
+        elms_   = []
         if TAB!=[]:
             if Titre!='':
                 self.addMarker({'category':'Marker','title': tscolor('\c00????30') + Titre,'icon':cItem['icon']})
@@ -513,9 +523,14 @@ class TSCBaseHostClass:
                                 elif url.startswith('//'): url = 'https:'+url
                                 elif url.startswith('/'): url = self.MAIN_URL+url
                                 else: url = self.MAIN_URL+'/'+url
-                        if mode=='serv': 
+                        if mode.startswith('serv'): 
                             Local = ''
                             need_resolve = 1							
+                            if mode == 'serv_url':
+                                if url.startswith('http'):
+                                    titre = self.up.getDomain(url, onlyDomain=True)
+                                else:
+                                    titre=''                            
                             if resolve == '1': URL = 'hst#tshost#'+url
                             else: URL = url 
                             for elm__ in local:
@@ -535,7 +550,8 @@ class TSCBaseHostClass:
                                         need_resolve = 0
                                     else:
                                         URL = url
-                            TAB0.append({'name':self.cleanHtmlStr(titre), 'url':URL, 'need_resolve':need_resolve,'type':Local})
+                            if '!!DELETE!!' not in titre:
+                                TAB0.append({'name':self.cleanHtmlStr(titre), 'url':URL, 'need_resolve':need_resolve,'type':Local})
                         elif mode.startswith('link'):
                             url = url.replace('\\/','/')
                             url = url.replace('\\','')
@@ -552,7 +568,7 @@ class TSCBaseHostClass:
                             titre = self.cleanHtmlStr(str(titre))
                             if not any(word in titre for word in del_):
                                 if u_titre:
-                                    desc1,titre = self.uniform_titre(titre)
+                                    desc1,titre = self.uniform_titre(titre,year_op)
                                     desc = desc1 + desc                             
                                 if (titre!='') and (url!=''):
                                     if isinstance(mode_, str):
@@ -563,15 +579,20 @@ class TSCBaseHostClass:
                                             else: str_cnt = titre
                                             if tag=='': mode = md
                                             elif tag in str_cnt: mode = md 
+                                    printDBG('link0000:'+mode+'|'+url)
                                     if mode=='video':
                                         found = True
-                                        self.addVideo({'category':'host2','good_for_fav':True, 'title': titre,'sub_mode':sub_mode,'url':url, 'desc':desc,'import':cItem['import'],'icon':image,'hst':hst,'EPG':EPG})	
+                                        eelm = {'category':'host2','good_for_fav':True, 'title': titre,'sub_mode':sub_mode,'url':url, 'desc':desc,'import':cItem['import'],'icon':image,'hst':hst,'EPG':EPG}
+                                        self.addVideo(eelm)	
+                                        elms_.append(eelm)
                                     elif mode=='picture':
                                         found = True
                                         self.addPicture({'category':'host2','good_for_fav':True, 'title': titre,'sub_mode':sub_mode,'url':url, 'desc':desc,'import':cItem['import'],'icon':image,'hst':hst,'EPG':EPG})	
                                     else:	
                                         #printDBG('link0000:'+url)
-                                        self.addDir({'category':'host2','good_for_fav':True, 'title': titre,'sub_mode':sub_mode,'mode':mode.replace('data_out:','').replace('data_out0:',''),'url':url, 'desc':desc,'import':cItem['import'],'icon':image,'hst':'tshost','EPG':EPG,'data_out':data_out})
+                                        eelm = {'category':'host2','good_for_fav':True, 'title': titre,'sub_mode':sub_mode,'mode':mode.replace('data_out:','').replace('data_out0:',''),'url':url, 'desc':desc,'import':cItem['import'],'icon':image,'hst':'tshost','EPG':EPG,'data_out':data_out}
+                                        self.addDir(eelm)
+                                        elms_.append(eelm)
                     if ((Next[0]==1) or (Next[0]==2)) and (Next[1]!='none'):
                         self.addDir({'import':cItem['import'],'name':'categories', 'category':'host2', 'url':cItem['url'], 'title':'Page Suivante', 'page':page+1, 'desc':'Page Suivante', 'icon':cItem['icon'], 'mode':Next[1]})	
                     elif (Next[0]!=0) and (Next[1]!='none'):
@@ -589,8 +610,8 @@ class TSCBaseHostClass:
                 self.addVideo({'category':'host2','good_for_fav':True, 'title': cItem['title'],'url':cItem['url'], 'desc':cItem.get('desc',''),'import':cItem['import'],'icon':cItem['icon'],'hst':'tshost','EPG':EPG})						
         if search:
             self.addDir({'category':'search'  ,'title':tscolor('\c00????30') + _('Search'),'search_item':True,'page':1,'hst':'tshost','import':cItem['import'],'icon':cItem['icon']})
-        #printDBG('Tab0='+str(TAB0))
-        return (data,TAB0)	
+        printDBG('elms_='+str(elms_))
+        return (data,TAB0,elms_)	
 
 
 
@@ -633,6 +654,10 @@ class TSCBaseHostClass:
         url1=url1.replace('rgy44soft','=') 		
         printDBG('url1='+url1)
         return url1
+        
+    def std_url1(self,url):
+        return url.encode('utf-8')       
+        
     def uniform_titre(self,titre,year_op=0):
         titre=titre.replace('مشاهدة وتحميل مباشر','').replace('مشاهدة','').replace('اون لاين','')
         tag_type   = ['مدبلج للعربية','مترجمة للعربية','مترجم للعربية', 'مدبلجة', 'مترجمة' , 'مترجم' , 'مدبلج', 'مسلسل', 'عرض', 'انمي', 'فيلم']
@@ -661,10 +686,10 @@ class TSCBaseHostClass:
                 titre = titre.replace(elm,'')
                 qual = qual+elm+' | '
                 
-        data = re.findall('((19|20)\d{2})', titre, re.S)
+        data = re.findall('((?:19|20)\d{2})', titre, re.S)
         if data:
-            year_ = data[0][0]
-            year_out = tscolor('\c0000????')+data[0][0]+tscolor('\c00??????')
+            year_ = data[-1]
+            year_out = tscolor('\c0000????')+data[-1]+tscolor('\c00??????')
             if year_op==0:
                 titre = year_out+'  '+titre.replace(year_, '')
                 desc = 	tscolor('\c00????00')+ 'Year: '+tscolor('\c00??????')+year_+'\n'
@@ -699,6 +724,37 @@ class TSCBaseHostClass:
             
         return desc,self.cleanHtmlStr(titre).replace('()','').strip()
 
+    def MediaBoxResult(self,str_ch,year_,extra):
+        urltab=[]
+        str_ch_o = str_ch
+        str_ch = urllib.quote(str_ch_o+' '+year_)
+        result = self.SearchResult(str_ch,1,'')
+        if result ==[]:
+            str_ch = urllib.quote(str_ch_o)
+            result = self.SearchResult(str_ch,1,'')
+        for elm in result:
+            titre     = elm['title']
+            url       = elm['url']
+            desc      = elm.get('desc','')
+            image     = elm.get('icon','')
+            mode      = elm.get('mode','') 
+            type_     = elm.get('type','')
+            sub_mode  = elm.get('sub_mode','') 
+            if str_ch_o.lower().replace(' ','') == titre.replace('-',' ').replace(':',' ').lower().replace(' ',''):
+                trouver = True
+            else:
+                trouver = False
+            name_eng='|'+tscolor('\c0060??60')+self.SiteName+tscolor('\c00??????')+'| '+titre				
+            if type_=='video':
+                cat= 'video'
+            else:
+                cat = 'host2'
+            element = {'titre':titre,'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':cat, 'url':url, 'title':name_eng, 'desc':desc, 'icon':image,'sub_mode':sub_mode, 'mode':mode}
+            if trouver:
+                urltab.insert(0, element)					
+            else:
+                urltab.append(element)	
+        return urltab
         
     def informAboutGeoBlockingIfNeeded(self, country, onlyOnce=True):
         try: 

@@ -12,7 +12,7 @@ def getinfo():
 	info_['name']='Playbox TV (Android App)'
 	info_['version']='1.0 12/07/2020'
 	info_['dev']='RGYSoft' + tscolor('\c00????30') + ' >> Thx to TSmedia <<'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='افلام'
 	info_['icon']='https://i.ibb.co/9sVwFzc/playbox.png'
 	info_['recherche_all']='1'

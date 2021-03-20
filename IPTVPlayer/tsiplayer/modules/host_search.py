@@ -24,9 +24,9 @@ class TSIPHost(TSCBaseHostClass):
     def showmenu0(self,cItem):
         type_  = cItem.get('gnr','')
         cat_id_filtre=[]
-        if type_=='ar': cat_id_filtre=['201']
-        if type_=='fr': cat_id_filtre=['301']
-        if type_=='en': cat_id_filtre=['401']
+        if type_=='ar': cat_id_filtre=['21']
+        if type_=='fr': cat_id_filtre=['31']
+        if type_=='en': cat_id_filtre=['41']
         self.list=[]
         if config.plugins.iptvplayer.xtream_active.value=='Yes': cat_id_filtre.append('101')
         str_ch = cItem.get('str_ch','NoneNone')

@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='Shahid4u'
 	info_['version']='1.4 11/07/2020'
 	info_['dev']='Opesboy'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
 	info_['icon']='https://i.ibb.co/gtSXrs2/shahid4u.png'
 	info_['recherche_all']='1'

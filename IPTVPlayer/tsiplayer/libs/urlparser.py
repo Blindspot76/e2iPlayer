@@ -17,11 +17,7 @@ from Plugins.Extensions.IPTVPlayer.tools.e2ijs                     import js_exe
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson                    import loads as json_loads, dumps as json_dumps
 from Plugins.Extensions.IPTVPlayer.libs                            import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.packer           import cPacker
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.aadecode import AADecoder
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.aadecode import decodeAA
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.jjdecode import JJDecoder
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.parser   import cParser
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.jsunfuck import JSUnfuck
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util     import AADecoder,decodeAA,JJDecoder,cParser,JSUnfuck
 
 ###################################################
 # FOREIGN import
@@ -241,7 +237,10 @@ class urlparser:
                         'userload.co'     : self.pp.parserVSTREAM,
                         'embed.mystream.to':self.pp.parserVSTREAM,
                         'uptostream.com'  : self.pp.parserVSTREAM,
-                        'streamtape.com'  : self.pp.parserVSTREAM,                        
+                        'uptobox.com'     : self.pp.parserVSTREAM,                        
+                        'streamtape.com'  : self.pp.parserVSTREAM, 
+                        'evoload.io'      : self.pp.parserVSTREAM, 
+                        'dood.so'         : self.pp.parserVSTREAM,                          
                         'thevideobee.to'  : self.pp.parserUNI01,
                         'uqload.com'      : self.pp.parserUNI01,
                         'vidia.tv'        : self.pp.parserUNI01,
@@ -278,7 +277,7 @@ class urlparser:
                         'vidbem.com'      : self.pp.parserUNI01,
                         'vidbom.com'      : self.pp.parserUNI01,
                         'asia2tv.cc'      : self.pp.parserUNI01,
-                        'asia2tv.com'     : self.pp.parserUNI01,						
+                        'asiatv.online'   : self.pp.parserUNI01,						
                         'allvid.co'       : self.pp.parserUNI01,
                         'moshahda.online' : self.pp.parserUNI01,
                         'anavids.com'     : self.pp.parserUNI01,
@@ -293,8 +292,12 @@ class urlparser:
                         'aparat.cam'      : self.pp.parserUNI01,
                         'playtube.ws'     : self.pp.parserUNI01,
                         'extremenow.net'  : self.pp.parserUNI01,
+                        'streamsb.net'    : self.pp.parserUNI01,
+                        'movcloud.net'    : self.pp.parserMOVCLOUD,                        
+                        'ninjastream.to'  : self.pp.parserNINJASTREAM,                        
                         'movs4u.club'     : self.pp.parserMOVS4U,
                         'dustreaming.fr'  : self.pp.parserDUSTREAMING,
+                        'fcdn.stream'     : self.pp.parserDUSTREAMING,                        
                         'vid4up.com'      : self.pp.parserZIMABDKO,						
                         'gofile.io'       : self.pp.parserGOFILE,
                         'okstream.cc'     : self.pp.parserOKSTREAM,
@@ -322,7 +325,7 @@ class urlparser:
                         'flashx.tv'       : self.pp.parserFLASHXTV, 
                         'flashx.pw'       : self.pp.parserFLASHXTV, 
                         'flashx.co'       : self.pp.parserFLASHXTV,
-                        'uptobox.com'     : self.pp.parserUPTOSTREAMCOM,	
+                        #'uptobox.com'     : self.pp.parserUPTOSTREAMCOM,	
                         'google.com'      : self.pp.parserGOOGLE, 
                         'fembed.com'      : self.pp.parserXSTREAMCDNCOM, 
                         'uppom.live'      :	self.pp.downUPPOM, 	
@@ -539,16 +542,49 @@ class pageParser(CaptchaHelper):
             hostName = hostName.lower()
         return hostName
 
+    def parserMOVCLOUD(self, baseUrl):
+        printDBG("parserMOVCLOUD baseUrl[%s]" % baseUrl)
+        #example: https://movcloud.net/embed/ei-RkZ9lI_Bg
+        #api url format: https://api.movcloud.net/stream/ei-RkZ9lI_Bg
+        hlsTab = []
+        mp4Tab = []        
+        urlTabs=[]
+        m = re.search("embed/(?P<id>[^/]+)($|/)",baseUrl)
+        
+        if m:
+            video_id = m.groupdict().get('id','')
+            if video_id:
+                url = "https://api.movcloud.net/stream/" + video_id
+                
+                sts, data = self.cm.getPage(url)
+                if sts:
+                    response = json_loads(data)
+                    printDBG(str(response))
+                    
+                    if response.get('success', False):
+                        for s in response['data']['sources']:
+                            link_url = s.get('file','')
+                            label = s.get('label','Link')
+                            if  self.cm.isValidUrl(link_url):
+                                link_url = urlparser.decorateUrl(link_url, {'Referer': baseUrl})
+                                mp4Tab.append({'name':label, 'url':link_url})                             
+        urlTabs.extend(mp4Tab)
+        urlTabs.extend(hlsTab)
+        return urlTabs
+        
     def parserVSTREAM(self, baseUrl):
         printDBG("parserVSTREAM baseUrl[%r]" % baseUrl)
         UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0'
         videoTab = []
+        if 'uptobox.com/' in baseUrl:
+            baseUrl = baseUrl.replace('uptobox.com/', 'uptostream.com/')
         hst_name = self.getHostName(baseUrl, True)
         printDBG("Host Name="+hst_name)
         exec "from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters." + hst_name + " import cHoster"
         oHoster = cHoster()
+        referer = strwithmeta(baseUrl).meta.get('Referer','')
         if 'userload' in baseUrl:
-            if '|Referer=' not in baseUrl: baseUrl = baseUrl+'|Referer='
+            if '|Referer=' not in baseUrl: baseUrl = baseUrl+'|Referer='+referer
         oHoster.setUrl(baseUrl)
         aLink = oHoster.getMediaLink()
         printDBG('aLink='+str(aLink))
@@ -557,13 +593,14 @@ class pageParser(CaptchaHelper):
             if'||'in URL: urls = URL.split('||')
             else: urls = [URL]
             for URL in urls:
-                label=''
-                if '|tag:' in URL: URL,label = URL.split('|tag:',1)
-                if '|User-Agent=' in URL:
-                    URL,UA=URL.split('|User-Agent=',1)
-                URL = strwithmeta(URL, {'User-Agent':UA})
-                printDBG('URL='+URL)
-                videoTab.append({'url':URL , 'name': hst_name+' '+label})		
+                if URL.strip()<>'':
+                    label=''
+                    if '|tag:' in URL: URL,label = URL.split('|tag:',1)
+                    if '|User-Agent=' in URL:
+                        URL,UA=URL.split('|User-Agent=',1)
+                    URL = strwithmeta(URL, {'User-Agent':UA})
+                    printDBG('URL='+URL)
+                    videoTab.append({'url':URL , 'name': hst_name+' '+label})		
         return videoTab
 
     def parserXFILESHARE(self, baseUrl):
@@ -635,6 +672,26 @@ class pageParser(CaptchaHelper):
         if not sts: return False
         return self.cm.meta['url']		
 
+    def parserNINJASTREAM(self, baseUrl):
+        printDBG("parserNINJASTREAM baseUrl[%r]" % baseUrl )
+        linksTab = []
+        HTTP_HEADER = MergeDicts(self.cm.getDefaultHeader('firefox'), {'Referer':baseUrl})
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        r = re.search(r'v-bind:stream="([^"]+)', data)
+        if r:
+            data = json.loads(r.group(1).replace('&quot;', '"'))
+            murl = self.decodeNinja(data.get('host')) + data.get('hash') + '/index.m3u8'
+            murl ='https://databasegdriveplayer.co/files2.php?id=OG92KzdteWNQY0tjNC9ZUkMzVjNkUnhxZy9RMnV6QW1tK2VuVXdmUTdMNjFwUm1VNEN4RVdtU0wwZVBVZ0VNWQ==.m3u8'
+            linksTab.extend(getDirectM3U8Playlist(murl, checkExt=False, checkContent=True))
+        return linksTab
+
+    def decodeNinja(self, host):
+        s = ''
+        for n in range(len(host)):
+            s += chr(ord(host[n]) ^ ord('2'))
+        return s
+        
     def parserJAWCLOUDCO(self, baseUrl):
         printDBG("parserJAWCLOUDCO baseUrl[%r]" % baseUrl)
         if 'embed' not in baseUrl:
@@ -2513,6 +2570,8 @@ class pageParser(CaptchaHelper):
         if 'arabveturk'  in baseUrl: HTTP_HEADER['Referer'] = ''
         if 'gounlimited' in baseUrl: HTTP_HEADER['Referer'] = ''
         if 'movs4u'      in baseUrl: HTTP_HEADER['Referer'] = ''
+        if 'uqload'  in baseUrl: HTTP_HEADER['Referer'] = ''
+        if 'asia2tv'  in baseUrl: HTTP_HEADER['Referer'] = 'https://asiatv.online'
         #printDBG("parserUNI01"+str(HTTP_HEADER))
         COOKIE_FILE = GetCookieDir('UNI01.cookie')	
         self.cm.clearCookie(COOKIE_FILE, ['__cfduid', 'cf_clearance'])
@@ -2520,7 +2579,7 @@ class pageParser(CaptchaHelper):
         sts, data = self.getPageCF(url, urlParams)
         #sts, data = self.cm.getPage(url)
         if not sts: return False
-        #printDBG('data='+'#'+str(data)+'#')
+        printDBG('data='+'#'+str(data)+'#')
         if 'ﾟωﾟ' in data:
             lst_pk = re.findall("(ﾟωﾟ.*?)<", data, re.S)
             if lst_pk:
@@ -2640,7 +2699,7 @@ class pageParser(CaptchaHelper):
             
     def parserDUSTREAMING(self, baseUrl):
         printDBG("parserDUSTREAMING baseUrl[%r]" % baseUrl)
-        url = baseUrl.replace('/v/','/api/source/').replace('playvid.pw','feurl.com').replace('mg-play.info','feurl.com').replace('fsimg.info','feurl.com').replace('www.','')
+        url = baseUrl.replace('/v/','/api/source/').replace('playvid.pw','feurl.com').replace('mg-play.info','feurl.com').replace('fsimg.info','feurl.com').replace('fcdn.stream','feurl.com').replace('www.','')
         HTTP_HEADER= {'User-Agent':"Mozilla/5.0"}
         urlParams = {'header': HTTP_HEADER}
         post_data = {'r':'','d':'dustreaming.fr'}

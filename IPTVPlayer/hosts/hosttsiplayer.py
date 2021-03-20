@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit   import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost            import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools             import printDBG, printExc, GetTmpDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools             import printDBG, printExc, GetTmpDir, GetCacheSubDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes             import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools      import tunisia_gouv,tscolor,URLResolver
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper        import getDirectM3U8Playlist
@@ -32,7 +32,6 @@ import os
 #https://api.dailymotion.com/user/MelodyAflam/videos?page=1&limit=100&fields=id,title,duration,thumbnail_240_url
 config.plugins.iptvplayer.ts_dsn           = ConfigYesNo(default = True)
 config.plugins.iptvplayer.vs_meta_view     = ConfigYesNo(default = False)
-config.plugins.iptvplayer.dev_mod          = ConfigYesNo(default = False)
 config.plugins.iptvplayer.tsi_resolver     = ConfigSelection(default = "tsiplayer", choices = [("tsiplayer", "TSIPlayer"),("e2iplayer", "E2Iplayer")])
 config.plugins.iptvplayer.ts_resolver      = ConfigSelection(default = "tsmedia", choices = [("tsmedia", "TSMedia"), ("tsiplayer", "TSIPlayer")])
 config.plugins.iptvplayer.xtream_active    = ConfigSelection(default = "Yes", choices = [("Yes", _("Yes")), ("", _("No"))])
@@ -47,7 +46,6 @@ def GetConfigList():
     optionList = []
     optionList.append( getConfigListEntry(_("Decrypt Server Name:"), config.plugins.iptvplayer.ts_dsn) )
     #optionList.append( getConfigListEntry(_("Get Meta (VStream):"), config.plugins.iptvplayer.vs_meta_view) )
-    optionList.append( getConfigListEntry(_("Display Tools:"), config.plugins.iptvplayer.dev_mod) )
     optionList.append( getConfigListEntry(_("TSIplayer Resolver:"), config.plugins.iptvplayer.tsi_resolver) )	
     optionList.append( getConfigListEntry(_("TSMedia Group Resolver:"), config.plugins.iptvplayer.ts_resolver) )	
     optionList.append( getConfigListEntry(_("Display Xtream:"), config.plugins.iptvplayer.xtream_active) )
@@ -87,19 +85,26 @@ class TSIPlayer(CBaseHostClass):
     def MainCat(self):
         self.tsiplayer_host({'cat_id':'901','ordre':0})
         self.addDir({'name':'cat','category' : 'FilmsSeriesAr','title':'Arabic Section','desc':'Arabic section','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
-        self.addDir({'name':'cat','category' : 'FilmsSeriesFr','title':'French Section','desc':'Films, Series et Animes en Vf et Vostfr','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
-        self.addDir({'name':'cat','category' : 'FilmsSeriesEn','title':'English section','desc':'Films, Series & Animes (Eng)','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
-        self.addDir({'name':'cat','category' : 'Live','title':'Live Tv & Replay','desc':'Live Tv & Replay','icon':'https://1.bp.blogspot.com/-PHYAba3vvI0/WDroJDScJdI/AAAAAAAABuY/SfwAZRpThoIF-IFAaijBZNWThAn0KXU9QCLcB/s320/Ligtvkafe%2B%25C4%25B0le%2BKumanda%2BSende.jpg'} )
+        #self.addDir({'name':'cat','category' : 'FilmsSeriesFr','title':'French Section','desc':'Films, Series et Animes en Vf et Vostfr','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
         if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/'):
-            self.addDir({'name':'cat','category' : 'Addons','title':'Addons','desc':'','icon':'https://i.ibb.co/cv2fZ8y/add-ons-icon-11.png'} )
+            desc=tscolor('\c00????00')+'Une version '+tscolor('\c0000????')+'"Non Officielle"'+ '\\n'        
+            desc=desc + tscolor('\c00????00')+'Info:'+tscolor('\c00??????')+' '+'vStream est un addon KODI de streaming videos'+'\\n'
+            desc=desc+tscolor('\c00????00')+'Version:'+tscolor('\c00??????')+' '+'25/02/2021'+'\\n'
+            desc=desc+tscolor('\c00????00')+'Source:'+tscolor('\c00??????')+' '+'https://github.com/Kodi-vStream/venom-xbmc-addons/'+'\\n'
+            desc=desc+tscolor('\c00????00')+'Developpeur:'+tscolor('\c00??????')+' '+'vStream Team | '+ tscolor('\c00????00')+'Adaptation pour Tsiplayer: '+tscolor('\c00??????')+'RGYSoft'+'\\n'
+            elm = {'category': 'host2', 'import': 'from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.host_vstream import ', 'icon': 'https://i.ibb.co/Rj3P6HP/icon.png', 'mode': '03', 'title': 'French Section (VSTREAM)','desc':desc}
+            self.addDir(elm )	
+        self.addDir({'name':'cat','category' : 'FilmsSeriesEn','title':'English section','desc':'Films, Series & Animes (Eng)','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
+        self.addDir({'name':'cat','category' : 'SportLiveReplay','title':'LIVE & Replay','desc':'Live & Replay','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
+
         if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/TSmedia'):
             self.tsiplayer_host({'cat_id':'903'})
-        if config.plugins.iptvplayer.dev_mod.value:
-            self.addDir({'name':'cat','category' : 'Devmod','title':'Tools','desc':'','icon':'http://www.mezganisaid.com/z-include/images/code-dev.png'} )
         self.addDir({'name':'cat','category' : 'Trash','title':'Trash','desc':'','icon':'https://i.ibb.co/9424kFw/Cancel-Subscription.png'} )
-        self.tsiplayer_host({'cat_id':'901','ordre':1})
-
-
+        self.tsiplayer_host({'cat_id':'901','ordre':1})        
+        
+        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/'):
+            if os.path.exists('/usr/lib/enigma2/python/Plugins/tsiplayer/'):
+                self.addDir({'name':'cat','category' : 'Devmod','title':'Tools','desc':'','icon':'https://i.ibb.co/Sc31b4P/development-icon-131032-1.png'} )
 
 
 
@@ -107,7 +112,7 @@ class TSIPlayer(CBaseHostClass):
 #		self.addDir({'name':'cat','category' : 'vstream','title':'Vstream','desc':'desc','icon':''} )
 #1:Ar,2:Live,3:Kids,4:Ramadan,6:Ar+In,10:dev,101:EN,102:FR,
 #Live sport: 100,replay Sport: 110
-#Live all: 120, replay all:130
+#Live all: 120, replay all:130,All replay and live 140
 #All:  101  
 #Dev:  102
 #Dev Touls :103
@@ -117,60 +122,52 @@ class TSIPlayer(CBaseHostClass):
 #French: 301,302,303
 #Eng:    401,402,403
 #
-    def FilmCatFr(self):
-        self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Films & Series |★●-----','desc':'Films, Series & Animes en VF et VOSTFR'})	
-        self.tsiplayer_host({'cat_id':'101'})	
-        self.tsiplayer_host({'cat_id':'301'})
-        #self.addDir({'name':'search','category' :'search','title': _('Search'),'search_item':True,'page':1,'hst':'ALLFR','icon':''})
-        self.tsiplayer_host({'cat_id':'904','gnr':'fr'})		
-        self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Animes & Dessins animés |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
-        self.tsiplayer_host({'cat_id':'302'})
-        self.tsiplayer_host({'cat_id':'303'})
 
     def FilmCatEn(self):
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Films & Series |★●-----','desc':'Films, Series & Animes'})	
-        self.tsiplayer_host({'cat_id':'101'})	
-        self.tsiplayer_host({'cat_id':'401'})
+        #self.tsiplayer_host({'cat_id':'10'})	
+        self.tsiplayer_host({'cat_id':'11'})
+        self.tsiplayer_host({'cat_id':'12'}) 
+        self.tsiplayer_host({'cat_id':'41'})
         self.tsiplayer_host({'cat_id':'904','gnr':'en'})
 
     def TrashCat(self):
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Not Supported Hosts |★●-----','desc':'Not supported Hosts'})	
-        self.tsiplayer_host({'cat_id':'102'})	
-        self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Deleted Hosts |★●-----','desc':'Not Working Hosts'})
-        self.tsiplayer_host({'cat_id':'104'})			
+        self.tsiplayer_host({'cat_id':'99'})			
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Not Working Hosts |★●-----','desc':'Not Working Hosts'})
-        self.tsiplayer_host({'cat_id':'105'})	
+        self.tsiplayer_host({'cat_id':'98'})	
 
 
 
         
     def FilmCatAr(self):
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Films & Series |★●-----','desc':'Films, Series & Animes en VF et VOSTFR'})			
-        self.tsiplayer_host({'cat_id':'101'})	
-        self.tsiplayer_host({'cat_id':'201'})	
+        #self.tsiplayer_host({'cat_id':'10'})	
+        self.tsiplayer_host({'cat_id':'11'})
+        self.tsiplayer_host({'cat_id':'12'})        
+        self.tsiplayer_host({'cat_id':'21'})	
         self.tsiplayer_host({'cat_id':'904','gnr':'ar'})	
         #self.addDir({'name':'search','category' :'search','title': _('Search'),'search_item':True,'page':1,'hst':'ALLAR','icon':''})	
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Animes & Dessins animés |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
-        self.tsiplayer_host({'cat_id':'202'})
-        self.tsiplayer_host({'cat_id':'203'})
+        self.tsiplayer_host({'cat_id':'22'})
+        self.tsiplayer_host({'cat_id':'23'})
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Islamic |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
-        self.tsiplayer_host({'cat_id':'204'})
-                        
-    def IptvCat(self):
-        self.tsiplayer_host({'cat_id':'100'})
-        self.tsiplayer_host({'cat_id':'110'})
-        self.tsiplayer_host({'cat_id':'120'})		
+        self.tsiplayer_host({'cat_id':'24'})
+
+    def SportLiveReplay(self):
+        self.tsiplayer_host({'cat_id':'10'})
+        self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Sport Replay |★●-----','desc':'Replay Sport'})
+        self.tsiplayer_host({'cat_id':'25'})
+        self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Sport Live |★●-----','desc':'Replay Sport'})
+        self.tsiplayer_host({'cat_id':'26'})	
         
     def AddonsCat(self):
         self.tsiplayer_host({'cat_id':'902'})		
                                 
     def DevCat(self):
+        self.addDir({'name':'cat','category' : 'Addons','title':'Addons','desc':'','icon':'https://i.ibb.co/cv2fZ8y/add-ons-icon-11.png'} )        
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Tools |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
-        self.tsiplayer_host({'cat_id':'103'})
-        #params = {'category' : 'update_now','title':tscolor('\c0000????')+' +++++++ FORCE UPDATE & RESTART (Tar method) +++++++ ','name':'update_restart'} 
-        #self.addDir(params)		
-        #params = {'category' : 'update_now2','title':tscolor('\c0000????')+' +++++++ FORCE UPDATE & RESTART (Zip method) +++++++ ','name':'update_restart'} 
-        #self.addDir(params)			
+        self.tsiplayer_host({'cat_id':'900'})
 
 
     def PrintExTs(self,e):
@@ -225,18 +222,32 @@ class TSIPlayer(CBaseHostClass):
                 if (file_.endswith('.py'))and((file_.startswith('host_')) or ((file_.startswith('hide_')))):
                     path_=folder+'/'+file_
                     import_str=import_+file_.replace('.py',' import ')
-                    try:
-                        exec (import_str+'getinfo')
-                        info=getinfo()
-                    except Exception, e:
-                        info={}
-                        info['warning']=' >>>>>>> Problem in this host <<<<<<<'
-                        info['desc']=str(e)
-                        info['name']=file_
-                        info['icon']=''
-                        info['version']=''
-                        info['cat_id']='105'
-                        info['dev']=''
+                    if 'vstream' in file_:
+                        try:
+                            exec (import_str+'getinfo')
+                            info=getinfo()   
+                        except Exception, e:
+                            info={}
+                            info['warning']=' >>>>>>> Problem in this host <<<<<<<'
+                            info['desc']=str(e)
+                            info['name']=file_
+                            info['icon']=''
+                            info['version']=''
+                            info['cat_id']='98'
+                            info['dev']=''                 
+                    else:
+                        try:
+                            exec (import_str+'getinfo')
+                            info=getinfo()
+                        except Exception, e:
+                            info={}
+                            info['warning']=' >>>>>>> Problem in this host <<<<<<<'
+                            info['desc']=str(e)
+                            info['name']=file_
+                            info['icon']=''
+                            info['version']=''
+                            info['cat_id']='98'
+                            info['dev']=''
                         #info.get('host','')=
                     desc=''
                     icon_ = info['icon']
@@ -250,7 +261,7 @@ class TSIPlayer(CBaseHostClass):
                             param_ = ''
                     if param_!='': 
                         if cat_id==info['cat_id']:
-                            if cat_id=='10':
+                            if cat_id=='n10':
                                 desc=desc+tscolor('\c00????00')+' -----> !!!!!!!!! Not Working (Dev Mod) !!!!!!!!! <-----\\n'
                             if info.get('warning', '')!='':
                                 desc=desc+tscolor('\c00????00')+' '+info.get('warning', '')+'\\n'
@@ -293,6 +304,7 @@ class TSIPlayer(CBaseHostClass):
                 if (file_.endswith('.py'))and((file_.startswith('host_')) or ((file_.startswith('hide_')))):
                     path_=folder+'/'+file_
                     import_str=import_+file_.replace('.py',' import ')
+                    sys.argv='' 
                     try:
                         exec (import_str+'getinfo')
                         info=getinfo()
@@ -317,7 +329,8 @@ class TSIPlayer(CBaseHostClass):
     def tsiplayer_host(self,cItem):
         self.tsiplayer_get_host(cItem,'private')
         self.tsiplayer_get_host(cItem,'public')
-        self.tsiplayer_get_host(cItem,'addons')
+        if os.path.exists('/usr/lib/enigma2/python/Plugins/tsiplayer/'):
+            self.tsiplayer_get_host(cItem,'addons')
         self.tsiplayer_get_host(cItem,'system')
         self.tsiplayer_get_addons_host(cItem)
                         
@@ -360,10 +373,10 @@ class TSIPlayer(CBaseHostClass):
             self.listSearchResult(self.currItem,'', '')				
         elif category == 'FilmsSeriesAr':
             self.FilmCatAr()
-        elif category == 'FilmsSeriesFr':
-            self.FilmCatFr()
         elif category == 'FilmsSeriesEn':
             self.FilmCatEn()
+        elif category == 'SportLiveReplay':
+            self.SportLiveReplay()            
         elif category == 'Live':
             self.IptvCat()
         elif category == 'Devmod':
@@ -373,9 +386,19 @@ class TSIPlayer(CBaseHostClass):
         elif category == 'Addons':
             self.AddonsCat()
         else:
-            exec('self.'+category+'_host(self.currItem)')
+            try:
+                try:
+                    xx = len(sys.argv)
+                except:
+                    sys.argv = ''
+                exec('self.'+category+'_host(self.currItem)')
+            except Exception, e:
+                self.PrintExTs(e)
+                printDBG('erreeuuu')
 
         CBaseHostClass.endHandleService(self, index, refresh)
+
+
         
     def listSearchResult(self, cItem, searchPattern, searchType):		
         hst=cItem['hst']

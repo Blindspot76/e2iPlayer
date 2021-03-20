@@ -10,10 +10,10 @@ import re
 
 def getinfo():
 	info_={}
-	info_['name']='Yalla-Shoot.Com (Only replay)'
+	info_['name']='Yalla-Shoot.Com'
 	info_['version']='1.0 24/04/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='110'
+	info_['cat_id']='25'
 	info_['desc']='مشاهدة ملخصات و مباريات كاملة'
 	info_['icon']='http://www.yalla-shoot.com/img/logo.png'
 	info_['recherche_all']='0'

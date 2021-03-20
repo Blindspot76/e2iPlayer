@@ -2,22 +2,19 @@
 # vStream https://github.com/Kodi-vStream/venom-xbmc-addons
 #
 import base64
-import re,urllib
+import re
 
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters.hoster import iHoster
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import dialog, VSlog, isMatrix
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import cPremiumHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.parser import cParser
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import VSlog,Unquote,dialog,cPremiumHandler
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import cParser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import Unquote
 
-
-
-
-# -*- coding: utf-8 -*-
-# vStream https://github.com/Kodi-vStream/venom-xbmc-addons
-#
-
-
-
+try:
+    xrange
+except NameError:
+    xrange = range
 
 class cHoster(iHoster):
 
@@ -122,6 +119,8 @@ class cHoster(iHoster):
             sHtml = oRequest.request()
 
         qua, url_list = decodeur1(sHtml)
+        VSlog('qua='+str(qua))
+        VSlog('url_list='+str(url_list))        
         if qua and url_list:
             api_call = dialog().VSselectqual(qua, url_list)
 
@@ -132,7 +131,6 @@ class cHoster(iHoster):
                 return True, api_call.replace('\\', '')
 
         return False, False
-
 
 def decodeur1(Html):
     from ast import literal_eval
@@ -178,7 +176,7 @@ def decodeur1(Html):
                             i = 0
                             vname = ''
                             for i in xrange(len(Html)):
-                                fisrt_r = re.match("([^']+)':", Html, re.DOTALL)
+                                fisrt_r = re.match("([^']+)':", Html)
                                 if fisrt_r:
                                     vname = fisrt_r.group(1)
                                     tableau[vname] = 'null'
@@ -270,7 +268,10 @@ def decoder(data, fn):
     tempData = ''
 
     for i in xrange(len(data)):
-        tempData += ("%" + format(ord(data[i]), '02x'))
+        if isMatrix():
+            tempData += ("%" + format(data[i], '02x'))
+        else:
+            tempData += ("%" + format(ord(data[i]), '02x'))
 
     data = Unquote(tempData)
 
@@ -292,7 +293,11 @@ def decoder(data, fn):
     x = 0
     y = 0
     i = 0
-    while i < len(data.decode('utf-8')):
+
+    if not isMatrix():
+        data = data.decode('utf-8')
+
+    while i < len(data):
 
         x = (x + 1) % 256
         y = (y + secretKey[x]) % 256
@@ -301,7 +306,7 @@ def decoder(data, fn):
         secretKey[x] = secretKey[y]
         secretKey[y] = temp
 
-        url += (chr(ord(data.decode('utf-8')[i]) ^ secretKey[(secretKey[x] + secretKey[y]) % 256]))
+        url += (chr(ord(data[i]) ^ secretKey[(secretKey[x] + secretKey[y]) % 256]))
 
         i += 1
 

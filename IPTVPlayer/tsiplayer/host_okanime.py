@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='Okanime.Com'
 	info_['version']='1.2.1 16/09/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='202'
+	info_['cat_id']='22'
 	info_['desc']='انمي مترجم'
 	info_['icon']='https://i.ibb.co/88XFP0D/okanim.jpg'
 	info_['recherche_all']='0'

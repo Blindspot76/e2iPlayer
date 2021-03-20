@@ -31,7 +31,7 @@ def getinfo():
     info_['name']=name
     info_['version']='1.9.3 01/12/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
     info_['icon']='https://i.ibb.co/pLWdJQn/akoam.png'
     info_['recherche_all']='1'
@@ -239,7 +239,7 @@ class TSIPHost(TSCBaseHostClass):
                 name_eng=ph.clean_html(name_eng.strip())
                 desc0,titre0 = self.uniform_titre(name_eng,1)
                 if ' 3D' not in name_eng:
-                    name_eng='|'+tscolor('\c0060??60')+'Akoam'+tscolor('\c00??????')+'| '+titre0
+                    name_eng='|'+tscolor('\c0060??60')+'Akwam (OLD)'+tscolor('\c00??????')+'| '+titre0
                     urltab.append({'titre':titre0,'import':extra,'category' : 'host2','title':name_eng,'url':url1,'desc':desc0,'icon':image,'mode':'31','good_for_fav':True,'EPG':True,'hst':'tshost'})
         return urltab
 

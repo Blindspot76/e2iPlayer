@@ -11,12 +11,12 @@ def getinfo():
 	info_={}
 	name = 'Movizland.Com'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://sa.movizland.online'
+	if hst=='': hst = 'https://4k.movizland.online'
 	info_['host']= hst
 	info_['name']=name
 	info_['version']='1.2.01 05/07/2020'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='21'
 	info_['desc']='أفلام, مسلسلات و انمي بالعربية'
 	info_['icon']='https://i.ibb.co/ZS8tq3z/movizl.png'
 	info_['recherche_all']='1'
@@ -60,7 +60,7 @@ class TSIPHost(TSCBaseHostClass):
 
 	def showmenu1(self,cItem):
 		self.defaut_mobile = False
-		sts, data = self.getPage(self.MAIN_URL)
+		sts, data = self.getPage(self.MAIN_URL+'/homepage6/')
 		if sts:
 			gnr=cItem.get('sub_mode', 0)
 			Liste_films_data = re.findall('DropdownFilter">(.*?)</ul', data, re.S)
@@ -81,7 +81,7 @@ class TSIPHost(TSCBaseHostClass):
 		gnr=cItem.get('sub_mode', 0)
 		filter_=cItem.get('filter_','')
 		if count==0:
-			sts, data1 = self.getPage(self.MAIN_URL)
+			sts, data1 = self.getPage(self.MAIN_URL+'/homepage6/')
 			if sts:
 				Liste_films_data = re.findall('DropdownFilter">(.*?)</ul', data1, re.S)
 				if Liste_films_data:

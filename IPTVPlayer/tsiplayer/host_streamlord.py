@@ -21,7 +21,7 @@ def getinfo():
 	info_['name']='Streamlord.Com'
 	info_['version']='1.0 30/05/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='401'#'401'
+	info_['cat_id']='41'#'401'
 	info_['desc']='Films & Series'
 	info_['icon']='http://www.streamlord.com/images/logo.png'
 	info_['recherche_all']='0'

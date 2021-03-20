@@ -26,12 +26,12 @@ def getinfo():
     info_={}
     name = 'Akwam (New)'
     hst = tshost(name)	
-    if hst=='': hst = 'https://akwam.co'
+    if hst=='': hst = 'https://akwam.in'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2.01 29/09/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
     info_['icon']='https://i.ibb.co/0qgtD2Z/akwam.png'
     info_['recherche_all']='1'
@@ -53,6 +53,7 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
 
     def getPage(self,baseUrl, addParams = {}, post_data = None):
         baseUrl = self.std_url(baseUrl)
+        baseUrl = re.sub('(akwam\..{2,4}?)/', self.MAIN_URL.replace('https://','')+'/', baseUrl)
         i=0
         while True:
             printDBG('count='+str(i))
@@ -185,6 +186,7 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
                         self.addVideo({'import':cItem['import'],'category' : 'host2','title':titre1,'url':url,'desc':ph.clean_html(inf),'icon':image,'hst':'tshost','good_for_fav':True})				
 
     def SearchResult(self,str_ch,page,extra):
+        elms = []        
         url_=self.MAIN_URL+'/search?q='+str_ch+'&page='+str(page)
         sts, data = self.getPage(url_)
         if sts:
@@ -199,8 +201,37 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
                 desc = tscolor('\c0000????')+'Rating: '+tscolor('\c00??????')+rating+'\n'
                 desc = desc + tscolor('\c0000????')+'Quality: '+tscolor('\c00??????')+quality+'\n'
                 titre=self.cleanHtmlStr(titre)
-                self.addDir({'import':extra,'category' : 'host2','title':titre,'url':url,'desc':desc,'icon':image,'mode':'31','good_for_fav':True,'EPG':True,'hst':'tshost'})
+                elm = {'import':extra,'category' : 'host2','title':titre,'url':url,'desc':desc,'icon':image,'mode':'31','good_for_fav':True,'EPG':True,'hst':'tshost'}
+                elms.append(elm)
+                self.addDir(elm)
+        return elms
 
+    def MediaBoxResult(self,str_ch,year_,extra):
+        urltab=[]
+        str_ch_o = str_ch
+        str_ch = urllib.quote(str_ch_o+' '+year_)
+        result = self.SearchResult(str_ch,1,'')
+        if result ==[]:
+            str_ch = urllib.quote(str_ch_o)
+            result = self.SearchResult(str_ch,1,'')
+        for elm in result:
+            titre     = elm['title']
+            url       = elm['url']
+            desc      = elm.get('desc','')
+            image     = elm.get('icon','')
+            mode      = elm.get('mode','') 
+            if str_ch_o.lower().replace(' ','') == titre.replace('-',' ').replace(':',' ').lower().replace(' ',''):
+                trouver = True
+            else:
+                trouver = False
+            name_eng='|'+tscolor('\c0060??60')+'Akwam (NEW)'+tscolor('\c00??????')+'| '+titre				
+            element = {'titre':titre,'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url, 'title':name_eng, 'desc':desc, 'icon':image, 'mode':mode}
+            if trouver:
+                urltab.insert(0, element)					
+            else:
+                urltab.append(element)	
+        return urltab	 
+        
     def get_links(self,cItem): 	
         urlTab = []
         URL=cItem['url']

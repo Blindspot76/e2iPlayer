@@ -16,7 +16,7 @@ def getinfo():
     info_['name']=name
     info_['version']='1.2.01 05/07/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='أفلام و مسلسلات اسياوية و اجنبية'
     info_['icon']='https://i.ibb.co/XDQ5v3G/facel.png'
     info_['recherche_all']='1'
@@ -144,6 +144,7 @@ class TSIPHost(TSCBaseHostClass):
                     self.addVideo({'import':cItem['import'], 'hst':'tshost', 'url':cItem['url'], 'title':cItem['title'], 'desc':cItem['desc'], 'icon':cItem['icon']})
         
     def SearchResult(self,str_ch,page,extra):
+        elms = []
         url_=self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
         url_=self.std_url(url_)
         sts, data = self.getPage(url_)
@@ -154,37 +155,36 @@ class TSIPHost(TSCBaseHostClass):
                 name_eng=name_eng.replace('&#8211;','-')
                 mode = '31'
                 if 'movies_collections' in url1: mode = '30'				
-                self.addDir({'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':str(name_eng), 'desc':desc, 'icon':image, 'mode':mode} )	
-
+                desc,name_eng = self.uniform_titre(name_eng,1)
+                elm = {'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':str(name_eng), 'desc':desc, 'icon':image, 'mode':mode}
+                elms.append(elm)
+                self.addDir(elm)	
+        return elms
+        
     def MediaBoxResult(self,str_ch,year_,extra):
         urltab=[]
         str_ch_o = str_ch
         str_ch = urllib.quote(str_ch_o+' '+year_)
-        url_=self.MAIN_URL+'/page/1/?s='+str_ch
-        sts, data = self.cm.getPage(url_)
-        if sts:
-            lst_data=re.findall('class="movie-wrap">.*?href="(.*?)".*?src="(.*?)".*?alt="(.*?)".*?<span>(.*?)</span>(.*?)<h1>', data, re.S)			
-            for (url1,image,name_eng,desc1,desc2) in lst_data:
-                desc=''
-                if self.cleanHtmlStr(desc1)!='':
-                    desc='Rate:'+self.cleanHtmlStr(desc1)+'\n'
-                desc=''
-                
-                name_eng=str(name_eng).replace('&#8211;','-')
-                
-                x1,titre0=self.uniform_titre(name_eng,year_op=1)
-                desc=x1+desc				
-                
-                if str_ch_o.lower().replace(' ','') == titre0.replace('-',' ').replace(':',' ').lower().replace(' ',''):
-                    trouver = True
-                else:
-                    trouver = False
-                name_eng='|'+tscolor('\c0060??60')+'FaselHD'+tscolor('\c00??????')+'| '+titre0				
-                if trouver:
-                    urltab.insert(0,{'titre':titre0,'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':name_eng, 'desc':desc, 'icon':image, 'mode':'32'} )					
-                else:
-                    urltab.append({'titre':titre0,'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':name_eng, 'desc':desc, 'icon':image, 'mode':'32'} )	
-        return urltab	
+        result = self.SearchResult(str_ch,1,'')
+        for elm in result:
+            titre     = elm['title']
+            url       = elm['url']
+            desc      = elm.get('desc','')
+            image     = elm.get('icon','')
+            mode      = elm.get('mode','') 
+            if str_ch_o.lower().replace(' ','') == titre.replace('-',' ').replace(':',' ').lower().replace(' ',''):
+                trouver = True
+            else:
+                trouver = False
+            name_eng='|'+tscolor('\c0060??60')+'FaselHD'+tscolor('\c00??????')+'| '+titre				
+            element = {'titre':titre,'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url, 'title':name_eng, 'desc':desc, 'icon':image, 'mode':mode}
+            if trouver:
+                urltab.insert(0, element)					
+            else:
+                urltab.append(element)	
+        return urltab	        
+        
+ 
         
     def get_links(self,cItem): 	
         urlTab = []	

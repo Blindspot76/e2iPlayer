@@ -21,7 +21,7 @@ def getinfo():
     info_['name']=name
     info_['version']='1.1.01 05/07/2020' 
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
     info_['icon']='https://i.ibb.co/4FCCKvf/cima4u.png'
     info_['recherche_all']='1'
@@ -33,9 +33,10 @@ class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'cima4u2.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'
-        self.MAIN_URL =  getinfo()['host']
-        self.MAIN_URL2 = 'http://live.cima4u.io'
-        self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
+        self.MAIN_URL   =  getinfo()['host']
+        self.MAIN_URL2  = 'http://live.cima4u.io'
+        self.SiteName   = 'Cima4u'
+        self.HEADER     = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.defaultParams = {'header':self.HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         #self.getPage = self.cm.getPage
             
@@ -200,13 +201,9 @@ class TSIPHost(TSCBaseHostClass):
                                     self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':cItem['desc'],'icon':cItem['icon'],'hst':'tshost'})	
                         elif  '/video/' in URL.lower():
                             self.addVideo({'import':cItem['import'],'good_for_fav':True,'good_for_fav':True,'category' : 'video','url': URL,'title':cItem['title'],'desc':cItem['desc'],'icon':cItem['icon'],'hst':'tshost'})	
-
-
-
-
-            
-    
+               
     def SearchResult(self,str_ch,page,extra):
+        elms = []  
         url_='http://cima4u.io'+'/search/'+str_ch+'/page/'+str(page)+'/'
         sts, data = self.getPage(url_)
         if sts:
@@ -227,8 +224,13 @@ class TSIPHost(TSCBaseHostClass):
                     else: cat = '!!'                    
                     
                     desc = tscolor('\c00????00')+'Genre: '+ tscolor('\c00??????') +ph.clean_html(genre)+'\n'+ tscolor('\c00????00')+'Cat: '+tscolor('\c00??????')+ph.clean_html(cat)
-                    self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'mode':'31','EPG':True,'hst':'tshost'})	
-
+                    desc0,titre = self.uniform_titre(titre,1)
+                    desc = desc0 + desc
+                    elm = {'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'mode':'31','EPG':True,'hst':'tshost'}	
+                    elms.append(elm)
+                    self.addDir(elm)
+        return elms
+        
     def get_links(self,cItem):
         urlTab = []	
         url=cItem['url']

@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='Stardima.Com'
 	info_['version']='1.0 19/04/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='203'
+	info_['cat_id']='23'
 	info_['desc']='افلام و مسلسلات كرتون'
 	info_['icon']='https://www.stardima.com/watch/uploads/custom-logo.jpg'
 	info_['recherche_all']='0'

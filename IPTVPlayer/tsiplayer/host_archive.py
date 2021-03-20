@@ -12,7 +12,7 @@ def getinfo():
 	info_['name']=name
 	info_['version']='1.3 20/05/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='204'
+	info_['cat_id']='24'
 	info_['desc']='تسجيلات لتفسير و تلاوة القرآن'
 	info_['icon']='https://img.yumpu.com/62618769/1/358x516/holy-quran.jpg?quality=85'
 	info_['recherche_all']='0'

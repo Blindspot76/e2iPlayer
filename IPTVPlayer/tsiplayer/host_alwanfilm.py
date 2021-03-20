@@ -6,7 +6,7 @@ def getinfo():
     info_['name']='Alwan Film'
     info_['version']='1.0 27/12/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='افلام و مسلسلات كرتون'
     info_['icon']='https://i.ibb.co/Bj4mLP1/Sans-titre.png'
     info_['recherche_all']='0'

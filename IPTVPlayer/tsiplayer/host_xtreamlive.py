@@ -12,7 +12,7 @@ def getinfo():
 	info_['name']='Xtream IPTV (LIVE)'
 	info_['version']='1.0 24/04/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='120'
+	info_['cat_id']='10'
 	info_['desc']='مشاهدة القنوات مباشر من اشتراكات xtream'
 	info_['icon']='https://i.ibb.co/nPHsSDp/xtream-code-iptv.jpg'
 	info_['filtre']='xtream_active'

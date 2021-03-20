@@ -10,12 +10,12 @@ def getinfo():
     info_={}
     name = 'Arabseed'
     hst = tshost(name)	
-    if hst=='': hst = 'https://arabseed.cam'
+    if hst=='': hst = 'https://arabseed.onl'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.5.2 11/07/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'#'201'
+    info_['cat_id']='21'#'201'
     info_['desc']='أفلام و مسلسلات عربية و اجنبية'
     info_['icon']='https://i.ibb.co/7S7tWYb/arabseed.png'
     info_['recherche_all']='1'
@@ -28,6 +28,7 @@ class TSIPHost(TSCBaseHostClass):
         TSCBaseHostClass.__init__(self,{'cookie':'arabseed.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.MAIN_URL = getinfo()['host']
+        self.SiteName   = 'Arabseed'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         #self.getPage = self.cm.getPage
@@ -113,11 +114,13 @@ class TSIPHost(TSCBaseHostClass):
 
 
     def SearchResult(self,str_ch,page,extra):
+        elms = []
         url = self.MAIN_URL+'/find/?find='+str_ch+'&offset='+str(page)
         desc = [('Info','Ribbon">(.*?)</div>','',''),('Story','Story">(.*?)</div>','','')]
-        self.add_menu({'import':extra,'url':url},'','class="MovieBlock.*?href="(.*?)".*?(?:image=|img src=)"(.*?)"(.*?)<h4>(.*?)</h4>(.*?)</a>','','21',ind_0 = -1,ord=[0,3,1,2,4],Desc=desc,u_titre=True,EPG=True)		
+        data = self.add_menu({'import':extra,'url':url},'','class="MovieBlock.*?href="(.*?)".*?(?:image=|img src=)"(.*?)"(.*?)<h4>(.*?)</h4>(.*?)</a>','','21',ind_0 = -1,ord=[0,3,1,2,4],Desc=desc,u_titre=True,year_op=1,EPG=True)		
+        return data[2]
 
-    def MediaBoxResult(self,str_ch,year_,extra):
+    def MediaBoxResult1(self,str_ch,year_,extra):
         urltab=[]
         str_ch_o = str_ch
         str_ch = urllib.quote(str_ch_o+' '+year_)	

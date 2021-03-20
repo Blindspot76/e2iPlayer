@@ -4,9 +4,10 @@
 
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters.hoster import iHoster
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.parser import cParser
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.aadecode import AADecoder
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.packer import cPacker
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import cParser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import AADecoder
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import cPacker
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import VSlog
 
 import requests, re 
 

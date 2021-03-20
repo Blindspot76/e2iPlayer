@@ -16,7 +16,7 @@ def getinfo():
     info_['name']='Esheeq.Com'
     info_['version']='1.2.02 27/08/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='201'
+    info_['cat_id']='21'
     info_['desc']='أفلام و مسلسلات تركية'
     info_['icon']='https://i.ibb.co/dBxJK7F/esseq.png'
     info_['recherche_all']='1'
