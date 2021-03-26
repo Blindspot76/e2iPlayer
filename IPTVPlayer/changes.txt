@@ -1,3 +1,6 @@
+#2021.03.26.01
+-EuroSport Player javítva
+-Kisebb módosítások
 #2021.03.20.01
 -TSiPlayer frissítve
 #2021.03.18.01
