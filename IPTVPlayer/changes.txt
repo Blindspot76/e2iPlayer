@@ -1,3 +1,6 @@
+#2021.03.30.01
+-GamatoCom, GoWatchSeries javítva
+-Tárhelytámogatás bővítve (GosFD.eu)
 #2021.03.26.01
 -EuroSport Player javítva
 -Kisebb módosítások
