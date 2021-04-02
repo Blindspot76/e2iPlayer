@@ -33,7 +33,6 @@ hostclassiccinemaonline
 hostdailymotion
 hostdancetrippin
 hostddl
-hostdel
 hostdixmax
 hostdokumentalnenet
 hostdpstreamingcx
@@ -48,7 +47,6 @@ hosteurosportplayer
 hostfaselhdcom
 hostfavourites
 hostfenixsite
-hostfightvideo
 hostfilma24hdcom
 hostfilma24io
 hostfilman

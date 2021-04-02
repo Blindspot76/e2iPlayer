@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-03-08 by Blindspot - modified iptvhostgroups
+# 2021-04-02 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -110,7 +110,6 @@ class IPTVHostsGroups:
         'dailymotion' : [ 'hungarian', 'arabic', 'balkans', 'documentary', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'science', 'swedish'] ,
         'dancetrippin' : [ 'english', 'music'] ,        
         'ddl' : [ 'english', 'german', 'moviesandseries'] ,
-        'del' : [ 'german', 'sport'] ,
         'dixmax' : [ 'latino', 'moviesandseries'] ,
         'dokumentalnenet' : [ 'documentary', 'polish', 'science'] ,
         'dplayit' : [ 'italian'] ,
@@ -127,7 +126,6 @@ class IPTVHostsGroups:
         'favourites' : [ 'userdefined'] ,
         'fenixsite' : [ 'balkans', 'moviesandseries'] ,
         'fighttube' : [ 'polish', 'sport'] ,
-        'fightvideo' : [ 'english', 'sport'] ,
         'filma24hdcom' : [ 'balkans', 'moviesandseries'] ,
         'filma24io' : [ 'balkans', 'moviesandseries'] ,
         'filman' : [ 'polish', 'moviesandseries'] ,
