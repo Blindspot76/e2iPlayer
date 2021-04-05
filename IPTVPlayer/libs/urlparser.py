@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-03-29 by Blindspot
+# 2021-04-04 by Blindspot
 ###################################################
 ###################################################
 # LOCAL import
@@ -285,6 +285,7 @@ class urlparser:
                        'hdpass.online':         self.pp.parserHDPASSONLINE  ,
                        'hdplayer.casa':         self.pp.parserHDPLAYERCASA  ,
                        'hdvid.tv':              self.pp.parserHDVIDTV       ,
+                       'highstream.tv':         self.pp.parserCLIPWATCHINGCOM,
                        'hlstester.com':         self.pp.parserHLSTESTER,
                        'hofoot.allvidview.tk':  self.pp.parserVIUCLIPS      ,
                        'hofoot.koravidup.com':  self.pp.parserVIUCLIPS      ,
@@ -3739,24 +3740,22 @@ class pageParser(CaptchaHelper):
             printDBG(data)
             printDBG("----------------------")
 
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, 'window.hola_player({', '}, ', False)
-            printDBG(str(tmp))
-
-            for t in tmp:
-                if 'sources' in t:
-                    links= re.findall("src\s?:\s?['\"]([^\"^']+?)['\"]",t,re.S)
-
-                    for link_url in links:
-                        if  self.cm.isValidUrl(link_url):
-                            link_url = urlparser.decorateUrl(link_url, {'Referer': baseUrl})
-                            if 'm3u8' in link_url:
-                                params = getDirectM3U8Playlist(link_url, checkExt=True, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
-                                printDBG(str(params))
-                                urlTabs.extend(params)
-                            else:
-                                params = {'name': 'link' , 'url': link_url}
-                                printDBG(str(params))
-                                urlTabs.append(params)
+            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''jwplayer\([^\)]+?player[^\)]+?\)\.setup'''), re.compile(';'))[1]
+#            printDBG(str(data))
+            
+            if 'sources' in data:
+                items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''[\{\s]sources\s*[=:]\s*\['''), re.compile('''\]'''), False)[1].split('},')
+                for item in items:
+                    label   = self.cm.ph.getSearchGroups(item, 'label:[ ]*?"([^"]+?)"')[0]
+                    src     = self.cm.ph.getSearchGroups(item, 'file:[ ]*?"([^"]+?)"')[0]
+                    if  self.cm.isValidUrl(src):
+                        src = urlparser.decorateUrl(src, {'Referer': baseUrl})
+                        if 'm3u8' in src:
+                            params = getDirectM3U8Playlist(src, checkExt=True, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
+                            urlTabs.extend(params)
+                        else:
+                            params = {'name': 'mp4 ' + label, 'url': src}
+                            urlTabs.append(params)
 
         return urlTabs
 

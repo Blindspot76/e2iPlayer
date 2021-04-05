@@ -1,3 +1,5 @@
+#2021.04.05.01
+-Kisebb javítások
 #2021.04.02.01
 -Megszűnt szolgáltatók törölve
 #2021.03.30.01
