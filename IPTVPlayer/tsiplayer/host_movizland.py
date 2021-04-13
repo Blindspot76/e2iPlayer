@@ -11,7 +11,7 @@ def getinfo():
 	info_={}
 	name = 'Movizland.Com'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://4k.movizland.online'
+	if hst=='': hst = 'https://movizland.top'
 	info_['host']= hst
 	info_['name']=name
 	info_['version']='1.2.01 05/07/2020'
@@ -214,30 +214,11 @@ class TSIPHost(TSCBaseHostClass):
 		post_data = {'watch':'1'}
 		sts, data = self.getPage(Url,post_data=post_data)
 		if sts:
-			#Local server
+			printDBG('data::'+data)
+            #Local server
 			iframe = re.findall('EmbedCode">.*?<IFRAME.*?SRC="(.*?)"',data,re.S|re.IGNORECASE)			
 			if iframe:
-				sts, data0 = self.getPage(iframe[0])
-				if sts:
-					packed_ = re.findall('(eval\(.*?)</script>',data0,re.S)
-					if packed_: 
-						try:
-							packed = packed_[0].strip()
-							printDBG('packed='+packed)
-							unpacked = cPacker().unpack(packed)
-							printDBG('unpacked='+unpacked)
-							data0 = data0.replace(packed,unpacked)
-						except:
-							printDBG('erreur: packer')			
-					iframe = re.findall('{.{0,3}file:"(.*?)"(.*?)}',data0,re.S)
-					for (url,label) in iframe:			
-						if 'onclick' not in label:
-							if 'm3u8' in url: label='HLS'
-							label='|'+label.replace(',label:"','').replace('"','')+'| Moshahada'						
-							if 'm3u8' in url:
-								urlTab.append({'name':label, 'url':'hst#tshost#'+url, 'need_resolve':1,'type':'local'})
-							else:
-								urlTab.append({'name':label, 'url':url, 'need_resolve':0,'type':'local'})			
+				urlTab.append({'name':'Moshahda', 'url':iframe[0]+'|Referer='+Url, 'need_resolve':1,'type':'local'})
 			# other servers		
 			iframe = re.findall('<li data.*?">(.*?)<.*?srcout="(.*?)"',data,re.S|re.IGNORECASE)			
 			for (server,href) in iframe:

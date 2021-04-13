@@ -9,7 +9,7 @@ def getinfo():
 	info_={}
 	name = 'EgyDead.live'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://egydead.live'
+	if hst=='': hst = 'https://w.egydead.com'
 	info_['host']= hst
 	info_['name']=name
 	info_['version']='1.0.01 23/10/2020'

@@ -5,17 +5,17 @@
 
 import re
 import time
-import json
 from hashlib import sha1
 import hmac
 import binascii
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
 
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.gui.hoster import cHosterGui
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.gui.gui import cGui
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.inputParameterHandler import cInputParameterHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.outputParameterHandler import cOutputParameterHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.requestHandler import cRequestHandler
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress, VSPath  
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress, VSPath, VSlog, isMatrix
 
 
 UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'
@@ -51,7 +51,6 @@ URL_SEARCH_DRAMAS = (URL_SEARCH[0], 'showMovies')
 
 se = 'true'  # activation des sous titres
 # lang = 'en' ou 'fr'
-
 
 def load():
     oGui = cGui()
@@ -145,12 +144,12 @@ def showMovies(sSearch=''):
     oRequestHandler = cRequestHandler(url)
     oRequestHandler.addHeaderEntry('User-Agent', UA)
     oRequestHandler.addHeaderEntry('Accept-Language', '')
-    sJsonContent = oRequestHandler.request()
-    jsonrsp = json.loads(sJsonContent)
+    jsonrsp = oRequestHandler.request(jsonDecode=True)
 
     if not jsonrsp:
         oGui.addText(SITE_IDENTIFIER)
 
+    oOutputParameterHandler = cOutputParameterHandler()
     if len(jsonrsp['response']) > 0:
         total = len(jsonrsp['response'])
         progress_ = progress().VScreate(SITE_NAME)
@@ -168,14 +167,19 @@ def showMovies(sSearch=''):
                         sThumb = jsonrsp['response'][movie]['images']['poster']['url']  # thumb size 120ko
                         # sThumb = jsonrsp['response'][movie]['images']['atv_cover']['url']  # thumb size 800 ko
                         sUrl2 = URL_API + 'series/' + jsonrsp['response'][movie]['id'] + '/episodes.json?page=1&per_page=50&app=100000a&t=' + str(timestamp)
-                        sDesc = jsonrsp['response'][movie]['descriptions']['fr'].encode('utf-8', 'ignore')
-                        # sDesc = jsonrsp['response'][movie]['descriptions']['en'].encode('utf-8', 'ignore')
+                        
+                        sDesc = jsonrsp['response'][movie]['descriptions']['fr']
+                        
 
-                        oOutputParameterHandler = cOutputParameterHandler()
                         oOutputParameterHandler.addParameter('siteUrl', sUrl2)
                         oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
                         oOutputParameterHandler.addParameter('sThumb', sThumb)
-                        oOutputParameterHandler.addParameter('sDesc', sDesc)
+
+                        if not isMatrix():
+                            oOutputParameterHandler.addParameter('sDesc', sDesc.encode('utf-8', 'ignore'))
+                        else:
+                            oOutputParameterHandler.addParameter('sDesc', sDesc)
+
                         oGui.addTV(SITE_IDENTIFIER, 'showSaisons', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
                     else:
                         if (jsonrsp['response'][movie]['blocked'] == False):
@@ -196,15 +200,19 @@ def showMovies(sSearch=''):
                                 pass
 
                             sDesc = str(mt)
-                            sTitle = str(jsonrsp['response'][movie]['titles']['en'].encode('utf-8', 'ignore'))
+                            sTitle = str(jsonrsp['response'][movie]['titles']['en'])
                             sThumb = str(jsonrsp['response'][movie]['images']['poster']['url'])
                             sUrlApi = str(jsonrsp['response'][movie]['id'] + '@' +
                                           jsonrsp['response'][movie]['images']['poster']['url'] + '@' +
                                           subtitle_completion1 + '@' + subtitle_completion2 + '@' + mt)
 
-                            oOutputParameterHandler = cOutputParameterHandler()
                             oOutputParameterHandler.addParameter('siteUrl', sUrlApi)
-                            oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+                            
+                            if not isMatrix():
+                                oOutputParameterHandler.addParameter('sMovieTitle', sTitle.encode('utf-8', 'ignore'))
+                            else:
+                                oOutputParameterHandler.addParameter('sMovieTitle', sTitle)  
+
                             oOutputParameterHandler.addParameter('sThumb', sThumb)
                             oOutputParameterHandler.addParameter('sDesc', sDesc)
                             oGui.addMovie(SITE_IDENTIFIER, 'showLinks', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
@@ -240,9 +248,9 @@ def showSaisons():
     oRequestHandler = cRequestHandler(url)
     oRequestHandler.addHeaderEntry('User-Agent', UA)
     oRequestHandler.addHeaderEntry('Accept-Language', '')
-    sJsonContent = oRequestHandler.request()
-    jsonrsp = json.loads(sJsonContent)
+    jsonrsp = oRequestHandler.request(jsonDecode=True)
 
+    oOutputParameterHandler = cOutputParameterHandler()
     for episode in range(0, len(jsonrsp['response'])):
         try:
             if (jsonrsp['response'][episode]['blocked'] == False):
@@ -267,7 +275,6 @@ def showSaisons():
                            jsonrsp['response'][episode]['images']['poster']['url'] + '@' +
                            subtitle_completion1 + '@' + subtitle_completion2 + '@' + et)
 
-                oOutputParameterHandler = cOutputParameterHandler()
                 oOutputParameterHandler.addParameter('siteUrl', sUrl)
                 oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
                 oOutputParameterHandler.addParameter('sThumb', sThumb)
@@ -305,8 +312,7 @@ def showMovieGenre():
     oRequestHandler = cRequestHandler(url)
     oRequestHandler.addHeaderEntry('User-Agent', UA)
     oRequestHandler.addHeaderEntry('Accept-Language', '')
-    sJsonContent = oRequestHandler.request()
-    jsonrsp = json.loads(sJsonContent)
+    jsonrsp = oRequestHandler.request(jsonDecode=True)
 
     oOutputParameterHandler = cOutputParameterHandler()
     for genre in range(0, len(jsonrsp)):
@@ -327,8 +333,7 @@ def showSerieGenre():
     oRequestHandler = cRequestHandler(url)
     oRequestHandler.addHeaderEntry('User-Agent', UA)
     oRequestHandler.addHeaderEntry('Accept-Language', '')
-    sJsonContent = oRequestHandler.request()
-    jsonrsp = json.loads(sJsonContent)
+    jsonrsp = oRequestHandler.request(jsonDecode=True)
 
     oOutputParameterHandler = cOutputParameterHandler()
     for genre in range(0, len(jsonrsp)):
@@ -356,8 +361,8 @@ def showPays(genre):
     oRequestHandler = cRequestHandler(url)
     oRequestHandler.addHeaderEntry('User-Agent', UA)
     oRequestHandler.addHeaderEntry('Accept-Language', '')
-    sJsonContent = oRequestHandler.request()
-    jsonrsp = json.loads(sJsonContent)
+    jsonrsp = oRequestHandler.request(jsonDecode=True)
+
     # site ou il n'y a jamais rien
     sBlaccountryList = ['tw', 'ca', 'us', 'gb', 'th', 'ph', 'es']
 
@@ -379,22 +384,26 @@ def showPays(genre):
 def SIGN(url, pth):
     timestamp = str(int(time.time()))
     key = 'MM_d*yP@`&1@]@!AVrXf_o-HVEnoTnm$O-ti4[G~$JDI/Dc-&piU&z&5.;:}95=Iad'
-    rawtxt = '/v4/videos/' + url + pth + '?app=100005a&t=' + timestamp + '&site=www.viki.com'
-    hashed = hmac.new(key, rawtxt, sha1)
-    fullurl = 'https://api.viki.io' + rawtxt + '&sig=' + binascii.hexlify(hashed.digest())
+    rawtxt = '/v4/videos/'+url+pth+'?app=100005a&t='+timestamp+'&site=www.viki.com'
+    hashed = hmac.new(key.encode('utf-8'), rawtxt.encode('utf-8'), sha1)
+    signatura = binascii.hexlify(hashed.digest())
+    fullurl = 'https://api.viki.io' + rawtxt+'&sig='+signatura.decode('utf-8')
     return fullurl
 
-
 def GET_SUBTILES(url, subtitle_completion1, subtitle_completion2):
-    srtsubs_path1 = VSPath('special://temp/vstream_viki_SubFrench.srt')
-    srtsubs_path2 = VSPath('special://temp/vstream_viki_SubEnglish.srt')
+    srtsubs_path1 = 'special://temp/vstream_viki_SubFrench.srt'
+    srtsubs_path2 = 'special://temp/vstream_viki_SubEnglish.srt'
     try:
         if (int(subtitle_completion1) > 79 and se == 'true'):
             urlreq = SIGN(url, '/subtitles/fr.srt')
             oRequestHandler = cRequestHandler(urlreq)
             oRequestHandler.addHeaderEntry('User-Agent', UA)
             data = oRequestHandler.request()
-            with open(srtsubs_path1, "w") as subfile:
+
+            if isMatrix():
+                data = data.encode('latin-1')
+
+            with xbmcvfs.File(srtsubs_path1, "w") as subfile:
                 subfile.write(data)
 
         if (int(subtitle_completion2) > 0 and se == 'true'):
@@ -402,7 +411,11 @@ def GET_SUBTILES(url, subtitle_completion1, subtitle_completion2):
             oRequestHandler = cRequestHandler(urlreq)
             oRequestHandler.addHeaderEntry('User-Agent', UA)
             data = oRequestHandler.request()
-            with open(srtsubs_path2, "w") as subfile:
+
+            if isMatrix():
+                data = data.encode('latin-1')
+
+            with xbmcvfs.File(srtsubs_path2, "w") as subfile:
                 subfile.write(data)
         else:
             # VSlog('GET_SUBTILES:erreur completion')
@@ -421,8 +434,12 @@ def GET_URLS_STREAM(url):
     urlreq = SIGN(url, '/streams.json')
     oRequestHandler = cRequestHandler(urlreq)
     oRequestHandler.addHeaderEntry('User-Agent', UA)
-    sJsonContent = oRequestHandler.request()
-    jsonrsp = json.loads(sJsonContent)
+    oRequestHandler.addHeaderEntry('authority', 'manifest-viki.viki.io')
+    oRequestHandler.addHeaderEntry('accept', '*/*')
+    oRequestHandler.addHeaderEntry('x-viki-app-ver', '6.0.0')
+    oRequestHandler.addHeaderEntry('origin', 'https://www.viki.com')
+    oRequestHandler.addHeaderEntry('referer', url)
+    jsonrsp = oRequestHandler.request(jsonDecode=True)
 
     testeurl = ''
     testeq = ''
@@ -439,7 +456,6 @@ def GET_URLS_STREAM(url):
     # ajout du teste à enlever + 1 à revoir et
     streamUrlList.append(testeurl)
     validq.append(testeq)
-
     return validq, streamUrlList
 
 

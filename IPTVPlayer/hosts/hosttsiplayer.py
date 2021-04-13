@@ -86,14 +86,24 @@ class TSIPlayer(CBaseHostClass):
         self.tsiplayer_host({'cat_id':'901','ordre':0})
         self.addDir({'name':'cat','category' : 'FilmsSeriesAr','title':'Arabic Section','desc':'Arabic section','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
         #self.addDir({'name':'cat','category' : 'FilmsSeriesFr','title':'French Section','desc':'Films, Series et Animes en Vf et Vostfr','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
-        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/'):
+        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/resources/'):
             desc=tscolor('\c00????00')+'Une version '+tscolor('\c0000????')+'"Non Officielle"'+ '\\n'        
             desc=desc + tscolor('\c00????00')+'Info:'+tscolor('\c00??????')+' '+'vStream est un addon KODI de streaming videos'+'\\n'
             desc=desc+tscolor('\c00????00')+'Version:'+tscolor('\c00??????')+' '+'25/02/2021'+'\\n'
             desc=desc+tscolor('\c00????00')+'Source:'+tscolor('\c00??????')+' '+'https://github.com/Kodi-vStream/venom-xbmc-addons/'+'\\n'
             desc=desc+tscolor('\c00????00')+'Developpeur:'+tscolor('\c00??????')+' '+'vStream Team | '+ tscolor('\c00????00')+'Adaptation pour Tsiplayer: '+tscolor('\c00??????')+'RGYSoft'+'\\n'
             elm = {'category': 'host2', 'import': 'from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.host_vstream import ', 'icon': 'https://i.ibb.co/Rj3P6HP/icon.png', 'mode': '03', 'title': 'French Section (VSTREAM)','desc':desc}
-            self.addDir(elm )	
+            self.addDir(elm )
+        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/kod/'):
+            desc=tscolor('\c00????00')+'Une version '+tscolor('\c0000????')+'"Non Officielle"'+ '\\n'        
+            desc=desc + tscolor('\c00????00')+'Info:'+tscolor('\c00??????')+' '+'Kodi on Demand est un addon KODI de streaming videos'+'\\n'
+            desc=desc+tscolor('\c00????00')+'Version:'+tscolor('\c00??????')+' '+'25/03/2021'+'\\n'
+            desc=desc+tscolor('\c00????00')+'Source:'+tscolor('\c00??????')+' '+'https://github.com/Kodi-vStream/venom-xbmc-addons/'+'\\n'
+            desc=desc+tscolor('\c00????00')+'Developpeur:'+tscolor('\c00??????')+' '+'vStream Team | '+ tscolor('\c00????00')+'Adaptation pour Tsiplayer: '+tscolor('\c00??????')+'RGYSoft'+'\\n'
+            elm = {'category': 'host2', 'import': 'from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.host_kod import ', 'icon': 'https://i.ibb.co/Rj3P6HP/icon.png', 'mode': '03', 'title': 'Italien Section (KOD)','desc':desc}
+            self.addDir(elm )
+
+            
         self.addDir({'name':'cat','category' : 'FilmsSeriesEn','title':'English section','desc':'Films, Series & Animes (Eng)','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
         self.addDir({'name':'cat','category' : 'SportLiveReplay','title':'LIVE & Replay','desc':'Live & Replay','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
 
@@ -386,15 +396,15 @@ class TSIPlayer(CBaseHostClass):
         elif category == 'Addons':
             self.AddonsCat()
         else:
+            #try:
             try:
-                try:
-                    xx = len(sys.argv)
-                except:
-                    sys.argv = ''
-                exec('self.'+category+'_host(self.currItem)')
-            except Exception, e:
-                self.PrintExTs(e)
-                printDBG('erreeuuu')
+                xx = len(sys.argv)
+            except:
+                sys.argv = ''
+            exec('self.'+category+'_host(self.currItem)')
+            #except Exception, e:
+            #    self.PrintExTs(e)
+            #    printDBG('erreeuuu')
 
         CBaseHostClass.endHandleService(self, index, refresh)
 

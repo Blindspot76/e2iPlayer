@@ -19,6 +19,7 @@ import re
 import cookielib
 import time
 import urllib
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser  import urlparser as ts_urlparser
 
 def getinfo():
     info_={}
@@ -49,7 +50,7 @@ class TSIPHost(TSCBaseHostClass):
         
         TSCBaseHostClass.__init__(self,{'cookie':'movs4u.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'https://www.movs4u.ws'
+        self.MAIN_URL = 'https://www.movs4u.cc'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.defaultParams = {'timeout':9,'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         #self.getPage = self.cm.getPage
@@ -518,7 +519,7 @@ class TSIPHost(TSCBaseHostClass):
                                             urlTab.append(('Aflamyz ('+_label+')|'+_url,'4'))										
                     break
 
-                elif (self.up.checkHostSupport(videoUrl) == 1):	
+                elif (self.up.checkHostSupport(videoUrl) == 1) or (ts_urlparser().checkHostSupport(videoUrl) == 1):	
                     printDBG('3')
                     urlTab.append((videoUrl,'1'))
                     break

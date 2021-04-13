@@ -8,7 +8,7 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.inputP
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.outputParameterHandler import cOutputParameterHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.parser import cParser
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress, isMatrix
 
 SITE_IDENTIFIER = 'adkami_com'
 SITE_NAME = 'ADKami'
@@ -17,25 +17,25 @@ SITE_DESC = 'Bienvenue sur ADKami un site Animés, Mangas & Séries en streaming
 URL_MAIN = 'https://www.adkami.com/'
 
 ANIM_ANIMS = (True, 'showAnimMenu')
-ANIM_NEWS = (URL_MAIN + 'anime', 'showMovies')
+ANIM_NEWS = (URL_MAIN + 'anime', 'showSeries')
 ANIM_LIST = (URL_MAIN + 'video?search=&n=&g=&s=&v=&t=0&p=&order=&d1=&d2=&e=&m=&q=&l=', 'showAZ')
-ANIM_VIEWS = (URL_MAIN + 'video?search=&t=0&order=3', 'showMovies')
+ANIM_VIEWS = (URL_MAIN + 'video?search=&t=0&order=3', 'showSeries')
 
 SERIE_SERIES = (True, 'showSerieMenu')
-SERIE_NEWS = (URL_MAIN + 'serie', 'showMovies')
+SERIE_NEWS = (URL_MAIN + 'serie', 'showSeries')
 SERIE_LIST = (URL_MAIN + 'video?search=&n=&g=&s=&v=&t=1&p=&order=&d1=&d2=&e=&m=&q=&l=', 'showAZ')
-SERIE_VIEWS = (URL_MAIN + 'video?search=&t=1&order=3', 'showMovies')
+SERIE_VIEWS = (URL_MAIN + 'video?search=&t=1&order=3', 'showSeries')
 
 DRAMA_DRAMAS = (True, 'showDramaMenu')
-DRAMA_NEWS = (URL_MAIN + 'drama', 'showMovies')
+DRAMA_NEWS = (URL_MAIN + 'drama', 'showSeries')
 DRAMA_LIST = (URL_MAIN + 'video?search=&n=&g=&s=&v=&t=5&p=&order=&d1=&d2=&e=&m=&q=&l=', 'showAZ')
-DRAMA_VIEWS = (URL_MAIN + 'video?search=&t=5&order=3', 'showMovies')
+DRAMA_VIEWS = (URL_MAIN + 'video?search=&t=5&order=3', 'showSeries')
 
-URL_SEARCH = (URL_MAIN + 'video?search=', 'showMovies')
-URL_SEARCH_SERIES = (URL_MAIN + 'video?t=1&order=0&search=', 'showMovies')
-URL_SEARCH_DRAMAS = (URL_MAIN + 'video?t=5&order=0&search=', 'showMovies')
-URL_SEARCH_ANIMS = (URL_MAIN + 'video?t=0&order=0&search=', 'showMovies')
-FUNCTION_SEARCH = 'showMovies'
+URL_SEARCH = (URL_MAIN + 'video?search=', 'showSeries')
+URL_SEARCH_SERIES = (URL_MAIN + 'video?t=1&order=0&search=', 'showSeries')
+URL_SEARCH_DRAMAS = (URL_MAIN + 'video?t=5&order=0&search=', 'showSeries')
+URL_SEARCH_ANIMS = (URL_MAIN + 'video?t=0&order=0&search=', 'showSeries')
+FUNCTION_SEARCH = 'showSeries'
 
 
 def load():
@@ -114,7 +114,7 @@ def showSearchSerie():
     sSearchText = oGui.showKeyBoard()
     if (sSearchText != False):
         sUrl = URL_SEARCH_SERIES[0] + sSearchText
-        showMovies(sUrl)
+        showSeries(sUrl)
         oGui.setEndOfDirectory()
         return
 
@@ -125,7 +125,7 @@ def showSearchAnim():
     sSearchText = oGui.showKeyBoard()
     if (sSearchText != False):
         sUrl = URL_SEARCH_ANIMS[0] + sSearchText
-        showMovies(sUrl)
+        showSeries(sUrl)
         oGui.setEndOfDirectory()
         return
 
@@ -136,7 +136,7 @@ def showSearchDrama():
     sSearchText = oGui.showKeyBoard()
     if (sSearchText != False):
         sUrl = URL_SEARCH_DRAMAS[0] + sSearchText
-        showMovies(sUrl)
+        showSeries(sUrl)
         oGui.setEndOfDirectory()
         return
 
@@ -147,7 +147,7 @@ def showSearch():
     sSearchText = oGui.showKeyBoard()
     if (sSearchText != False):
         sUrl = URL_SEARCH[0] + sSearchText
-        showMovies(sUrl)
+        showSeries(sUrl)
         oGui.setEndOfDirectory()
         return
 
@@ -189,7 +189,7 @@ def showGenre():
     oOutputParameterHandler = cOutputParameterHandler()
     for sTitle, sUrl in liste:
         oOutputParameterHandler.addParameter('siteUrl', sUrl)
-        oGui.addDir(SITE_IDENTIFIER, 'showMovies', sTitle, 'genres.png', oOutputParameterHandler)
+        oGui.addDir(SITE_IDENTIFIER, 'showSeries', sTitle, 'genres.png', oOutputParameterHandler)
 
     oGui.setEndOfDirectory()
 
@@ -209,7 +209,7 @@ def showAZ():
         sUrl2 = sUrl + str(i)
 
         oOutputParameterHandler.addParameter('siteUrl', sUrl2)
-        oGui.addDir(SITE_IDENTIFIER, 'showMovies', '[COLOR teal] Lettre [COLOR red]' + str(i).upper() + '[/COLOR]', 'az.png', oOutputParameterHandler)
+        oGui.addDir(SITE_IDENTIFIER, 'showSeries', '[COLOR teal] Lettre [COLOR red]' + str(i).upper() + '[/COLOR]', 'az.png', oOutputParameterHandler)
 
     oGui.setEndOfDirectory()
 
@@ -228,7 +228,7 @@ def showNoAlpha():
     sHtmlContent = oParser.parse(sHtmlContent, sPattern)
 
     # regex pour listage sur la partie decoupée
-    sPattern = '<span class="top"><a href="([^"]+)"><span class="title">([^<]+)</span>'
+    sPattern = 'data-original="([^"]+)".+?<span class="top"><a href="([^"]+)"><span class="title">([^<]+)</span>'
     aResult = oParser.parse(sHtmlContent, sPattern)
 
     if (aResult[0] == False):
@@ -239,23 +239,25 @@ def showNoAlpha():
 
         for aEntry in aResult[1]:
 
-            sUrl2 = aEntry[0]
-            sTitle = aEntry[1]  # .decode("unicode_escape").encode("latin-1")
+            sThumb = aEntry[0]
+            sUrl2 = aEntry[1]
+            sTitle = aEntry[2]
 
             oOutputParameterHandler.addParameter('siteUrl', sUrl2)
             oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+            oOutputParameterHandler.addParameter('sThumb', sThumb)
 
             if 't=1' in sUrl:
-                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'series.png', '', '', oOutputParameterHandler)
+                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'series.png', sThumb, '', oOutputParameterHandler)
             elif 't=5' in sUrl:
-                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'dramas.png', '', '', oOutputParameterHandler)
+                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'dramas.png', sThumb, '', oOutputParameterHandler)
             else:
-                oGui.addAnime(SITE_IDENTIFIER, 'showEpisode', sTitle, 'animes.png', '', '', oOutputParameterHandler)
+                oGui.addAnime(SITE_IDENTIFIER, 'showEpisode', sTitle, 'animes.png', sThumb, '', oOutputParameterHandler)
 
     oGui.setEndOfDirectory()
 
 
-def showMovies(sSearch=''):
+def showSeries(sSearch=''):
     oGui = cGui()
     if sSearch:
         sUrl = sSearch.replace(' ', '+')
@@ -267,7 +269,7 @@ def showMovies(sSearch=''):
     sHtmlContent = oRequestHandler.request()
 
     oParser = cParser()
-    sPattern = 'class="top">\s*<a href="([^"]+)">\s*<span class="title">([^<]+)'
+    sPattern = 'data-original="([^"]+)".+?class="top">.+?<a href="([^"]+)">.+?<span class="title">([^<]+)'
     aResult = oParser.parse(sHtmlContent, sPattern)
 
     if (aResult[0] == False):
@@ -283,18 +285,20 @@ def showMovies(sSearch=''):
             if progress_.iscanceled():
                 break
 
-            sUrl2 = aEntry[0]
-            sTitle = aEntry[1]
+            sThumb = aEntry[0]
+            sUrl2 = aEntry[1]
+            sTitle = aEntry[2]
 
             oOutputParameterHandler.addParameter('siteUrl', sUrl2)
             oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+            oOutputParameterHandler.addParameter('sThumb', sThumb)
 
             if 't=1' in sUrl:
-                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'series.png', '', '', oOutputParameterHandler)
+                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'series.png', sThumb, '', oOutputParameterHandler)
             elif 't=5' in sUrl:
-                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'dramas.png', '', '', oOutputParameterHandler)
+                oGui.addTV(SITE_IDENTIFIER, 'showEpisode', sTitle, 'dramas.png', sThumb, '', oOutputParameterHandler)
             else:
-                oGui.addAnime(SITE_IDENTIFIER, 'showEpisode', sTitle, 'animes.png', '', '', oOutputParameterHandler)
+                oGui.addAnime(SITE_IDENTIFIER, 'showEpisode', sTitle, 'animes.png', sThumb, '', oOutputParameterHandler)
 
         progress_.VSclose(progress_)
 
@@ -303,7 +307,7 @@ def showMovies(sSearch=''):
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
             sNumPage = re.search('page=([0-9]+)', sNextPage).group(1)
-            oGui.addNext(SITE_IDENTIFIER, 'showMovies', 'Page ' + sNumPage, oOutputParameterHandler)
+            oGui.addNext(SITE_IDENTIFIER, 'showSeries', 'Page ' + sNumPage, oOutputParameterHandler)
 
     if not sSearch:
         oGui.setEndOfDirectory()
@@ -324,19 +328,18 @@ def showEpisode():
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
+    sThumb = oInputParameterHandler.getValue('sThumb')
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
 
     oParser = cParser()
     # info anime et serie
-    sThumb = ''
     sDesc = ''
     try:
-        sPattern = '<img itemprop="image".+?src="([^"]+).+?<strong>(.+?)</strong>'
+        sPattern = '<p class="description.+?">([^<]+)<a title'
         aResult = oParser.parse(sHtmlContent, sPattern)
         if (aResult[0] == True):
-            sThumb = aResult[1][0][0]
             sDesc = aResult[1][0][1]
             sDesc = sDesc.replace('<br />', '')
     except:
@@ -356,10 +359,12 @@ def showEpisode():
             oOutputParameterHandler = cOutputParameterHandler()
             for aEntry in aResult[1]:
                 if aEntry[0]:
-                    oGui.addText(SITE_IDENTIFIER, '[COLOR red]' + aEntry[0].capitalize() + '[/COLOR]')
+                    sSaison = aEntry[0].capitalize()
+                    oGui.addText(SITE_IDENTIFIER, '[COLOR red]' + sSaison + '[/COLOR]')
                 else:
                     sUrl = aEntry[1]
-                    sTitle = sMovieTitle + ' ' + aEntry[2]
+                    sEpisode = aEntry[2]
+                    sTitle = sMovieTitle + ' ' + sSaison + ' ' + sEpisode
                     sTitle = re.sub(' vf', ' (VF)', sTitle, re.IGNORECASE)
                     sDisplayTitle = re.sub(' vostfr', ' (VOSTFR)', sTitle, re.IGNORECASE)
                     sTitle = sDisplayTitle.replace(' (VF)', '').replace(' (VOSTFR)', '')
@@ -385,20 +390,23 @@ def showLinks():
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
 
-    sPattern = 'video-iframe.+?data-url="([^"]+)'
     oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    if not aResult[0]:
-        sPattern = '<iframe.+?src="([^"]+)"'
+    if "crunchyroll" in str(sHtmlContent) or "wakanim" in str(sHtmlContent) or "animedigitalnetwork" in str(sHtmlContent):
+        sPattern = 'encrypted-media.+?src="([^"]+)"'
         aResult = oParser.parse(sHtmlContent, sPattern)
 
+    else:
+        sPattern = '<div class="video-iframe.+?url="([^"]+)"'
+        aResult = oParser.parse(sHtmlContent, sPattern)
+        if not aResult[0]:
+            sPattern = 'class="video-video">.+?src="([^"]+)"'
+            aResult = oParser.parse(sHtmlContent, sPattern)
+    
     oOutputParameterHandler = cOutputParameterHandler()
     for aEntry in aResult[1]:
         sUrl = aEntry.replace('+', 'plus')
-        try:
+        if 'youtube' in sUrl and not 'hl=fr' in sUrl:
             sUrl = decodex(sUrl)
-        except Exception:
-            pass
 
         if sUrl.startswith('//'):
             sUrl = 'https:' + sUrl
@@ -455,6 +463,9 @@ def decodex(x):
 
     px = chain(e)
     for y in list(px):
-        t += chr(int(175 ^ ord(y[0])) - ord(r[a]))
+        if isMatrix():
+            t += chr(int(175 ^ y) - ord(r[a]))
+        else:
+            t += chr(int(175 ^ ord(y[0])) - ord(r[a]))
         a = 0 if a > len(r) - 2 else a + 1
     return t

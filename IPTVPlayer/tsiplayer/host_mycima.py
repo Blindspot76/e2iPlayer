@@ -15,7 +15,7 @@ def getinfo():
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'mycima.cookie'})
-        self.MAIN_URL   = 'https://mycima.video'
+        self.MAIN_URL   = 'https://ww.mycima.ch'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.011'
         self.HEADER     = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}

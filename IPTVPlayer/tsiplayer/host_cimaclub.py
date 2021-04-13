@@ -10,7 +10,7 @@ def getinfo():
 	info_={}
 	name = 'Cimaclub.Com'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://www.cimaclub.io'
+	if hst=='': hst = 'https://www.cimaclub.best'
 	info_['host']= hst
 	info_['name']=name
 	info_['version']='1.1.02 27/08/2020'

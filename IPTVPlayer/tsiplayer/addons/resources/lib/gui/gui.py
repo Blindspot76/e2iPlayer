@@ -14,6 +14,7 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.util import Qu
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetCacheSubDir
 import urllib
 import pickle
+import time
 
 class cGui:
 
@@ -243,7 +244,6 @@ class cGui:
         #oOutputParameterHandler.clearParameter()
 
     def TsiplayerWrite(self,oGuiElement, oOutputParameterHandler):
-        printDBG('addTsiplayerWrite0001:')
         sPluginPath='Tsiplayer'
         sParams    = oOutputParameterHandler.getParameterAsUri()     
         sId        = oGuiElement.getSiteName()
@@ -253,14 +253,13 @@ class cGui:
         sThumbnail = oGuiElement.getThumbnail()
         sMeta      = oGuiElement.getMeta()
         sItemUrl = '%s?site=%s&function=%s&title=%s&meta=%s&%s' % (sPluginPath, sId, sFunction, urllib.quote_plus(str(sLabel)),sMeta, sParams)
-        printDBG('sItemUrl='+sItemUrl)
-        printDBG('sThumbnail='+sThumbnail)
-        printDBG('sIcon='+sIcon) 
         if sIcon == 'special://home/addons/plugin.video.vstream/resources/art/':
             sIcon = sThumbnail  
-        PIK = self.MyPath() + "VStream_listing.dat"
-        data = [oGuiElement, oOutputParameterHandler]
-        with open(PIK, "a+") as f:
+        #PIK = self.MyPath() + "VStream_listing.dat"
+        PIK = self.MyPath() + ("tmdb/VStream_listing_%s.dat" % sId)
+        time_now = round(time.time() * 1000)
+        data = [oGuiElement, oOutputParameterHandler,time_now]
+        with open(PIK, "a+b") as f:
             pickle.dump(data, f)        
         return ''
         

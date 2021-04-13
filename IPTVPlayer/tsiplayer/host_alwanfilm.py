@@ -26,7 +26,7 @@ class TSIPHost(TSCBaseHostClass):
        
     def showitms(self,cItem):
         desc = [('Date','</h3>(.*?)</span>','',''),('Rating','rating">(.*?)</div>','',''),('Quality','quality">(.*?)</div>','','')]
-        self.add_menu(cItem,'','class="item .*?alt="(.*?)".*?src="(.*?)"(.*?)href="(.*?)"(.*?)</article>','','video',ord=[3,0,1,2,4],Desc=desc)
+        self.add_menu(cItem,'','class="item.*?src="(.*?)"(.*?)href="(.*?)".*?<h3>(.*?)</h3>(.*?)</article>','','video',ord=[2,3,0,1,4],Desc=desc)
 
     def SearchResult(self,str_ch,page,extra):
         url = self.MAIN_URL+'/?s='+str_ch

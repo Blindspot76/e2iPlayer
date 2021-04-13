@@ -9,7 +9,7 @@ def getinfo():
     info_={}
     name = 'Arblionz'
     hst = tshost(name)	
-    if hst=='': hst = 'https://new.arblionz.org'
+    if hst=='': hst = 'https://arblionz.cam'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2 13/03/2021'
@@ -42,7 +42,7 @@ class TSIPHost(TSCBaseHostClass):
             new_url=self.std_url(new_url)
             sts,data = self.cm.getPage(new_url, addParams, post_data)
         elif str(data).strip() == '':
-            url0       = 'https://new.arblionz.org/ajax'
+            url0       = self.MAIN_URL+'/ajax'
             post_data0 = {'action':'action_page_load'}
             addParams0 = dict(self.defaultParams)
             addParams0['header']['X-Requested-With'] = 'XMLHttpRequest'

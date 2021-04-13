@@ -69,7 +69,7 @@ class TSIPHost(TSCBaseHostClass):
         url = self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
         desc = [('Type','<span class="(tvshows|movies)"','',''),('Rating','class="rating">(.*?)</span>','',''),('Year','class="year">(.*?)</span>','',''),
                 ('Story','contenido">(.*?)</div>','\n','')]
-        self.add_menu({'import':extra,'url':url},'','result-item">.*?href="(.*?)".*?-src="(.*?)".*?alt="(.*?)"(.*?)</article>','','31',ord=[0,2,1,3],Desc=desc)
+        self.add_menu({'import':extra,'url':url},'','result-item">.*?href="(.*?)".*?src="(.*?)".*?alt="(.*?)"(.*?)</article>','','31',ord=[0,2,1,3],Desc=desc)
 
 
     def get_links(self,cItem):

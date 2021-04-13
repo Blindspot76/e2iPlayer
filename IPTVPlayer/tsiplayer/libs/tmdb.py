@@ -3,28 +3,19 @@
 # Modif pour vStream
 # https://github.com/Kodi-vStream/venom-xbmc-addons/
 
-import re
+import re,os
 import json
-
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
 import string
-import webbrowser
-
-
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.util import QuotePlus
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import addon, dialog, VSlog, VSPath, isMatrix, xbmc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 
 try:
     import urllib2
+    import urllib    
 except ImportError:
     import urllib.request as urllib2 
+    import urllib.parse as urllib
 
-try:
-    from sqlite3 import dbapi2 as sqlite
-    VSlog('SQLITE 3 as DB engine for tmdb')
-except:
-    from pysqlite2 import dbapi2 as sqlite
-    VSlog('SQLITE 2 as DB engine for tmdb')
+from sqlite3 import dbapi2 as sqlite
 
 class cTMDb:
 
@@ -65,35 +56,25 @@ class cTMDb:
     URL_TRAILER = 'plugin://plugin.video.youtube/play/?video_id=%s' # ancien : 'plugin://plugin.video.youtube/?action=play_video&videoid=%s'
     from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetCacheSubDir
     CACHE = GetCacheSubDir('Tsiplayer')+'video_cache.db'
-
-    # important seul xbmcvfs peux lire le special
-    if not isMatrix():
-        REALCACHE = VSPath(CACHE).decode('utf-8')
-    else:
-        REALCACHE = VSPath(CACHE)
-
-
+    REALCACHE = CACHE.decode('utf-8')
+    
     def __init__(self, api_key='', debug=False, lang='fr'):
 
-        self.ADDON = addon()
-        
-        self.api_key = self.ADDON.getSetting('api_tmdb')
-        self.debug = debug
-        self.lang = lang
-        self.poster = 'https://image.tmdb.org/t/p/%s' % self.ADDON.getSetting('poster_tmdb')
-        self.fanart = 'https://image.tmdb.org/t/p/%s' % self.ADDON.getSetting('backdrop_tmdb')
+        self.api_key = 'b7cf9324cbeb6f4fb811144aa9397093'
+        self.debug   = False
+        self.lang    = lang
+        self.poster  = 'https://image.tmdb.org/t/p/w342'
+        self.fanart  = 'https://image.tmdb.org/t/p/%s'
 
         try:
-            if not xbmcvfs.exists(self.CACHE):
-                # f = open(self.cache, 'w')
-                # f.close()
+            if not os.path.exists(self.CACHE):
                 self.db = sqlite.connect(self.REALCACHE)
                 self.db.row_factory = sqlite.Row
                 self.dbcur = self.db.cursor()
                 self.__createdb()
                 return
         except:
-            VSlog('Error: Unable to write on %s' % self.REALCACHE)
+            printDBG('Error: Unable to write on %s' % self.REALCACHE)
             pass
 
         try:
@@ -101,7 +82,7 @@ class cTMDb:
             self.db.row_factory = sqlite.Row
             self.dbcur = self.db.cursor()
         except:
-            VSlog('Error: Unable to connect to %s' % self.REALCACHE)
+            printDBG('Error: Unable to connect to %s' % self.REALCACHE)
             pass
 
     def __createdb(self):
@@ -133,7 +114,7 @@ class cTMDb:
         try:
             self.dbcur.execute(sql_create)
         except:
-            VSlog('Error: Cannot create table movie')
+            printDBG('Error: Cannot create table movie')
 
         sql_create = "CREATE TABLE IF NOT EXISTS tvshow ("\
                      "imdb_id TEXT, "\
@@ -192,7 +173,7 @@ class cTMDb:
                      ");"
 
         self.dbcur.execute(sql_create)
-        VSlog('table movie creee')
+        printDBG('table movie creee')
 
     def __del__(self):
         """ Cleanup db when object destroyed """
@@ -201,45 +182,6 @@ class cTMDb:
             self.db.close()
         except:
             pass
-
-    def getToken(self):
-
-        result = self._call('authentication/token/new', '')
-
-        total = len(result)
-
-        if (total > 0):
-            url = 'https://www.themoviedb.org/authenticate/'
-            if not xbmc.getCondVisibility('system.platform.android'):
-                #Si possible on ouvre la page automatiquement dans un navigateur internet.
-                webbrowser.open(url + result['request_token'])
-                sText = (self.ADDON.VSlang(30421)) % (url, result['request_token'])
-                DIALOG = dialog()
-                if not DIALOG.VSyesno(sText):
-                    return False
-            else:
-                from resources.lib import pyqrcode
-                qr = pyqrcode.create(url + result['request_token'])
-                qr.png('special://home/userdata/addon_data/plugin.video.vstream/qrcode.png', scale=5)
-                oSolver = cInputWindowYesNo(captcha='special://home/userdata/addon_data/plugin.video.vstream/qrcode.png', msg="Scanner le QRCode pour acceder au lien d'autorisation", roundnum=1)
-                retArg = oSolver.get()
-                DIALOG = dialog()
-                if retArg == "N":
-                    return False
-
-            result = self._call('authentication/session/new', 'request_token=' + result['request_token'])
-
-            if 'success' in result and result['success']:
-                self.ADDON.setSetting('tmdb_session', str(result['session_id']))
-                DIALOG.VSinfo(self.ADDON.VSlang(30000))
-                return
-            else:
-                DIALOG.VSerror('Erreur' + self.ADDON.VSlang(30000))
-                return
-
-            # xbmc.executebuiltin('Container.Refresh')
-            return
-        return
 
     # cherche dans les films ou serie l'id par le nom, return ID ou FALSE
     def get_idbyname(self, name, year='', mediaType='movie', page=1):
@@ -257,9 +199,9 @@ class cTMDb:
             pass
 
         if year:
-            term = QuotePlus(name) + '&year=' + year
+            term = urllib.quote_plus(name) + '&year=' + year
         else:
-            term = QuotePlus(name)
+            term = urllib.quote_plus(name)
 
         meta = self._call('search/' + str(mediaType), 'query=' + term + '&page=' + str(page))
 
@@ -269,18 +211,7 @@ class cTMDb:
 
         # cherche 1 seul resultat
         if 'total_results' in meta and meta['total_results'] != 0:
-            if meta['total_results'] > 1:
-                qua = []
-                url = []
-                for aEntry in meta['results']:
-                   url.append(aEntry["id"])
-                   qua.append(aEntry['name'])
-
-                #Affichage du tableau
-                tmdb_id = dialog().VSselectqual(qua, url)
-
-            else:
-                tmdb_id = meta['results'][0]['id']
+            tmdb_id = meta['results'][0]['id']
             return tmdb_id
 
         else:
@@ -294,9 +225,9 @@ class cTMDb:
         name = re.sub(" +", " ", name)  # nettoyage du titre
 
         if year:
-            term = QuotePlus(name) + '&year=' + year
+            term = urllib.quote_plus(name) + '&year=' + year
         else:
-            term = QuotePlus(name)
+            term = urllib.quote_plus(name)
 
         meta = self._call('search/movie', 'query=' + term + '&page=' + str(page))
 
@@ -354,7 +285,7 @@ class cTMDb:
 
         name = re.sub(" +", " ", name)  # nettoyage du titre
 
-        term = QuotePlus(name)
+        term = urllib.quote_plus(name)
 
         meta = self._call('search/collection', 'query=' + term)
 
@@ -408,9 +339,9 @@ class cTMDb:
     def search_tvshow_name(self, name, year='', page=1, genre=''):
 
         if year:
-            term = QuotePlus(name) + '&year=' + year
+            term = urllib.quote_plus(name) + '&year=' + year
         else:
-            term = QuotePlus(name)
+            term = urllib.quote_plus(name)
 
         meta = self._call('search/tv', 'query=' + term + '&page=' + str(page))
         if 'errors' not in meta and 'status_code' not in meta:
@@ -465,7 +396,7 @@ class cTMDb:
     # Search for person by name.
     def search_person_name(self, name):
         name = re.sub(" +", " ", name)  # nettoyage du titre
-        term = QuotePlus(name)
+        term = urllib.quote_plus(name)
 
         meta = self._call('search/person', 'query=' + term)
 
@@ -532,6 +463,7 @@ class cTMDb:
         _meta['tmdb_id'] = ''
         _meta['tvdb_id'] = ''
         _meta['title'] = name
+        _meta['original_title'] = ''        
         _meta['media_type'] = ''
         _meta['rating'] = 0
         _meta['votes'] = 0
@@ -560,7 +492,10 @@ class cTMDb:
             _meta['title'] = meta['title']
         elif 'name' in meta and meta['name']:
             _meta['title'] = meta['name']
-
+            
+        if 'original_title' in meta:
+            _meta['original_title'] = meta['original_title']
+        
         if 'id' in meta:
             _meta['tmdb_id'] = meta['id']
         if 'tmdb_id' in meta:
@@ -608,9 +543,9 @@ class cTMDb:
         try:
             duration = 0
             if 'runtime' in meta and meta['runtime']:
-                duration = float(meta['runtime'])
+                duration = int(meta['runtime'])
             elif 'episode_run_time' in meta and meta['episode_run_time']:
-                duration = float(meta['episode_run_time'][0])
+                duration = int(meta['episode_run_time'][0])
             
             if duration < 300 : # en minutes
                 duration *= 60  # Convertir les minutes TMDB en secondes pour KODI
@@ -658,8 +593,7 @@ class cTMDb:
                 else:
                     _meta['genre'] += ' / ' + genre
 
-            if not isMatrix():
-                _meta['genre'] = unicode(_meta['genre'], 'utf-8')
+            _meta['genre'] = unicode(_meta['genre'], 'utf-8')
 
         elif 'parts' in meta:   # Il s'agit d'une collection, on récupere le genre du premier film 
             genres = self.getGenresFromIDs(meta['parts'][0]['genre_ids'])
@@ -670,8 +604,7 @@ class cTMDb:
                 else:
                     _meta['genre'] += ' / ' + genre
 
-            if not isMatrix():
-                _meta['genre'] = unicode(_meta['genre'], 'utf-8')
+            _meta['genre'] = unicode(_meta['genre'], 'utf-8')
 
         trailer_id = ''
         if 'trailer' in meta and meta['trailer']:   # Lecture du cache
@@ -843,7 +776,7 @@ class cTMDb:
             self.dbcur.execute(sql_select)
             matchedrow = self.dbcur.fetchone()
         except Exception as e:
-            VSlog('************* Error selecting from cache db: %s' % e, 4)
+            printDBG('************* Error selecting from cache db: %s' % e, 4)
             return None
 
         if matchedrow:
@@ -887,7 +820,7 @@ class cTMDb:
             self.db.commit()
 #             VSlog('SQL INSERT Successfully')
         except Exception as e:
-            VSlog('SQL ERROR INSERT into table ' + media_type)
+            printDBG('SQL ERROR INSERT into table ' + media_type)
             pass
 
     # Cache pour les séries (et animes)
@@ -915,7 +848,7 @@ class cTMDb:
             self.db.commit()
 #             VSlog('SQL INSERT Successfully')
         except Exception as e:
-            VSlog('SQL ERROR INSERT into table ' + media_type)
+            printDBG('SQL ERROR INSERT into table ' + media_type)
             pass
 
     def _cache_save_season(self, meta, season):
@@ -934,7 +867,7 @@ class cTMDb:
                 self.db.commit()
 #                 VSlog('SQL INSERT Successfully')
             except Exception:
-                VSlog('SQL ERROR INSERT into table season')
+                printDBG('SQL ERROR INSERT into table season')
                 pass
 
     def get_meta(self, media_type, name, imdb_id='', tmdb_id='', year='', season='', episode='', update=False):
@@ -1009,36 +942,34 @@ class cTMDb:
 
         return meta
 
-    def getUrl(self, url, page=1, term=''):
+    def getUrl(self, url, page=1, term='',lng=''):
         # return url api exemple 'movie/popular' page en cours
         try:
             if term:
                 term = term + '&page=' + str(page)
             else:
                 term = 'page=' + str(page)
-            result = self._call(url, term)
+            result = self._call(url, term,lng)
         except:
             return False
         return result
 
-    def _call(self, action, append_to_response=''):
-        url = '%s%s?language=%s&api_key=%s' % (self.URL, action, self.lang, self.api_key)
+    def _call(self, action, append_to_response='',lng=''):
+        if lng=='': lng =self.lang
+        url = '%s%s?language=%s&api_key=%s' % (self.URL, action, lng, self.api_key)
         if append_to_response:
             url += '&%s' % append_to_response
 
         #On utilise requests car urllib n'arrive pas a certain moment a ouvrir le json.    
         import requests
+        printDBG('URL='+url)
         data = requests.get(url).json()
         
         return data
 
     def getPostUrl(self, action, post):
 
-        tmdb_session = self.ADDON.getSetting('tmdb_session')
-        if not tmdb_session:
-            return
-
-        sUrl = '%s%s?api_key=%s&session_id=%s' % (self.URL, action, self.api_key, tmdb_session)
+        sUrl = '%s%s?api_key=%s&session_id=' % (self.URL, action, self.api_key)
         try:
             sPost = json.dumps(post).encode('utf-8')
         except:

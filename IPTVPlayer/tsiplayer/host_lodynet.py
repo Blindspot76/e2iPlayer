@@ -20,7 +20,7 @@ def getinfo():
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{})
-        self.MAIN_URL = 'https://www.lodynet.co'
+        self.MAIN_URL = 'https://ww.lodynet.cam'
         
     def showmenu(self,cItem):
         TAB = [('مسلسلات','','10',0),('افلام','','10',1),('برامج و حفلات','/category/برامج-و-حفلات-tv/','20','')]

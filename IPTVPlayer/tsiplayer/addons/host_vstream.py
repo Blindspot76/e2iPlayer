@@ -21,7 +21,9 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.home import cH
 import pickle
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser    import urlparser as ts_urlparser
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import GetIPTVSleep
-
+from os import listdir
+from os.path import isfile, join
+import glob
 MAIN_URL0   = '/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/resources/sites'
 fncs_search = ['showsearch','myshowsearchmovie','myshowsearchserie','showmoviessearch','showsearchtext']
 
@@ -140,7 +142,12 @@ class TSIPHost(TSCBaseHostClass):
             self.ts_up = ts_urlparser()
         else:
             self.ts_up = urlparser()
-           
+        
+        if not os.path.exists(self.MyPath + 'tmdb'):
+            os.makedirs(self.MyPath + 'tmdb')
+        files = glob.glob(self.MyPath + 'tmdb/*')
+        for f in files:
+            os.remove(f)   
  
     def showmenu(self,cItem):
         self.addDir({'import':cItem['import'],'category' : 'host2','title':'Sites','icon':cItem['icon'],'mode':'01'})
@@ -292,17 +299,21 @@ class TSIPHost(TSCBaseHostClass):
        
     def get_listing(self):
         listing      = []
-        self.datas   = []
-        if os.path.exists(self.path_listing+'.dat'):
-            with open(self.path_listing+'.dat', 'rb') as f_listing:
+        datas_   = []
+        mypath = self.MyPath + 'tmdb/'
+        onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+        printDBG('Files = '+str(onlyfiles))
+        HST = []
+        for file_ in onlyfiles:
+            path_listing = mypath + file_
+            with open(path_listing, 'rb') as handle:
                 try:
                     while True:
-                        listing.append(pickle.load(f_listing))
+                        listing.append(pickle.load(handle))
                 except EOFError:
                     pass	
-            #os.remove(self.path_listing+'.dat')
-            
-        for (oGuiElement, oOutputParameterHandler) in listing:
+        printDBG('listing='+str(listing))
+        for (oGuiElement, oOutputParameterHandler,time_now) in listing:
             elm                      = {}
             elm['sSiteName']         = oGuiElement.getSiteName()            
             elm['sFunction']         = oGuiElement.getFunction()
@@ -323,8 +334,14 @@ class TSIPHost(TSCBaseHostClass):
                 elm['sHosterIdentifier'] = 'lien_direct'
                 sParams                  = ''
             elm['argv']              = self.create_argv(sParams)
-            self.datas.append(elm)
-            
+            datas_.append((elm,time_now))
+        printDBG('datas_='+str(datas_))
+        datas_.sort(key=lambda x:x[1])
+        printDBG('datas_='+str(datas_))
+        self.datas = []
+        for (a,b) in datas_:
+           self.datas.append(a) 
+        printDBG('self.datas='+str(self.datas))    
     def create_argv(self,sParams=''):      
         return ['plugin://plugin.video.vstream/', '13','?'+sParams]
 
@@ -345,16 +362,17 @@ class TSIPHost(TSCBaseHostClass):
                 URL=strwithmeta(URL,meta_)
                 urlTab.append({'name':'Direct', 'url':URL, 'need_resolve':0})
         elif gnr==1:
+            try_tsiplayer = False
             try:
                 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.gui.hoster import cHosterGui
                 cHoster = cHosterGui()
                 oHoster = cHoster.getHoster(sHosterIdentifier)
                 oHoster.setUrl(sMediaUrl)				
                 aLink = oHoster.getMediaLink()
+                printDBG('aLink='+str(aLink))
             except Exception, e:
                 aLink = [False,'']
                 printExc()
-            
             if aLink:
                 if (aLink[0] == True):
                     URL = aLink[1]
@@ -368,6 +386,16 @@ class TSIPHost(TSCBaseHostClass):
                             URL = strwithmeta(URL, meta)
                             printDBG('URL='+URL)
                             urlTab.append({'url':URL , 'name': sHosterIdentifier+' '+label})
+                else:
+                    try_tsiplayer = True
+            else:
+                try_tsiplayer = True
+            if try_tsiplayer:
+                printDBG('Try with TSIPLAYER Parser')
+                if (ts_urlparser().checkHostSupport(str(sMediaUrl))==1) or (urlparser().checkHostSupport(str(sMediaUrl))==1):
+                    url_ = str(sMediaUrl).replace('://www.youtube.com/embed/','://www.youtube.com/watch?v=')
+                    printDBG('TSIPLAYER Parser Found :'+url_+ '('+str(sMediaUrl)+')')
+                    urlTab.append({'name':'Tsiplayer', 'url':url_, 'need_resolve':1})  
         return urlTab	
 
 
@@ -409,10 +437,12 @@ class TSIPHost(TSCBaseHostClass):
         if os.path.exists(self.path_listing+'.search'):	
             os.remove(self.path_listing+'.search')
             GetIPTVSleep().Sleep(5)
-        if os.path.exists(self.path_listing+'.dat'):
-            os.remove(self.path_listing+'.dat')
+        files = glob.glob(self.MyPath + 'tmdb/*')
+        for f in files:
+            os.remove(f)
         self.currList = []
         mode=cItem.get('mode', None)
+        printDBG('Start:'+str(cItem))
         if mode=='00':
             self.showmenu(cItem)
             #self.showmenuHome(cItem)

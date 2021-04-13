@@ -10,7 +10,7 @@ def getinfo():
     info_={}
     name = 'Asia2tv'
     hst = tshost(name)	
-    if hst=='': hst = 'https://asiatv.online'
+    if hst=='': hst = 'https://asia2tv.cn'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.4 20/02/2020'

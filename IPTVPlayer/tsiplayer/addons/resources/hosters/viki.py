@@ -5,7 +5,6 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.hosters.hoster imp
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.parser import cParser
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcgui
 
-
 class cHoster(iHoster):
 
     def __init__(self):
@@ -80,7 +79,7 @@ class cHoster(iHoster):
             pathsub.append(sub2)
 
             offset = 2
-            numberQ = (len(aResult[1])-offset)/2
+            numberQ = (len(aResult[1])-offset)//2
             for i in range(offset, offset + numberQ):
                 if 'mpd' in aResult[1][i]:
                     if bsupportedMdp:

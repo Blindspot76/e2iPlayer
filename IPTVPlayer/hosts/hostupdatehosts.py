@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-02-27 by Blindspot - updatehosts HU host telepítő
+# 2021-04-11 by Blindspot - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "4.3"
+HOST_VERSION = "4.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -610,7 +610,7 @@ class updatehosts(CBaseHostClass):
             if hiba:
                 if msg == '':
                     msg = 'Hiba: 410 - Nem sikerült a Youtube hiba javítása!'
-                title = 'A YouTube hiba javítása nemsikerült!'
+                title = 'A YouTube hiba javítása nem sikerült!'
                 desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             else:
@@ -632,7 +632,7 @@ class updatehosts(CBaseHostClass):
                     desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés, frissítés!!!'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
-            title = 'A YouTube hiba javítása nemsikerült!'
+            title = 'A YouTube hiba javítása nem sikerült!'
             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
             printExc()            
         params = dict()
@@ -685,7 +685,7 @@ class updatehosts(CBaseHostClass):
             if hiba:
                 if msg == '':
                     msg = 'Hiba: 205 - Nem sikerült a magyarítás telepítése!'
-                title = 'A magyarítás telepítése nemsikerült!'
+                title = 'A magyarítás telepítése nem sikerült!'
                 desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             else:
@@ -707,7 +707,7 @@ class updatehosts(CBaseHostClass):
                     desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés, frissítés!!!'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
-            title = 'A magyarítás telepítése nemsikerült!'
+            title = 'A magyarítás telepítése nem sikerült!'
             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
             printExc()
         params = dict()
@@ -778,7 +778,7 @@ class updatehosts(CBaseHostClass):
             if hiba:
                 if msg == '':
                     msg = 'Hiba: 308 - Nem sikerült az Urllist.stream telepítése!'
-                title = 'Az Urllist.stream telepítése nemsikerült!'
+                title = 'Az Urllist.stream telepítése nem sikerült!'
                 desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             else:
@@ -800,7 +800,7 @@ class updatehosts(CBaseHostClass):
                     desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés, frissítés!!!'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
-            title = 'Az Urllist.stream telepítése nemsikerült!'
+            title = 'Az Urllist.stream telepítése nem sikerült!'
             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
             printExc()
         params = dict()
@@ -894,7 +894,7 @@ class updatehosts(CBaseHostClass):
             if hiba:
                 if msg == '':
                     msg = 'Hiba: 13 - Nem sikerült a(z)  ' + host.upper() + '  host telepítése!'
-                title = host + ' telepítése nemsikerült!'
+                title = host + ' telepítése nem sikerült!'
                 desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             else:
@@ -909,14 +909,14 @@ class updatehosts(CBaseHostClass):
                             quitMainloop(3)
                         except Exception:
                             msg = 'Hiba: 14 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
-                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés, frissítés!!!'
+                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a telepítés, frissítés!!!'
                             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
                 except Exception:
                     msg = 'Hiba: 15 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
-                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés, frissítés!!!'
+                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a telepítés, frissítés!!!'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )                
         except Exception:
-            title = host + ' telepítése nemsikerült!'
+            title = host + ' telepítése nem sikerült!'
             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
             printExc()
         params = dict()
@@ -1182,8 +1182,8 @@ class updatehosts(CBaseHostClass):
                             hiba = True
                         if hiba:
                             if msg == '':
-                                msg = 'Hiba: 701 - Nemsikerült a Beállítások visszatöltése!'
-                            title = 'A Beállítások visszatöltése nemsikerült!'
+                                msg = 'Hiba: 701 - Nem sikerült a Beállítások visszatöltése!'
+                            title = 'A Beállítások visszatöltése nem sikerült!'
                             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
                         else:
@@ -1215,9 +1215,9 @@ class updatehosts(CBaseHostClass):
                                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
                     else:
                         desc = 'A backup fájl nem található itt:   ' + ided.replace('/',' / ').strip() + ' / ' + idef.strip() + '\n\nHiányzik a fájl, vagy rossz az Oldal beállítás (KÉK gomb)!\nNyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
-                        title = 'Beállítások visszatöltése nemsikerült'
+                        title = 'Beállítások visszatöltése nem sikerült'
                 except Exception:
-                    title = 'Hiba: 705 - A Beállítások visszatöltése nemsikerült!'
+                    title = 'Hiba: 705 - A Beállítások visszatöltése nem sikerült!'
                     desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                 params = dict()
                 params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'beall_vissza', 'desc': desc})
@@ -1254,7 +1254,7 @@ class updatehosts(CBaseHostClass):
                         if fileExists(idefw):
                             rm(idefw)
                         desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
-                        title = 'Beállítások mentése nemsikerült'
+                        title = 'Beállítások mentése nem sikerült'
                         params = dict()
                         params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'beall_kiment', 'desc': desc})
                         self.addDir(params)
@@ -1312,7 +1312,7 @@ class updatehosts(CBaseHostClass):
                     if hiba:
                         if msg == '':
                             msg = 'Hiba: 507 - Nem sikerült a visszaállítás!'
-                        title = 'Az Alapértelmezett stílus visszaállítása nemsikerült!'
+                        title = 'Az Alapértelmezett stílus visszaállítása nem sikerült!'
                         desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                         self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
                     else:
@@ -1327,14 +1327,14 @@ class updatehosts(CBaseHostClass):
                                     quitMainloop(3)
                                 except Exception:
                                     msg = 'Hiba: 508 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
-                                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a visszaállítás!!!'
+                                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a visszaállítás!!!'
                                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
                         except Exception:
                             msg = 'Hiba: 509 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
-                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a visszaállítás!!!'
+                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a visszaállítás!!!'
                             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
                 except Exception:
-                    title = 'Az Alapértelmezett stílus visszaállítása nemsikerült!'
+                    title = 'Az Alapértelmezett stílus visszaállítása nem sikerült!'
                     desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                     printExc()
                 params = dict()
@@ -1370,32 +1370,32 @@ class updatehosts(CBaseHostClass):
                                             hiba = False
                                         else:
                                             hiba = True
-                                            msg = 'Hiba: 811 - Az E2iPlayer telepítése nemsikerült!'    
+                                            msg = 'Hiba: 811 - Az E2iPlayer telepítése nem sikerült!'    
                                     else:
                                         hiba = True
-                                        msg = 'Hiba: 810 - Az E2iPlayer telepítése nemsikerült!'
+                                        msg = 'Hiba: 810 - Az E2iPlayer telepítése nem sikerült!'
                                 else:
                                     hiba = True
-                                    msg = 'Hiba: 809 - Az E2iPlayer telepítése nemsikerült!'        
+                                    msg = 'Hiba: 809 - Az E2iPlayer telepítése nem sikerült!'        
                             else:
                                 hiba = True
-                                msg = 'Hiba: 808 - Az E2iPlayer telepítése nemsikerült!'
+                                msg = 'Hiba: 808 - Az E2iPlayer telepítése nem sikerült!'
                         else:
                             hiba = True
-                            msg = 'Hiba: 807 - Az E2iPlayer telepítése nemsikerült!'
+                            msg = 'Hiba: 807 - Az E2iPlayer telepítése nem sikerült!'
                     else:
                         hiba = True
-                        msg = 'Hiba: 806 - Az E2iPlayer telepítése nemsikerült!'
+                        msg = 'Hiba: 806 - Az E2iPlayer telepítése nem sikerült!'
                 else:
                     hiba = True
-                    msg = 'Hiba: 805 - Az E2iPlayer telepítése nemsikerült!'
+                    msg = 'Hiba: 805 - Az E2iPlayer telepítése nem sikerült!'
             else:
                 hiba = True
-                msg = 'Hiba: 804 - Az E2iPlayer telepítése nemsikerült!'
+                msg = 'Hiba: 804 - Az E2iPlayer telepítése nem sikerült!'
             if hiba:
                 if msg == '':
                     msg = 'Hiba: 803 - Nem sikerült az E2iPlayer telepítése!'
-                title = 'Az E2iPlayer telepítése nemsikerült!'
+                title = 'Az E2iPlayer telepítése nem sikerült!'
                 desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             else:
@@ -1405,7 +1405,7 @@ class updatehosts(CBaseHostClass):
                     if ret[0]:
                         try:
                             title = 'Telepítés végrehajtva'
-                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés!!!'
+                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a telepítés!!!'
                             iptv_system(zlib.decompress(base64.b64decode('eJwrylXQLUpTAAAJSQIl')) + self.IH + zlib.decompress(base64.b64decode('eJxTUFNTyC1TAAAFXAGQ')) + self.IHU + ' ' + self.IH + zlib.decompress(base64.b64decode('eJxTUFNTKK7MSwYACAwCSg==')))
                             if fileExists(destination):
                                 rm(destination)
@@ -1422,8 +1422,8 @@ class updatehosts(CBaseHostClass):
                             quitMainloop(3)
                         except Exception:
                             msg = 'Hiba: 802 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
-                            title = 'Az E2iPlayer telepítése nemsikerült!'
-                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés!!!'
+                            title = 'Az E2iPlayer telepítése nem sikerült!'
+                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a telepítés!!!'
                             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
                     else:
                         title = 'Telepítés megszakítva!'
@@ -1432,10 +1432,10 @@ class updatehosts(CBaseHostClass):
                             rmtree(self.IHU, ignore_errors=True)
                 except Exception:
                     msg = 'Hiba: 801 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
-                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés!!!'
+                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a telepítés!!!'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
-            title = 'Az E2iPlayer telepítése nemsikerült!'
+            title = 'Az E2iPlayer telepítése nem sikerült!'
             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
         params = dict()
         params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'p_telepit', 'desc': desc})
@@ -1505,8 +1505,8 @@ class updatehosts(CBaseHostClass):
                         if hiba:
                             self.eplftatls()
                             if msg == '':
-                                msg = 'Sajnos nem lehet a frissítést végrehajtani!\n Probálkozz még 2x-szer, s ha akkor sem sikerül, azután egy új telepítést kell végrehajtanod!'
-                            title = 'A Frissítés nemsikerült!'
+                                msg = 'Sajnos nem lehet a frissítést végrehajtani!\n Probálkozz még kétszer, s ha akkor sem sikerül, egy új telepítést kell végrehajtanod!'
+                            title = 'A Frissítés nem sikerült!'
                             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20)
                         else:
@@ -1528,19 +1528,19 @@ class updatehosts(CBaseHostClass):
                                             else:
                                                 self.eplftatls()
                                                 msg = 'Hiba: 1000 - Nem sikerült a Frissítés!'
-                                                title = 'A Frissítés nemsikerült!'
+                                                title = 'A Frissítés nem sikerült!'
                                                 desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                                                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
                                         else:
                                             self.eplftatls()
                                             msg = 'Hiba: 1001 - Nem sikerült a Frissítés!'
-                                            title = 'A Frissítés nemsikerült!'
+                                            title = 'A Frissítés nem sikerült!'
                                             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                                             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
                                     except Exception:
                                         self.eplftatls()
                                         msg = 'Hiba: 1002 - Nem sikerült a Frissítés!\n\nIndítsd újra a Kezelőfelületet manuálisan!'
-                                        title = 'A Frissítés nemsikerült!'
+                                        title = 'A Frissítés nem sikerült!'
                                         desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt!!!'
                                         self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
                                 else:
@@ -1553,7 +1553,7 @@ class updatehosts(CBaseHostClass):
                                 desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt!!!'
                                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
         except Exception:
-            title = 'Frissítés nemsikerült!'
+            title = 'Frissítés nem sikerült!'
             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
         params = dict()
         params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'p_frissit', 'desc': desc})
@@ -1796,7 +1796,7 @@ class updatehosts(CBaseHostClass):
             if hiba:
                 if msg == '':
                     msg = 'Hiba: 607 - A magyar minimál stílus beállítása nem sikerült!'
-                title = 'A Magyar minimál stílus beállítása nemsikerült!'
+                title = 'A Magyar minimál stílus beállítása nem sikerült!'
                 desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             else:
@@ -1815,10 +1815,10 @@ class updatehosts(CBaseHostClass):
                             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
                 except Exception:
                     msg = 'Hiba: 609 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
-                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a Magyar minimál stílus beállítás!!!'
+                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Ne hagyd ki ezt a lépést, mert csak így sikeres a Magyar minimál stílus beállítás!!!'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
-            title = 'A Magyar minimál stílus beállítása nemsikerült!'
+            title = 'A Magyar minimál stílus beállítása nem sikerült!'
             desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
             printExc()
         params = dict()

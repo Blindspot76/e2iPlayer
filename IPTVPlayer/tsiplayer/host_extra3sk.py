@@ -25,7 +25,7 @@ class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'extra_3sk.cookie'})
         self.USER_AGENT     = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL       = 'https://extra-3sk.info'
+        self.MAIN_URL       = 'https://extrask.com'
         self.TrySetMainUrl  = True
         self.HEADER         = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}
         self.defaultParams  = {'header':self.HEADER,'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE} 

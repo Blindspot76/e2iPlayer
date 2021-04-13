@@ -26,7 +26,7 @@ def getinfo():
     info_={}
     name = 'Akwam (New)'
     hst = tshost(name)	
-    if hst=='': hst = 'https://akwam.in'
+    if hst=='': hst = 'https://akwam.cc'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2.01 29/09/2020'

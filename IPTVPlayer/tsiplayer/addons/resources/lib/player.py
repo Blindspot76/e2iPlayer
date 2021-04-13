@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon impor
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetCacheSubDir
 import urllib
 import pickle
+import time
 #pour les sous titres
 #https://github.com/amet/service.subtitles.demo/blob/master/service.subtitles.demo/service.py
 #player API
@@ -37,10 +38,14 @@ class cPlayer():
         
         sMediaUrl  = oGuiElement.getMediaUrl()
         sSiteUrl   = oGuiElement.getSiteUrl()         
-        PIK = self.MyPath() + "VStream_listing.dat"
-        data = [oGuiElement, '']
-        with open(PIK, "a+") as f:
+
+
+        PIK = self.MyPath() + ("tmdb/VStream_listing_%s.dat" % sId)
+        time_now = round(time.time() * 1000)
+        data = [oGuiElement, '',time_now]
+        with open(PIK, "a+b") as f:
             pickle.dump(data, f)        
+   
         return ''
         
     def MyPath(self):

@@ -10,7 +10,7 @@ def getinfo():
     info_={}
     name = 'Esheeq.Com'
     hst = tshost(name)	
-    if hst=='': hst = 'https://esheeq.com'
+    if hst=='': hst = 'https://esheeq.co'
     info_['host']= hst
     info_['name']=name
     info_['name']='Esheeq.Com'
