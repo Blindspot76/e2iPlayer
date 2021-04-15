@@ -16,7 +16,7 @@ def getinfo():
     info_['dev']='RGYSoft'
     info_['cat_id']='21'
     info_['desc']='أفلام و مسلسلات عربية و اجنبية'
-    info_['icon']='https://new.arblionz.org/public/img/logo.png'
+    info_['icon']='https://arblionz.cam/public/img/logo.png'
     info_['recherche_all']='1'
     return info_
 

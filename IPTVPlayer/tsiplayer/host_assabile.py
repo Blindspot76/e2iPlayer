@@ -21,7 +21,7 @@ def getinfo():
 	info_['dev']='RGYSoft'
 	info_['cat_id']='24'
 	info_['desc']='Quran Audio Library'
-	info_['icon']='http://ar.assabile.com/img/logo-assabile.png'
+	info_['icon']='https://i.ibb.co/JpSLWz5/logo-assabile.png'
 	info_['recherche_all']='0'
 	return info_
 	

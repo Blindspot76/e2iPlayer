@@ -10,7 +10,7 @@ def getinfo():
 	info_={}
 	name = 'Cimaclub.Com'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://www.cimaclub.best'
+	if hst=='': hst = 'https://www.cimaclub.ws'
 	info_['host']= hst
 	info_['name']=name
 	info_['version']='1.1.02 27/08/2020'
@@ -45,12 +45,12 @@ class TSIPHost(TSCBaseHostClass):
 	def showmenu0(self,cItem):
 		hst='host2'
 		img_=cItem['icon']
-		Cimaclub_TAB=[{'category':hst,'title': tscolor('\c00????00') +'Main'    ,'mode':'20'  ,'sub_mode':'filter'},	
+		Cimaclub_TAB=[{'category':hst,'title': tscolor('\c0000????') + 'Ramadan 2021' ,'mode':'30', 'url': self.MAIN_URL+'/category/مسلسلات-رمضان-2021'},	
+                      {'category':hst,'title': tscolor('\c00????00') +'Main'    ,'mode':'20'  ,'sub_mode':'filter'},	
 					  {'category':hst,'title': 'Films'    ,'mode':'20'  ,'sub_mode':'film'},
 					  {'category':hst,'title': 'Series'   ,'mode':'20'  ,'sub_mode':'serie'},
 					  {'category':hst,'title': 'Other'    ,'mode':'20'  ,'sub_mode':'other'},
-
-					  {'category':hst,'title': tscolor('\c0000??00') + 'Filter'   ,'mode':'21', 'url': self.MAIN_URL+'/getposts?'},					  
+					  {'category':hst,'title': tscolor('\c0000??00') + 'Filter'       ,'mode':'21', 'url': self.MAIN_URL+'/getposts?'},					  
 					  {'category':'search'  ,'title':tscolor('\c0000????') +  _('Search'),'search_item':True,'page':1,'hst':'tshost'},
 					]
 		self.listsTab(Cimaclub_TAB, {'icon':img_,'import':cItem['import']})

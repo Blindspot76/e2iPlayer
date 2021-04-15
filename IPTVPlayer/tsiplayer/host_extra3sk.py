@@ -64,6 +64,7 @@ class TSIPHost(TSCBaseHostClass):
         if page>1:
             url0=url0+'/page/'+str(page)+'/'
             url0=url0.replace('//page/','/page/')
+        if url0.startswith('/'): url0 = self.MAIN_URL + url0
         sts, data = self.getPage(url0)
         if sts:
             lst_data=re.findall(pat, data, re.S)

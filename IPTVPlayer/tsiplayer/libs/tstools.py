@@ -396,7 +396,8 @@ class TSCBaseHostClass:
         elif mode=='21':
             self.showelms(cItem)		
         return True
-    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}],year_op=0):
+        
+    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}],year_op=0,del_titre=''):
         if isinstance(mode_, str):
             mode = mode_
         else:
@@ -449,13 +450,13 @@ class TSCBaseHostClass:
                         self.addMarker({'title': tscolor('\c00????30') + Titre,'icon':cItem['icon']})
                     if mode=='desc': 
                         desc = ''
-                        for (tag,pat,frst,Del_) in Desc:
+                        for (tag,pat,frst,Del_0) in Desc:
                             if desc == '': frst = ''
                             elif frst == '': frst = ' | '
                             if data1:
                                 desc_=re.findall(pat, data1[0], re.S)	
                                 if desc_:
-                                    if ((Del_=='') or ((Del_!='') and (Del_.lower() not in desc_[0].lower()))):
+                                    if ((Del_0=='') or ((Del_0!='') and (Del_0.lower() not in desc_[0].lower()))):
                                         if self.cleanHtmlStr(desc_[0]).strip()!='':
                                             desc = desc + frst + tscolor('\c00????00') + tag + ': ' + tscolor('\c00??????') + self.cleanHtmlStr(desc_[0])
                         return desc
@@ -505,15 +506,16 @@ class TSCBaseHostClass:
                             for i in x:
                                 desc0  = desc0 + elm[ord[i]]					
                             desc = ''
-                            for (tag,pat,frst,Del_) in Desc:
+                            for (tag,pat,frst,Del_0) in Desc:
                                 if desc == '': frst = ''
                                 elif frst == '': frst = ' | '
                                 desc_=re.findall(pat, desc0, re.S)	
                                 if desc_:
-                                    if ((Del_=='') or ((Del_!='') and (Del_.lower() not in desc_[0].lower()))):
+                                    if ((Del_0=='') or ((Del_0!='') and (Del_0.lower() not in desc_[0].lower()))):
                                         if self.cleanHtmlStr(desc_[0]).strip()!='':
                                             desc = desc + frst + tscolor('\c00????00') + tag + ': ' + tscolor('\c00??????') + self.cleanHtmlStr(desc_[0])
                         sub_mode=0
+                        if del_titre!='': titre = re.sub(del_titre,'',titre)
                         for (elm_0,elm_1) in s_mode:
                             if elm_0 in url: sub_mode=elm_1
                         if corr_:

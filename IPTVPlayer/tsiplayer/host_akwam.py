@@ -26,7 +26,7 @@ def getinfo():
     info_={}
     name = 'Akwam (New)'
     hst = tshost(name)	
-    if hst=='': hst = 'https://akwam.cc'
+    if hst=='': hst = 'https://akwam.cz'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2.01 29/09/2020'
@@ -90,6 +90,8 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
                         self.addDir({'import':cItem['import'],'category' : 'host2','title':cItem['title'] +' | '+ titre,'url':url,'desc':'','icon':cItem['icon'],'mode':'30'})		
         self.addDir({'import':cItem['import'],'category' : 'host2','title':'ALL','url':cItem['url'],'desc':'','icon':cItem['icon'],'mode':'30'})
         self.addDir({'import':cItem['import'],'category' : 'host2','title':'By Filtre','desc':'','icon':cItem['icon'],'mode':'22','sub_mode':sub_mode})		
+        if sub_mode==1:        
+            self.addDir({'category': 'host2', 'title': 'Ramadan 2021', 'url': self.MAIN_URL+'/series?section=0&category=87&rating=0&year=2021&language=0&formats=0&quality=0', 'mode': '30','import':cItem['import'], 'icon': cItem['icon'], 'type': 'category', 'desc': ''})
             
     def showfilter(self,cItem):
         count=cItem.get('count',0)
@@ -151,6 +153,7 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
                 Url = cItem['url']+'&page='+str(page)
             else:
                 Url = cItem['url']+'?page='+str(page)
+        if Url.startswith('/'): Url = self.MAIN_URL + Url
         sts, data = self.getPage(Url)
         if sts:
             lst_data=re.findall('class="entry-box.*?>(.*?)-src="(.*?)".*?href="(.*?)".*?<h3.*?>(.*?)</h3>', data, re.S)

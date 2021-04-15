@@ -64,7 +64,8 @@ class TSIPHost(TSCBaseHostClass):
                 for (url,titre) in data2:
                     if not url.startswith('http'): url=self.MAIN_URL+url
                     self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':titre,'desc':'','icon':cItem['icon'],'mode':'20'})	
-
+        if gnr==2:
+            self.addDir({'import':cItem['import'], 'title': 'Ramadan 2021','category' : 'host2','url': self.MAIN_URL+'/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%b1%d9%85%d8%b6%d8%a7%d9%86-2021','desc':'','icon':cItem['icon'],'mode':'20'})            
     def showfilter(self,cItem):
         count=cItem['count']
         data1=cItem['data']	
@@ -92,7 +93,7 @@ class TSIPHost(TSCBaseHostClass):
     def showitms(self,cItem):
         desc = [('Info','Ribbon">(.*?)</div>','',''),('Story','Story">(.*?)</div>','','')]
         next = ['next page-numbers.*?href="(.*?)"','20']
-        if cItem['url'].startswith('http'):
+        if cItem['url'].startswith('http') or (cItem['url'].startswith('/')):
             self.add_menu(cItem,'Blocks">(.*?)</ul>','class="MovieBlock.*?href="(.*?)".*?(?:image=|img src=)"(.*?)"(.*?)<h4>(.*?)</h4>(.*?)</a>','','21',ind_0 = -1,ord=[0,3,1,2,4],Desc=desc,Next=next,u_titre=True,EPG=True)		
         else:
             LINK = self.MAIN_URL+'/wp-content/themes/Elshaikh2021/Ajaxat/Home/FilteringShows.php'

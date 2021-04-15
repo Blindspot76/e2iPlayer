@@ -396,15 +396,15 @@ class TSIPlayer(CBaseHostClass):
         elif category == 'Addons':
             self.AddonsCat()
         else:
-            #try:
             try:
-                xx = len(sys.argv)
-            except:
-                sys.argv = ''
-            exec('self.'+category+'_host(self.currItem)')
-            #except Exception, e:
-            #    self.PrintExTs(e)
-            #    printDBG('erreeuuu')
+                try:
+                    xx = len(sys.argv)
+                except:
+                    sys.argv = ''
+                exec('self.'+category+'_host(self.currItem)')
+            except Exception, e:
+                self.PrintExTs(e)
+                printDBG('erreeuuu')
 
         CBaseHostClass.endHandleService(self, index, refresh)
 
