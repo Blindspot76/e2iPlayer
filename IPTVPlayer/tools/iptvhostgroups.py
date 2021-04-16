@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-04-02 by Blindspot - modified iptvhostgroups
+# 2021-04-16 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -94,6 +94,7 @@ class IPTVHostsGroups:
         'bajeczkiorg' : [ 'cartoonsandanime', 'polish'] ,
         'bbciplayer' : [ 'english'] ,
         'bbcsport' : [ 'english', 'sport'] ,
+        'bildde': ['german'],
         'bsto' : [ 'german', 'moviesandseries'] ,
         'cartoonhd' : [ 'english', 'moviesandseries'] ,
         'cb01' : [ 'italian', 'moviesandseries'] ,

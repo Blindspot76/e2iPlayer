@@ -17,6 +17,7 @@ hostautohu
 hostbajeczkiorg
 hostbbciplayer
 hostbbcsport
+hostbildde
 hostbsto
 hostcartoonhd
 hostcasacinema
