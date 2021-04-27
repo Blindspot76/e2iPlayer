@@ -1,3 +1,6 @@
+#2021.04.27.01
+-TVpVOD javítva
+-Tárhelytámogatás bővítve, ill. frissítve
 #2021.04.18.01
 -eKino javítva
 #2021.04.16.01

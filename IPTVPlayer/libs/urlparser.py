@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-04-06 by Blindspot
+# 2021-04-27 by Blindspot
 ###################################################
 ###################################################
 # LOCAL import
@@ -239,6 +239,7 @@ class urlparser:
                        'facebook.com':          self.pp.parserFACEBOOK      ,
                        'fastflash.pw':          self.pp.parserCASTFLASHPW    ,
                        'fastplay.cc':           self.pp.parserFASTPLAYCC     ,
+                       'fastshare.cz':         self.pp.parserFASTSHARECZ    ,
                        'faststream.in':         self.pp.parserVIDSTREAM     ,
                        'fastvideo.in':          self.pp.parserFASTVIDEOIN   ,
                        'fembed.com':            self.pp.parserFEMBED,
@@ -632,6 +633,7 @@ class urlparser:
                        'vk.com':                self.pp.parserVK            ,
                        'vodlocker.com':         self.pp.parserVODLOCKER     ,
                        'vod-share.com':         self.pp.parserVODSHARECOM   ,
+                       'voe.sx':                self.pp.parserMATCHATONLINE  ,
                        'voodaith7e.com':        self.pp.parserYOUWATCH      ,
                        'vshare.eu':             self.pp.parserVSHAREEU      ,
                        'vshare.io':             self.pp.parserVSHAREIO       ,
@@ -15179,11 +15181,13 @@ class pageParser(CaptchaHelper):
 
         sts, data = self.cm.getPage(baseUrl, httpParams)
         if sts:
-            r = self.cm.ph.getSearchGroups(data, r'v-bind:stream="([^"]+?)"')[0].replace('&quot;', '"')
+            r = self.cm.ph.getSearchGroups(data, r'v-bind:[n|s]*stream="([^"]+?)"')[0].replace('&quot;', '"')
+            if not r: r = self.cm.ph.getSearchGroups(data, r'v-bind:[n|s]*file="([^"]+?)"')[0].replace('&quot;', '"')
+            printDBG("parserNINJASTREAMTO r [%s]" % r)
             if r:
                 data = json_loads(r)
                 hash = data.get('hash')
-                host = "".join([chr(ord(i)^50) for i in data.get('host')])
+                host = "".join([chr(ord(i) ^ ord(str(idx%2+1))) for idx, i in enumerate(data.get('host'))])
                 url = '%s%s/index.m3u8' % (host, hash)
                 urlsTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
 
@@ -15230,3 +15234,28 @@ class pageParser(CaptchaHelper):
             urlTab.append({'name':'mp4', 'url':url})
 
         return urlTab
+        
+    def parserFASTSHARECZ(self, baseUrl):
+        printDBG("parserFASTSHARECZ baseUrl[%s]" % baseUrl)
+
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer: HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+
+        url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=(\/free\/[^>]+?)>''')[0], baseUrl)
+        urlParams['max_data_size'] = 0
+        urlParams['no_redirection'] = True
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts: return False
+
+        urlTab = []
+        url = self.cm.meta.get('location', '')
+        if self.cm.isValidUrl(url):
+            url = strwithmeta(url, {'Origin':"https://" + urlparser.getDomain(baseUrl), 'Referer':baseUrl})
+            urlTab.append({'name':'mp4', 'url':url})
+
+        return urlTab
+
