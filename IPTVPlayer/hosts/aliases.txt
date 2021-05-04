@@ -42,6 +42,7 @@
 "hostdpstreamingcx": "https://voir.streaming-series.watch/",
 "hostdrdk": "http://dr.dk/",
 "hostdsda": "https://www.dsda.press/",
+"hostdudeplayercom": "https://dudeplayer.com/",
 "hostefilmytv": "http://www.efilmy.tv/",
 "hostegybest": "https://beal.egybest.xyz/",
 "hostekinotv": "http://ekino-tv.pl/",
@@ -54,8 +55,7 @@
 "hostfilisertv": "https://filmiki.tv/",
 "hostfilma24hdcom": "http://www.filmahd.cc/",
 "hostfilma24io": "https://www.filma24.ai/",
-"hostfilman": "https://filman.cc/",
-"hostfilmaoncom": "https://www.filmaon.nl/",
+"hostfilmancc": "https://filman.cc/",
 "hostfilmativa": "https://filmativa.xyz/",
 "hostfilmehdnet": "https://filmehd.se/",
 "hostfilmeonlineto": "https://filme-online.to/",
@@ -145,6 +145,7 @@
 "hostrtbfbe": "https://www.rtbf.be/",
 "hostrteieplayer": "http://rte.ie/player",
 "hostrtlmost": "https://rtlmost.hu/",
+"hosts01pl": "https://s01.pl/",
 "hostserienstreamto": "https://serienstream.sx/",
 "hostseriesonline": "https://www4.series9.ac/",
 "hostserijeonline": "http://www.serije.online/",
@@ -195,6 +196,7 @@
 "hostyesmoviesto": "https://yesmovies.ag/",
 "hostyifytv": "https://ymovies.se/",
 "hostyoutube": "https://youtube.com/",
+"hostzaluknijcc": "https://zaluknij.cc/",
 "hostzdfmediathek": "https://www.zdf.de/"
 "hostupdatehosts": "Magyar Változat Telepítő"
 }

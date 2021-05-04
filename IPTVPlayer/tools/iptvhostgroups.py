@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-04-16 by Blindspot - modified iptvhostgroups
+# 2021-05-04 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -131,6 +131,7 @@ class IPTVHostsGroups:
         'filma24io' : [ 'balkans', 'moviesandseries'] ,
         'filman' : [ 'polish', 'moviesandseries'] ,
         'filmaoncom' : [ 'balkans', 'moviesandseries'] ,
+        'filmancc' : ['polish', 'moviesandseries'] ,
         'filmativa' : [ 'balkans', 'moviesandseries'] ,
         'filmehdnet' : [ 'balkans', 'moviesandseries'] ,
         'filmeonlineto' : [ 'balkans', 'english', 'moviesandseries'] ,
@@ -215,7 +216,8 @@ class IPTVHostsGroups:
         'raiplay' : [ 'italian'] ,
         'redbull' : [ 'sport'] ,
         'rtbfbe' : [ 'french', 'others'] ,
-        'rteieplayer' : [ 'english'] ,               
+        'rteieplayer' : [ 'english'] ,  
+        's01pl' : ['polish', 'moviesandseries'] ,
         'serienstreamto' : [ 'german', 'moviesandseries'] ,
         'seriesonline' : [ 'english', 'moviesandseries'] ,
         'serijeonline' : [ 'balkans', 'moviesandseries'] ,
@@ -270,6 +272,8 @@ class IPTVHostsGroups:
         'yesmoviesto' : [ 'english', 'moviesandseries'] ,
         'yifytv' : [ 'english', 'moviesandseries'] ,
         'youtube' : [ 'hungarian', 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'swedish'] ,
+        'zaluknijcc' : ['polish', 'moviesandseries'] ,
+        'zdfmediathek' : ['german']
         }        
         
         for h in HOST_AND_GROUPS:

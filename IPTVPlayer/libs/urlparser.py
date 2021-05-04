@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-04-27 by Blindspot
+# 2021-05-04 by Blindspot
 ###################################################
 ###################################################
 # LOCAL import
@@ -218,6 +218,7 @@ class urlparser:
                        'divxstage.to':          self.pp.parserDIVXSTAGE     ,
                        'donevideo.com':         self.pp.parserLIMEVIDEO     ,
                        'dood.to':               self.pp.parserDOOD          ,
+                       'dood.so':               self.pp.parserDOOD          ,
                        'dood.watch':            self.pp.parserDOOD          ,
                        'doodstream.com':        self.pp.parserDOOD          ,
                        'dotstream.tv':          self.pp.parserDOTSTREAMTV   ,
@@ -640,6 +641,7 @@ class urlparser:
                        'vsports.pt':            self.pp.parserSAPOPT     ,
                        'vup.to':                self.pp.parserONLYSTREAM    ,
                        'waaw.tv':               self.pp.parserNETUTV         ,
+                       'waaw.to':               self.pp.parserNETUTV         ,
                        'filmbazis.org':         self.pp.parserNETUTV         ,
                        'wat.tv':                self.pp.parserWATTV          ,
                        'watchers.to':           self.pp.parserWATCHERSTO    ,
@@ -14199,7 +14201,9 @@ class pageParser(CaptchaHelper):
             'use_cookie':True,
             'load_cookie':True,
             'save_cookie':True,
-            'cookiefile': GetCookieDir("dood.cookie")
+            'cookiefile': GetCookieDir("dood.cookie"),
+            'max_data_size': 0,
+            'no_redirection': True
         }
 
         urlsTab = []
@@ -14207,6 +14211,12 @@ class pageParser(CaptchaHelper):
         if '/d/' in baseUrl:
             baseUrl = baseUrl.replace('/d/','/e/')
 
+        sts, data = self.cm.getPage(baseUrl, httpParams)
+        url = self.cm.meta.get('location', '')
+        if url != '':
+            baseUrl = url
+        del httpParams['max_data_size']
+        del httpParams['no_redirection']
         sts, data = self.cm.getPage(baseUrl, httpParams)
 
         if sts:

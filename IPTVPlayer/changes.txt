@@ -1,3 +1,6 @@
+#2021.05.04.01
+-Hostlista frissítve ill. bővítve
+-Dood tárhelytámogatás javítva
 #2021.04.27.01
 -TVpVOD javítva
 -Tárhelytámogatás bővítve, ill. frissítve

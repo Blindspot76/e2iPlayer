@@ -7,7 +7,6 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML
 ###################################################
 
 ###################################################
@@ -23,15 +22,15 @@ except Exception: import simplejson as json
 
 
 def gettytul():
-    return 'https://vizjer.pl/'
+    return 'https://filman.cc/'
 
-class Vizjer(CBaseHostClass):
+class Filman(CBaseHostClass):
     
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'Vizjer.pl', 'cookie':'Vizjer.pl.cookie'})
+        CBaseHostClass.__init__(self, {'history':'Filman.online', 'cookie':'Filman.online.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'https://vizjer.pl/'
-        self.DEFAULT_ICON_URL = 'https://vizjer.pl/public/dist/images/logo.png'
+        self.MAIN_URL = 'https://filman.cc/'
+        self.DEFAULT_ICON_URL = 'https://pliki.pl/wp-content/uploads/2017/04/filman-cc.png'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -42,35 +41,26 @@ class Vizjer(CBaseHostClass):
 
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
+        origBaseUrl = baseUrl
         baseUrl = self.cm.iriToUri(baseUrl)
-        sts,data = self.cm.getPage(baseUrl, addParams, post_data)
-        if not sts:
-            sts, data = self.cm.getPage('https://check.ddos-guard.net/check.js', addParams)
-            if sts:
-                jsurl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''src = ['"]([^"^']+?)['"]''')[0])
-                sts, data = self.cm.getPage(jsurl, addParams)
-                if sts:
-                    sts,data = self.cm.getPage(baseUrl, addParams, post_data)
-        return sts,data
+        def _getFullUrl(url):
+            if self.cm.isValidUrl(url): return url
+            else: return urlparse.urljoin(baseUrl, url)
+        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
-    def getFullIconUrl(self, url):
-        url = self.getFullUrl(url)
-        if url == '': return ''
-        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
-        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
-
     def setMainUrl(self, url):
         if self.cm.isValidUrl(url):
             self.MAIN_URL = self.cm.getBaseUrl(url)
     
     def listMainMenu(self, cItem):
-        printDBG("Vizjer.listMainMenu")
+        printDBG("Filman.listMainMenu")
 
-        MAIN_CAT_TAB = [{'category':'list_sort',       'title': _('Movies'),         'url':self.getFullUrl('/filmy-online/')},
-                        {'category':'list_items',      'title': _('Children'),       'url':self.getFullUrl('/dla-dzieci/')},
-                        {'category':'list_sort',       'title': _('Series'),         'url':self.getFullUrl('/series/index/')},
+        MAIN_CAT_TAB = [{'category':'list_sort',       'title': _('Movies'),         'url':self.getFullUrl('/filmy-online-pl/')},
+                        {'category':'list_items',      'title': _('Children'),       'url':self.getFullUrl('/dla-dzieci-pl/')},
+                        {'category':'list_sort',       'title': _('Series'),         'url':self.getFullUrl('/seriale-online-pl/')},
 #                        {'category':'list_years',     'title': _('Movies by year'), 'url':self.MAIN_URL},
-                        {'category':'list_cats',       'title': _('Movies genres'),  'url':self.getFullUrl('/filmy-online/')},
+                        {'category':'list_cats',       'title': _('Movies genres'),  'url':self.getFullUrl('/filmy-online-pl/')},
 #                        {'category':'list_az',        'title': _('Alphabetically'), 'url':self.MAIN_URL},
                         {'category':'search',         'title': _('Search'),         'search_item':True}, 
                         {'category':'search_history', 'title': _('Search history')},]
@@ -112,7 +102,7 @@ class Vizjer(CBaseHostClass):
     
     ###################################################
     def listMovieFilters(self, cItem, category):
-        printDBG("Vizjer.listMovieFilters")
+        printDBG("Filman.listMovieFilters")
         
         filter = cItem['category'].split('_')[-1]
         self._fillMovieFilters(cItem)
@@ -122,7 +112,7 @@ class Vizjer(CBaseHostClass):
             self.listsTab(filterTab, cItem, category)
         
     def listsTab(self, tab, cItem, category=None):
-        printDBG("Vizjer.listsTab")
+        printDBG("Filman.listsTab")
         for item in tab:
             params = dict(cItem)
             if None != category:
@@ -131,7 +121,7 @@ class Vizjer(CBaseHostClass):
             self.addDir(params)
 
     def listItems(self, cItem):
-        printDBG("Vizjer.listItems %s" % cItem)
+        printDBG("Filman.listItems %s" % cItem)
         page = cItem.get('page', 1)
 
         url  = cItem['url']
@@ -159,18 +149,18 @@ class Vizjer(CBaseHostClass):
             data = data.split('<div class="poster">')[1:]
         
         for item in data:
-#            printDBG("Vizjer.listItems item %s" % item)
+#            printDBG("Filman.listItems item %s" % item)
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0])
             if url == '': continue
             icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?poster[^"^']+?)['"]''')[0])
-            title = unescapeHTML(self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]).encode('UTF-8')
-            desc = unescapeHTML(self.cm.ph.getSearchGroups(item, '''data-text=['"]([^"^']+?)['"]''')[0]).encode('UTF-8')
+            title = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0].replace('&quot;', '"'.replace('&amp;', '&'))
+            desc = self.cm.ph.getSearchGroups(item, '''data-text=['"]([^"^']+?)['"]''')[0]
             if desc == '': desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'description'), ('</div', '>'), False)[1])
-#            quality = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'quality-version'), ('</div', '>'), False)[1])
-            year = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'rate'), ('</div', '>'), False)[1])
-            if year != '': desc = _('Year: ') + year + '[/br]' + desc
+            quality = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'quality-version'), ('</div', '>'), False)[1])
+            year = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'film_year'), ('</div', '>'), False)[1])
+            if year != '': desc = _('Year: ') + year + ' - ' + _('Quality:') + ' ' + quality + '[/br]' + desc
             if 'serial-online' in url:
-                params = {'good_for_fav':True,'category':'list_seasons', 'url':url, 'title':title, 'desc':desc, 'icon':icon}
+                params = {'good_for_fav':True,'category':'list_series', 'url':url, 'title':title, 'desc':desc, 'icon':icon}
                 self.addDir(params)
             else:
                 params = {'good_for_fav':True, 'url':url, 'title':title, 'desc':desc, 'icon':icon}
@@ -181,43 +171,36 @@ class Vizjer(CBaseHostClass):
             params.update({'title':_('Next page'), 'page':page + 1})
             self.addDir(params)
 
-    def listSeriesSeasons(self, cItem, nextCategory):
-        printDBG("Vizjer.listSeriesSeasons")
+    def listSeries(self, cItem):
+        printDBG("Filman.listSeries %s" % cItem)
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        serieDesc = self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'description'), ('</p', '>'), False)[1]
+        self.setMainUrl(data.meta['url'])
+
         data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'episode-list'), ('<hr', '>'))[1]
-        data = data.split('</ul>')
-        
-        for sItem in data:
-            sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(sItem, ('<span', '>'), ('</span', '>'))[1])
-            if not sTitle: continue
-            sItem = self.cm.ph.getAllItemsBeetwenMarkers(sItem, '<a', '</a>')
-            tabItems = []
-            for item in sItem:
-                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0])
+        #data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<li', '>', 'active'), ('</ul', '>'))
+        data = data.split('<span')
+        for sitem in data:
+#            printDBG("Filman.listSeries sitem %s" % sitem)
+            season = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(sitem, ('<span', '>'), ('</span', '>'))[1])
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(sitem, ('<li', '>'), ('</li', '>'))
+            for item in tmp:
+#                printDBG("Filman.listSeries item %s" % item)
+                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0])
+                if url == '': continue
+#                title = season + ' - ' + self.cleanHtmlStr(item)
                 title = self.cleanHtmlStr(item)
-                tabItems.append({'title':'%s' % title, 'url':url, 'icon':cItem['icon'], 'desc':''})
-            if len(tabItems):
-                params = dict(cItem)
-                params.update({'good_for_fav':False, 'category':nextCategory, 'title':sTitle, 'episodes':tabItems, 'icon':cItem['icon'], 'desc':serieDesc})
-                self.addDir(params)
-                
-    def listSeriesEpisodes(self, cItem):
-        printDBG("Vizjer.listSeriesEpisodes [%s]" % cItem)
-        episodes = cItem.get('episodes', [])
-        cItem = dict(cItem)
-        for item in episodes:
-            self.addVideo(item)
+                params = {'good_for_fav':True, 'url':url, 'title':title, 'icon':cItem['icon']}
+                self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("Vizjer.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG("Filman.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         url = self.getFullUrl('/wyszukiwarka?phrase=%s') % urllib.quote_plus(searchPattern)
         params = {'name':'category', 'category':'list_items', 'good_for_fav':False, 'url':url}
         self.listItems(params)
         
     def getLinksForVideo(self, cItem):
-        printDBG("Vizjer.getLinksForVideo [%s]" % cItem)
+        printDBG("Filman.getLinksForVideo [%s]" % cItem)
                 
         cacheKey = cItem['url']
         cacheTab = self.cacheLinks.get(cacheKey, [])
@@ -242,7 +225,7 @@ class Vizjer(CBaseHostClass):
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<td', '>', 'link-to-video'), ('</tr', '>'))
     
         for item in data:
-#            printDBG("Vizjer.getLinksForVideo item[%s]" % item)
+#            printDBG("Filman.getLinksForVideo item[%s]" % item)
             playerUrl = base64.b64decode(self.cm.ph.getSearchGroups(item, '''data-iframe=['"]([^"^']+?)['"]''')[0]).replace('\\', '')
             playerUrl = self.getFullUrl(self.cm.ph.getSearchGroups(playerUrl, '''src['"]:['"]([^"^']+?)['"]''')[0])
             name = self.up.getHostName(playerUrl)
@@ -257,7 +240,7 @@ class Vizjer(CBaseHostClass):
         return retTab
         
     def getVideoLinks(self, baseUrl):
-        printDBG("Vizjer.getVideoLinks [%s]" % baseUrl)
+        printDBG("Filman.getVideoLinks [%s]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         urlTab = []
         
@@ -273,10 +256,10 @@ class Vizjer(CBaseHostClass):
         return self.up.getVideoLinkExt(baseUrl)
 
     def getArticleContent(self, cItem):
-        printDBG("Vizjer.getArticleContent [%s]" % cItem)
+        printDBG("Filman.getArticleContent [%s]" % cItem)
         itemsList = []
 
-        sts, data = self.getPage(cItem['url'])
+        sts, data = self.cm.getPage(cItem['url'])
         if not sts: return []
 
         title = cItem['title']
@@ -323,10 +306,8 @@ class Vizjer(CBaseHostClass):
             self.listMovieFilters(self.currItem, 'list_items')
         elif category == 'list_items':
             self.listItems(self.currItem)            
-        elif category == 'list_seasons':
-            self.listSeriesSeasons(self.currItem, 'list_episodes')
-        elif category == 'list_episodes':
-            self.listSeriesEpisodes(self.currItem)
+        elif category == 'list_series':
+            self.listSeries(self.currItem)
 
     #SEARCH
         elif category in ["search", "search_next_page"]:
@@ -344,7 +325,7 @@ class Vizjer(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, Vizjer(), True, [])
+        CHostBase.__init__(self, Filman(), True, [])
 
     def withArticleContent(self, cItem):
         return True

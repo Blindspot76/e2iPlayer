@@ -39,6 +39,7 @@ hostdokumentalnenet
 hostdpstreamingcx
 hostdrdk
 hostdsda
+hostdudeplayercom
 hostefilmytv
 hostegybest
 hostekinotv
@@ -52,6 +53,7 @@ hostfilma24hdcom
 hostfilma24io
 hostfilman
 hostfilmaoncom
+hostfilmancc
 hostfilmativa
 hostfilmehdnet
 hostfilmeonlineto
@@ -142,6 +144,7 @@ hostredbull
 hostrtbfbe
 hostrteieplayer
 hostrtlmost
+hosts01pl
 hostserienstreamto
 hostseriesonline
 hostserijeonline
@@ -197,6 +200,7 @@ hostxrysoise
 hostyesmoviesto
 hostyifytv
 hostyoutube
+hostzaluknijcc
 hostzdfmediathek
 hostwebhuplayer
 hostupdatehosts
