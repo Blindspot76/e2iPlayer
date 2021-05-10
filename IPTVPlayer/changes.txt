@@ -1,3 +1,5 @@
+#2021.05.10.02
+-Kisebb javítások
 #2021.05.10.01
 -További összetevők frissítése
 #2021.05.08.01
