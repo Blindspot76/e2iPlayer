@@ -2,14 +2,9 @@
 ###################################################
 # LOCAL import
 ###################################################
-from os import stat
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, byteify
-from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-
 ###################################################
 
 ###################################################
@@ -18,200 +13,299 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 import copy
 import re
 import urllib
-try:    import json
-except Exception: import simplejson as json
+try:
+    import json
+except Exception:
+    import simplejson as json
 ###################################################
 
 
-import requests
-
 def gettytul():
-    return 'http://ustream.to/'
+    return 'http://ustream.tv/'
+
 
 class UstreamTV(CBaseHostClass):
+    MAIN_URL = 'https://www.ustream.tv/'
+    SRCH_URL = MAIN_URL + 'search?q='
+    DEFAULT_ICON_URL = 'http://occopwatch-com.secure40.ezhostingserver.com/wp-content/uploads/2013/10/ustream-logo.jpg'
+
+    MAIN_CAT_TAB = [{'category': 'items', 'title': _('Popular'), 'icon': DEFAULT_ICON_URL, 'cat_id': 'all', 'filters': {'subCategory': '', 'type': 'no-offline', 'location': 'anywhere'}},
+                    {'category': 'categories', 'title': _('Categories'), 'icon': DEFAULT_ICON_URL, 'filters': {}},
+                    {'category': 'search', 'title': _('Search'), 'icon': DEFAULT_ICON_URL, 'search_item': True},
+                    {'category': 'search_history', 'title': _('Search history'), 'icon': DEFAULT_ICON_URL}
+                   ]
+
     def __init__(self):
-        CBaseHostClass.__init__(self)
+        CBaseHostClass.__init__(self, {'history': 'UstreamTV', 'cookie': 'UstreamTV.cookie'})
+        self.cacheFilters = {}
 
-        self.MAIN_URL    = 'https://www.ustream.to/'
-        self.SRCH_URL    = self.MAIN_URL + 'search?q='
-        self.DEFAULT_ICON_URL = 'http://occopwatch-com.secure40.ezhostingserver.com/wp-content/uploads/2013/10/ustream-logo.jpg'
+    def _getFullUrl(self, url):
+        mainUrl = self.MAIN_URL
+        if 0 < len(url) and not url.startswith('http'):
+            url = mainUrl + url
+        if not mainUrl.startswith('https://'):
+            url = url.replace('https://', 'http://')
+        return url
 
-        self.MAIN_CAT_TAB = [
-            {'category': 'listItems',          'title': _("Main"), 'url': self.MAIN_URL},
-            {'category': 'listItems',          'title': _("Sports"), 'url': self.MAIN_URL + '/sports'},
-            {'category': 'listCountries',      'title': _("Countries"), 'url': self.MAIN_URL},
-            ]
-        self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
-
-        self.session = requests.Session()
-        self.session.headers.update(self.HEADER)
-
-    def listItems(self, cItem, nextCategory):
-        printDBG("UstreamTV.listItems cItem: %s" % cItem)
-
-        url = cItem['url']
-        resp = self.session.get(url)
-        if not resp:
+    def fillFilters(self, url):
+        printDBG("UstreamTV.fillFilters")
+        self.cacheFilters = {}
+        sts, data = self.cm.getPage(url)
+        if not sts:
             return
-        data = resp.content
+        filtersTab = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="control-select">', '</select>', False)
+        for filterData in filtersTab:
+            filterName = self.cm.ph.getSearchGroups(filterData, 'view-data-key="([^"]+?)"')[0]
+            if '' == filterName:
+                filterName = self.cm.ph.getSearchGroups(filterData, 'name="([^"]+?)"')[0]
 
-        items = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a class="ch_numz">', '</span>')
-        for item in items:
-            status =  self.cm.ph.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''<span class="status_.*?">(.*?)</span>''')[0])
-            title = self.cm.ph.getSearchGroups(item, '''target="_blank">([^>]+?)<span''')[0]
-            id = self.cm.ph.getSearchGroups(item, '''id=(.*?)&''')[0]
+            filterData = re.compile('<option value="([^"]*?)"[^>]*?>([^<]+?)</option>').findall(filterData)
+            self.cacheFilters[filterName] = []
+            for item in filterData:
+                self.cacheFilters[filterName].append({'title': self.cleanHtmlStr(item[1]), 'value': item[0]})
+        #printDBG("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK [%s]" % )
 
-            #printDBG("UstreamTV.listItems title: %s" % title)
-            #printDBG("UstreamTV.listItems id: %s" % id)
-            itemLink = self.MAIN_URL + "stream_original.php?id=" + id
+    def listFilters(self, cItem, filterName, category):
+        self.cacheFilters = {}
+        if self.cacheFilters == {}:
+            url = self.buildUrl(cItem)
+            self.fillFilters(url)
+        tab = self.cacheFilters.get(filterName, [])
 
-            color = ""
-            if "status_idle" in item:
-                color = "\c00????00"
-            elif "status_unknown" in item:
-                color = "\c00??2525"
-            elif "status_live" in item:
-                color = "\c0000??00"
-            title = color + title
-
-            params = dict(cItem)
-            params.update({'good_for_fav': False, 'category': nextCategory, 'title': title , 'url': itemLink, 'desc':status})
+        for item in tab:
+            params = copy.deepcopy(cItem)
+            params['category'] = category
+            params['title'] = item['title']
+            params['filters'][filterName] = item['value']
             self.addDir(params)
 
-    def listCountries(self, cItem, nextCategory):
-        printDBG("UstreamTV.listCountries cItem: %s" % cItem)
-        url = cItem['url']
-        resp = self.session.get(url)
-        if not resp:
-            return
-        data = resp.content
-        CountriesMenu = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="dropdown-header"', 'class="divider"></li>')[0]
-        CountryList = self.cm.ph.getAllItemsBeetwenMarkers(CountriesMenu, ('<a', 'href='), '</a>')
-        for country in CountryList:
-            link = self.getFullUrl(self.cm.ph.getSearchGroups(country, '''href="([^"]+?)"''')[0])
-            title = self.cm.ph.getSearchGroups(country, '''>([^>]+?)<''')[0]
+    def listsTab(self, tab, cItem, type='dir'):
+        printDBG("UstreamTV.listsTab")
+        for item in tab:
             params = dict(cItem)
-            params.update({'good_for_fav': False, 'category': nextCategory, 'title': title , 'url': link})
-            self.addDir(params)
-
-    def exploreItem(self, cItem):
-        printDBG("UstreamTV.exploreItem cItem: %s" % cItem)
-
-        url = cItem['url']
-
-        resp = self.session.get(url)
-        if not resp:
-            return
-        data = resp.content
-
-        funcs = self.cm.ph.getAllItemsBeetwenMarkers(data, 'eval(function(p,a,c,k,e,d)', '</script>')
-        videolink = None
-        for func in funcs:
-            func = func.replace('</script>', '')
-            func = func.replace('eval', 'console.log')
-
-            ret = js_execute(func)
-            data = ret['data']
-
-            if 'jdtk=' in data:
-                #printDBG("UstreamTV.exploreItem data: %s" % data)
-                filename = self.cm.ph.getSearchGroups(data, '''file_name="([^"]+?)"''')[0]
-                token = self.cm.ph.getSearchGroups(data, '''jdtk="([^"]+?)"''')[0]
-                host = self.cm.ph.getSearchGroups(data, '''host_tmg="([^"]+?)"''')[0]
-                adresa = self.cm.ph.getSearchGroups(data, '''adresa="([^"]+?)"''')[0]
-                videolink = 'http://' + host + "/" +  filename + "?token=" + token
-
-                import math
-                import time
-
-                mytimez = math.floor(int(time.time() * 1000) / 1000)
-
-                l1= "https://cdn.ustream.to/ts_count/%s-tmg.txt?%s" % (adresa, str(mytimez))
-                resp = self.session.get(l1)
-                if not resp:
-                    return
-                ts_count = resp.content
-                #printDBG("UstreamTV.exploreItem ts_count: %s" % ts_count)
-
-                l2 ="https://cdn.ustream.to/ts_count/%s-sequence.txt?%s" % (adresa, str(mytimez))
-                resp = self.session.get(l2)
-                if not resp:
-                    return
-                sequence = resp.content
-                #printDBG("UstreamTV.exploreItem sequence: %s" % sequence)
-
-                videolink += "&sequence=" + sequence
-
-                params = dict(cItem)
-                params.update({'url': strwithmeta(videolink, {'Referer':cItem['url']})})
+            params.update(item)
+            params['name'] = 'category'
+            if type == 'dir':
+                self.addDir(params)
+            else:
                 self.addVideo(params)
-                break
 
-        #printDBG("UstreamTV.exploreItem videolink: %s" % videolink)
+    def buildUrl(self, cItem):
+        if 'q' in cItem:
+            return self.SRCH_URL + cItem['q']
+        cat_id = cItem['cat_id']
+        url = self.MAIN_URL + 'explore/%s/all' % (cat_id)
+        return url.replace('/all/all', '/all')
 
-    def getLinksForVideo(self, cItem):
-        printDBG("Tele5.getLinksForVideo [%s]" % cItem)
-        linksTab = []
-        link = cItem['url']
+    def buildJsonUrl(self, cItem):
+        if 'q' in cItem:
+            cat_id = cItem['q']
+            url = self.MAIN_URL + 'ajax/search.json?q=%s&category=%s&type=%s&location=%s'
+            catFilterName = 'category'
+        else:
+            cat_id = cItem['cat_id']
+            url = self.MAIN_URL + 'ajax-alwayscache/explore/%s/all.json?subCategory=%s&type=%s&location=%s'
+            catFilterName = 'subCategory'
+        filters = cItem.get('filters', {})
+        page = cItem.get('page', 1)
+        url = url % (cat_id, filters.get(catFilterName, ''), filters.get('type', ''), filters.get('location', ''))
+        if page > 1:
+            url += '&page=%s' % page
+        return url
 
-        linksTab.extend(getDirectM3U8Playlist(link, checkExt=True, checkContent=True, sortWithMaxBitrate=999999999))
+    def listCategories(self, cItem, category):
+        printDBG("UstreamTV.listCategories")
+        sts, data = self.cm.getPage(self.MAIN_URL + 'explore/all')
+        if not sts:
+            return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="submenu-column half-width-links">', '<form', False)[1]
+        data = re.compile('<a href="[^"]*?/explore/([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
+        #data = re.compile('<a[^>]*?/([^/]+?)\.json[^>]*?>([^<]+?)<').findall(data)
+        for item in data:
+            if item[0] == 'all':
+                continue
+            params = dict(cItem)
+            params.update({'category': category, 'title': self.cleanHtmlStr(item[1]), 'cat_id': item[0]})
+            self.addDir(params)
 
-        return linksTab
+    def listRegular(self, cItem):
+        printDBG("UstreamTV.listItems")
+        url = self.buildJsonUrl(cItem)
+        self.listItems(cItem, url)
+
+    def listItems(self, cItem, url):
+        printDBG("UstreamTV.listItems")
+        sts, data = self.cm.getPage(url)
+        if not sts:
+            return
+
+        nextPage = False
+        try:
+            data = byteify(json.loads(data))
+            if not data['success']:
+                return
+            nextPage = data['pageMeta']['infinite']
+            data = data['pageContent']
+            data = data.split('<div class="item media-item">')
+            del data[0]
+            for item in data:
+                params = dict(cItem)
+                url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                title = self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0]
+                icon = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+                desc = self.cleanHtmlStr(item)
+                params.update({'title': self.cleanHtmlStr(title), 'icon': self._getFullUrl(icon), 'desc': desc, 'url': self._getFullUrl(url)})
+                self.addVideo(params)
+        except Exception:
+            printExc()
+
+        if nextPage:
+            params = dict(cItem)
+            params.update({'title': _('Next page'), 'page': cItem.get('page', 1) + 1})
+            self.addDir(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
-        cItem['q']  = urllib.quote_plus(searchPattern)
+        cItem['q'] = urllib.quote_plus(searchPattern)
         cItem['filters'] = {}
         self.listFilters(cItem, 'category', 'filter_type')
+
+    def getLinksForVideo(self, cItem):
+        printDBG("UstreamTV.getLinksForVideo [%s]" % cItem)
+        urlTab = []
+        tmp = self.up.getVideoLinkExt(cItem['url'])
+        for item in tmp:
+            item['need_resolve'] = 0
+            urlTab.append(item)
+        return urlTab
 
     def getFavouriteData(self, cItem):
         return cItem['url']
 
     def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
+        return self.getLinksForVideo({'url': fav_data})
 
-    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
+    def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('handleService start')
 
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
-        name     = self.currItem.get("name", '')
+        name = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG("handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category))
         self.currList = []
 
     #MAIN MENU
-        if name is None:
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
-        elif category == 'listItems':
-            self.listItems(self.currItem, 'exploreItem')
-        elif category == 'listCountries':
-            self.listCountries(self.currItem, 'listItems')
+        if name == None:
+            self.listsTab(self.MAIN_CAT_TAB, {'name': 'category'})
+        elif category == 'categories':
+            self.listCategories(self.currItem, 'filter_subCategory')
     # FILTERS
-        elif category == 'exploreItem':
-            self.exploreItem(self.currItem)
-
+        elif category == 'filter_subCategory':
+            self.listFilters(self.currItem, 'subCategory', 'filter_type')
+        elif category == 'filter_type':
+            self.listFilters(self.currItem, 'type', 'filter_location')
+        elif category == 'filter_location':
+            self.listFilters(self.currItem, 'location', 'items')
+    #ITEMS
+        elif category == 'items':
+            self.listRegular(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
-            cItem.update({'search_item':False, 'name':'category'})
+            cItem.update({'search_item': False, 'name': 'category'})
             self.listSearchResult(cItem, searchPattern, searchType)
-    #HISTORY SEARCH
+    #HISTORIA SEARCH
         elif category == "search_history":
-            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+            self.listsHistory({'name': 'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
 
         CBaseHostClass.endHandleService(self, index, refresh)
 
+
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, UstreamTV(), True)
+        CHostBase.__init__(self, UstreamTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
+    def getLogoPath(self):
+        return RetHost(RetHost.OK, value=[GetLogoDir('ustreamtvlogo.png')])
 
-if __name__=='__main__':
-    host = UstreamTV()
-    cItem = host.MAIN_CAT_TAB[0]
-    print(cItem)
+    def getLinksForVideo(self, Index=0, selItem=None):
+        retCode = RetHost.ERROR
+        retlist = []
+        if not self.isValidIndex(Index):
+            return RetHost(retCode, value=retlist)
+
+        urlList = self.host.getLinksForVideo(self.host.currList[Index])
+        for item in urlList:
+            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
+
+        return RetHost(RetHost.OK, value=retlist)
+    # end getLinksForVideo
+
+    def converItem(self, cItem):
+        hostList = []
+        searchTypesOptions = [] # ustawione alfabetycznie
+
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
+
+        if 'category' == cItem['type']:
+            if cItem.get('search_item', False):
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+        elif 'more' == cItem['type']:
+            type = CDisplayListItem.TYPE_MORE
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
+
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
+
+        title = cItem.get('title', '')
+        description = cItem.get('desc', '')
+        icon = cItem.get('icon', '')
+
+        return CDisplayListItem(name=title,
+                                    description=description,
+                                    type=type,
+                                    urlItems=hostLinks,
+                                    urlSeparateRequest=1,
+                                    iconimage=icon,
+                                    possibleTypesOfSearch=possibleTypesOfSearch)
+    # end converItem
+
+    def getSearchItemInx(self):
+        try:
+            list = self.host.getCurrList()
+            for i in range(len(list)):
+                if list[i]['category'] == 'search':
+                    return i
+        except Exception:
+            printDBG('getSearchItemInx EXCEPTION')
+            return -1
+
+    def setSearchPattern(self):
+        try:
+            list = self.host.getCurrList()
+            if 'history' == list[self.currIndex]['name']:
+                pattern = list[self.currIndex]['title']
+                search_type = list[self.currIndex]['search_type']
+                self.host.history.addHistoryItem(pattern, search_type)
+                self.searchPattern = pattern
+                self.searchType = search_type
+        except Exception:
+            printDBG('setSearchPattern EXCEPTION')
+            self.searchPattern = ''
+            self.searchType = ''
+        return

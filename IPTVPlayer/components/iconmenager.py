@@ -31,8 +31,7 @@ from Components.config import config
 #config.plugins.iptvplayer.SciezkaCache = ConfigText(default = "/hdd/IPTVCache")
 
 class IconMenager:
-    HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'gzip, deflate'}
-    #HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'}
+    HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36', 'Accept': '*/*', 'Accept-Encoding': 'gzip, deflate'}
 
     def __init__(self, updateFun=None, downloadNew=True):
         printDBG("IconMenager.__init__")
@@ -249,7 +248,9 @@ class IconMenager:
         else:
             self.checkSpace -= 1
         file_path = "%s%s" % (path, filename)
+
         params = {} #{'maintype': 'image'}
+
         if config.plugins.iptvplayer.allowedcoverformats.value != 'all':
             subtypes = config.plugins.iptvplayer.allowedcoverformats.value.split(',')
             #params['subtypes'] = subtypes
@@ -260,7 +261,7 @@ class IconMenager:
                 params['check_first_bytes'].append('\x89\x50\x4E\x47')
             if 'gif' in subtypes:
                 params['check_first_bytes'].extend(['GIF87a', 'GIF89a'])
-            # formato webp	'RI'
+            # formato webp  'RI'
             if 'webp' in subtypes:
                 params['check_first_bytes'].extend(['RI'])
         else:
@@ -270,11 +271,17 @@ class IconMenager:
             img_url = img_url[:-3]
             params_cfad = {'with_metadata': True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True}
             domain = urlparser.getDomain(img_url, onlyDomain=True)
-
+            if domain.startswith("www."):
+                domain = domain[4:]
             params_cfad['cookiefile'] = '/hdd/IPTVCache//cookies/{0}.cookie'.format(domain)
 
         else:
             params_cfad = {}
+
+        if img_url.endswith('|webpToPng'):
+            param_png = {'webp_convert_to_png': True}
+        else:
+            param_png = {}
 
         if img_url.endswith('need_resolve.jpeg'):
             domain = urlparser.getDomain(img_url)
@@ -353,6 +360,7 @@ class IconMenager:
         if not self.cm.isValidUrl(img_url):
             return False
 
-        params = MergeDicts(params, params_cfad)
+        params = MergeDicts(params, params_cfad, param_png)
 
+        printDBG("Calling saveWebFile file_path:'%s' img_url:'%s'" % (file_path, img_url))
         return self.cm.saveWebFile(file_path, img_url, addParams=params)['sts']
