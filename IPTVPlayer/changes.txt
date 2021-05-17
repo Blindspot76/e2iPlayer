@@ -1,3 +1,5 @@
+#2021.05.17.01
+-Kisebb javítások (Info)
 #2021.05.10.02
 -Kisebb javítások
 #2021.05.10.01

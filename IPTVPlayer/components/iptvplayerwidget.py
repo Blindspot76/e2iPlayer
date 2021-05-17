@@ -4,13 +4,16 @@
 #
 #  $Id$
 #
-#
+# 2021-05-17 - Modified by Blindspot
+###################################################
 
 from time import sleep as time_sleep
 from os import remove as os_remove, path as os_path
 from urllib import quote as urllib_quote
 from random import shuffle as random_shuffle
+from datetime import datetime
 import traceback
+import time
 
 ####################################################
 #                   E2 components
@@ -43,7 +46,6 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import IsUrlDown
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvfavourites import IPTVFavourites
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools_FreeSpace, \
                                                           mkdirs as iptvtools_mkdirs, GetIPTVPlayerVerstion, GetVersionNum, \
                                                           printDBG, printExc, iptv_system, GetHostsList, IsHostEnabled, \
@@ -106,7 +108,7 @@ class E2iPlayerWidget(Screen):
                             <widget name="spinner_3" zPosition="1" position="495,200" size="16,16" transparent="1" alphatest="blend" />
                             <widget name="spinner_4" zPosition="1" position="511,200" size="16,16" transparent="1" alphatest="blend" />
                     </screen>
-                """ % (IPTV_VERSION, GetIconDir('red.png'), GetIconDir('yellow.png'), GetIconDir('green.png'), GetIconDir('blue.png'))
+                """%(IPTV_VERSION, GetIconDir('red.png'), GetIconDir('yellow.png'), GetIconDir('green.png'), GetIconDir('blue.png'))
     else:
         skin = """
                     <screen position="center,center" size="1090,525" title="E2iPlayer %s">
@@ -491,7 +493,8 @@ class E2iPlayerWidget(Screen):
                         message = _('It seems that the host "%s" has crashed. Do you want to report this problem?') % self.hostName
                         message += "\n"
                         message += _('\nMake sure you are using the latest version of the plugin.')
-                        message += _('\nYou can also report problem here: \n https://gitlab.com/maxbambi/e2iplayer/issues')
+                        message += _('\nYou can also report problem here: \nhttps://github.com/blindspot76/e2iplayer/issues/\nor here: http://www.netboard.hu/viewtopic.php?topic=18425')
+
                         self.session.openWithCallback(self.reportHostCrash, MessageBox, text=message, type=MessageBox.TYPE_YESNO)
             self.hideSpinner()
         except Exception:
@@ -504,7 +507,8 @@ class E2iPlayerWidget(Screen):
                     exceptStack = self.workThread.getExceptStack()
                     reporter = GetPluginDir('iptvdm/reporthostcrash.py')
                     msg = urllib_quote('%s|%s|%s|%s' % ('HOST_CRASH', E2iPlayerWidget.IPTV_VERSION, self.hostName, self.getCategoryPath()))
-                    self.crashConsole = iptv_system('python "%s" "http://iptvplayer.vline.pl/reporthostcrash.php?msg=%s" "%s" 2&>1 > /dev/null' % (reporter, msg, exceptStack))
+                    self.crashConsole = iptv_system('python "%s" "http://blindspot.nhely.hu/reporthostcrash.php?msg=%s" "%s" 2&>1 > /dev/null' % (reporter, msg, exceptStack))
+
                     printDBG(msg)
                 except Exception:
                     printExc()
@@ -611,7 +615,6 @@ class E2iPlayerWidget(Screen):
             options.append((_("Edit favourites"), "EDIT_FAV"))
         elif 'favourites' == self.hostName:
             options.append((_("Edit favourites"), "EDIT_FAV"))
-            options.append((_("Remove from favourites"), "DELETE_FAV"))
 
         if None != self.activePlayer.get('player', None):
             title = _('Change active movie player')
@@ -708,26 +711,20 @@ class E2iPlayerWidget(Screen):
         TextMSG = ''
         if ret:
             if ret[1] == "info": #information about plugin
-                TextMSG = _("Lead programmer: ") + "\n\t- samsamsam\n"
-                TextMSG += _("E-mail: ") + "\n\t- iptvplayere2@gmail.com\n"
-                TextMSG += _("www: ") + "\n\t- http://iptvplayer.vline.pl/" + '\n\t- http://www.iptvplayer.gitlab.io/\n'
-                TextMSG += _("Developers: ")
-                developersTab = [{'nick': 'zdzislaw22', },
-                                 {'nick': 'mamrot', },
-                                 {'nick': 'MarcinO', },
-                                 {'nick': 'skalita', },
-                                 {'nick': 'atilaks', },
-                                 {'nick': 'huball', },
-                                 {'nick': 'matzg', },
-                                 {'nick': 'tomashj291', },
-                                 {'nick': 'a4tech', },
-                                ]
+                TextMSG  = _("E2iPlayer Magyar Változat")+"\n\n"
+                TextMSG += _("E-mail: ") + "\nblindspot76@gmail.com\n\n"
+                TextMSG += _("www: ") + "\nhttps://github.com/blindspot76/e2iplayer" + '\nhttp://www.netboard.hu/viewtopic.php?topic=18425\n\n\n'
+                TextMSG += _("Készítették: ") 
+                developersTab = [{'nick':'Alec',},
+                                 {'nick':'Celeburdi',    },
+                                 {'nick':'Blindspot',   },
+                                 ]
                 # present alphabetically, the order does not mean validity
                 sortedList = sorted(developersTab, key=lambda k: k['nick'].upper())
                 for item in sortedList:
                     TextMSG += "\n\t- {0}, ".format(item['nick'])
                 TextMSG = TextMSG[:-2]
-                TextMSG += "\n\tand others\n"
+                TextMSG += "\n\tés sokan mások\n"
                 self.session.open(MessageBox, TextMSG, type=MessageBox.TYPE_INFO)
             elif ret[1] == "IPTVDM":
                 self.runIPTVDM()
@@ -773,38 +770,10 @@ class E2iPlayerWidget(Screen):
                 self.requestListFromHost('ForFavItem', currSelIndex, '')
             elif ret[1] == 'EDIT_FAV':
                 self.session.openWithCallback(self.editFavouritesCallback, IPTVFavouritesMainWidget)
-            elif ret[1] == 'DELETE_FAV':
-                self.session.openWithCallback(self.deletefavouriteItem, MessageBox, _("Definitely remove from favorites?"), type=MessageBox.TYPE_YESNO, timeout=10)
-
             elif ret[1] == 'RandomizePlayableItems':
                 self.randomizePlayableItems()
             elif ret[1] == 'ReversePlayableItems':
                 self.reversePlayableItems()
-
-    def deletefavouriteItem(self, confirmed):
-        if confirmed and self.hostName == 'favourites':
-            found = False
-            helper = IPTVFavourites(GetFavouritesDir())
-            sts = helper.load()
-            if not sts:
-                return
-            groups = helper.getGroups()
-            for group in groups:
-                group_id = group['group_id']
-                if self['list'].currentSelection.name.lower() == group_id:
-                    helper.delGroup(group_id)
-                    found = True
-                else:
-                    for idx, item in enumerate(group['items'], start=0):
-                        if self['list'].currentSelection.name == item.name:
-                            helper.delGroupItem(idx, group_id)
-                            found = True
-                            break
-                if found:
-                    break
-            if found:
-                helper.save()
-                self.session.openWithCallback(self.loadHost, MessageBox, _("Item %s removed!") % self['list'].currentSelection.name, type=MessageBox.TYPE_INFO, timeout=5)
 
     def editFavouritesCallback(self, ret=False):
         if ret and 'favourites' == self.hostName: # we must reload host
@@ -1141,7 +1110,7 @@ class E2iPlayerWidget(Screen):
     def onStart(self):
         self.onShow.remove(self.onStart)
         #self.onLayoutFinish.remove(self.onStart)
-        self.setTitle('E2iPlayer ' + GetIPTVPlayerVerstion())
+        self.setTitle( 'E2iPlayer  |  ' + datetime.now().strftime('%Y. %B %-d. - %A') )
         self.loadSpinner()
         self.hideSpinner()
         self.checkBlacklistedImage()
@@ -1524,7 +1493,7 @@ class E2iPlayerWidget(Screen):
             if failCallBackFun:
                 failCallBackFun()
 
-    def loadHost(self, ret=None):
+    def loadHost(self):
         self.hostFavTypes = []
         try:
             _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['IPTVHost'], -1)
