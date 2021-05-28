@@ -1,3 +1,6 @@
+#2021.05.28.01
+-OpenSSL támogatás frissítve (1.1)
+-Kisebb javítások
 #2021.05.24.01
 -Wrealu 24 javítva
 #2021.05.21.01
