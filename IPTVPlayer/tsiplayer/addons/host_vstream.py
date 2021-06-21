@@ -266,15 +266,18 @@ class TSIPHost(TSCBaseHostClass):
                         sTitle = tscolor('\c00??8888')+ 'No informations'
                     self.addMarker({'title':sTitle,'desc':'','icon':image} )	
                 elif (sFunction=='play') or ((sSiteName=='radio') and (sFunction=='')): 
-                    url = sSiteUrl
+                    if (sMediaUrl!=''):
+                        url = sMediaUrl
+                    else:
+                        url = sSiteUrl
 
                     if (sHosterIdentifier =='lien_direct'):
                         host = 'direct'
                     else:
                         host = 'none' 
                     host = 'tshost'
-                    if (sSiteName=='radio'):
-                        url = sMediaUrl
+                    #if (sSiteName=='radio'):
+                    #    url = sMediaUrl
                         #host = 'direct'
                     color = ''
                     host_ = urlparser.getDomain(url).replace('www.','')
@@ -327,8 +330,14 @@ class TSIPHost(TSCBaseHostClass):
             elm['sFileName']         = oGuiElement.getFileName()
             elm['Year']              = oGuiElement.getYear()
             
+            
+            
+            
+            
             if oOutputParameterHandler!='':
                 elm['sHosterIdentifier'] = oOutputParameterHandler.getValue('sHosterIdentifier')            
+                if elm['sMediaUrl']=='':
+                    elm['sMediaUrl']     = oOutputParameterHandler.getValue('sMediaUrl') 
                 sParams                  = oOutputParameterHandler.getParameterAsUri()
             else:
                 elm['sHosterIdentifier'] = 'lien_direct'

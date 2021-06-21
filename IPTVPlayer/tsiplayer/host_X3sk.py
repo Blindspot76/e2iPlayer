@@ -10,7 +10,7 @@ def getinfo():
     info_={}
     name = 'Esheeq.Com'
     hst = tshost(name)	
-    if hst=='': hst = 'https://esheeq.co'
+    if hst=='': hst = 'https://esseq.net'
     info_['host']= hst
     info_['name']=name
     info_['name']='Esheeq.Com'
@@ -59,23 +59,30 @@ class TSIPHost(TSCBaseHostClass):
             if True:# ('/episodes/' in  url) or ('/category/' in  url):
                 #pat = '<li class="EpisodeBlock.*?href="(.*?)".*?Title">(.*?)<.*?bg="(.*?)"'
                 #pat = '<li class="EpisodeBlock.*?href="(.*?)".*?Title">(.*?)<.*?url\((.*?)\)'
+                i=0
                 pat = 'class="block-post.*?href="(.*?)".*?title="(.*?)".*?url\((.*?)\)'
                 lst_data=re.findall(pat, data, re.S)
                 for (url1,titre,image) in lst_data:
                     titre = ph.clean_html(titre)
                     image=self.std_url(image)
-                    if 'post.php?url=' in url1:
-                        url_tmp = url1.split('post.php?url=')[-1].replace('%3D','=')
+                    if '?url=' in url1:
+                        url_tmp = url1.split('?url=')[-1].replace('%3D','=')
                         #try:
                         url1 = base64.b64decode(url_tmp)
                         #except:
                         #    printDBG('error base64:url1='+url_tmp)
                     if '/series/' in url1:
+                        i=i+1
                         self.addDir({'import':cItem['import'],'category' : 'host2','title':titre,'url':url1,'desc':'','icon':image,'hst':'tshost','good_for_fav':True,'mode':'30'})			
                     else:
+                        i=i+1
                         self.addVideo({'import':cItem['import'],'category' : 'host2','title':titre,'url':url1,'desc':'','icon':image,'hst':'tshost','good_for_fav':True})	
                 #if '/series/' not in url:
-                self.addDir({'import':cItem['import'],'category' : 'host2','title':tscolor('\c00????00')+_("Next page"),'url':cItem['url'],'page':page+1,'mode':'30'})			
+                if i>0:
+                    self.addDir({'import':cItem['import'],'category' : 'host2','title':tscolor('\c00????00')+_("Next page"),'url':cItem['url'],'page':page+1,'mode':'30'})
+                else:
+                    if 'قريباً في موقع قصة عشق' in data:
+                        self.addMarker({'title':tscolor('\c0000????')+'قريباً في موقع قصة عشق','icon':cItem['icon']})
             else:
                 pat = 'class="SerieBox".*?href="(.*?)".*?bg="(.*?)".*?>(.*?)</a>'
                 pat = 'class="SerieBox".*?href="(.*?)".*?url\((.*?)\).*?>(.*?)</a>'

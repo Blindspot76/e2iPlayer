@@ -21,11 +21,11 @@ def getinfo():
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'cimanow.cookie'})
-        self.MAIN_URL = 'https://en.cimanow.cc'		
+        self.MAIN_URL = 'https://w.cimanow.cc'		
 
     def showmenu(self,cItem):
         del_ = ['قريبا','قائمتي']        
-        self.add_menu(cItem,'<ul>(.*?)</ul>','<li.*?href="(.*?)".*?>(.*?)</li>','','10',ord=[0,1],del_=del_,search=True)		
+        self.add_menu(cItem,'<ul>(.*?)</ul>','<a href="(.*?)".*?>(.*?)</a>','','10',ord=[0,1],del_=del_,search=True)		
 
     def showmenu1(self,cItem):
         del_ = ['قريبا','أختر وجهتك المفضلة','الاكثر مشاهدة','الاكثر اعجا','احدث الحفلات']
@@ -34,7 +34,7 @@ class TSIPHost(TSCBaseHostClass):
     def showitms(self,cItem):
         desc = [('Info','Ribbon">(.*?)</li>','',''),('Year','year">(.*?)</li>','',''),('Genre','<em>(.*?)</em>','','')]
         next = [1,'20']
-        self.add_menu(cItem,'','<article .*?href="(.*?)"(.*?)title">(.*?)(<em>.*?)</li>.*?src="(.*?)"','','21',ord=[0,2,4,1,3],Desc=desc,Next=next,u_titre=True,EPG=True,del_titre='<t class="fa fa-eye">.*?</em>')		
+        self.add_menu(cItem,'','<article .*?href="(.*?)"(.*?)title">(.*?)(<em>.*?)</li>.*?-src="(.*?)"','','21',ord=[0,2,4,1,3],Desc=desc,Next=next,u_titre=True,EPG=True,del_titre='<t class="fa fa-eye">.*?</em>')		
 
     def showelms(self,cItem):
         self.addVideo({'category':'host2','good_for_fav':True, 'title': cItem['title'],'url':cItem['url'], 'desc':cItem.get('desc',''),'import':cItem['import'],'icon':cItem['icon'],'hst':'tshost'})						

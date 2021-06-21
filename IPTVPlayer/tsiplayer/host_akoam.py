@@ -171,7 +171,7 @@ class TSIPHost(TSCBaseHostClass):
                         self.addDir({'import':import_,'category' : 'host2','title': titre ,'url':Url ,'desc':cItem['desc'],'icon':cItem['icon'],'hst':'tshost','mode':'31'})
                             
                 elif 'sub_episode_links">' in data:
-                    lst_data=re.findall('_episode_links">(.*?)title">(.*?)<.*?<h5>(.*?)<div class="sub', data, re.S)			
+                    lst_data=re.findall('_episode_links">(.*?)title">(.*?)<.*?(?:<h5>|sub-no-file)(.*?)<div class="sub', data, re.S)			
                     for (inf,titre1,data1) in lst_data:
                         img_data=re.findall('src="(.*?)"', inf, re.S)
                         img_ = cItem['icon']

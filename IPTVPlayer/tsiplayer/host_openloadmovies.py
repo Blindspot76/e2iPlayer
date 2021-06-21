@@ -9,16 +9,16 @@ def getinfo():
     info_['name']='OpenloadMovies'
     info_['version']='1.0 03/03/2021'
     info_['dev']='RGYSoft'
-    info_['cat_id']='41'
+    info_['cat_id']='99'
     info_['desc']='Watch Movies & TV shows'
-    info_['icon']='https://openloadmovies.cam/wp-content/uploads/2020/02/openload-movie-desktop.png'
+    info_['icon']='https://openloadmovies.ch/file/logo.png'
     info_['recherche_all']='1'
     return info_
       
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'momomesh.cookie'})
-        self.MAIN_URL = 'https://openloadmovies.cam'
+        self.MAIN_URL = 'https://openloadmovies.ch'
 
     def showmenu0(self,cItem):
         hst='host2'

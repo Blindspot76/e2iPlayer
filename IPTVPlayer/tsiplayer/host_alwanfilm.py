@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 
 def getinfo():
     info_={}
@@ -42,5 +43,10 @@ class TSIPHost(TSCBaseHostClass):
         params=videoUrl.split('%%')
         data_post = {'action':'doo_player_ajax','post':int(params[1]),'nume':int(params[2]),'type':params[0].strip()}
         result = self.add_menu({'url':URL},'','(embed_url)":"(.*?)"','','link1',ord=[1,0],post_data=data_post)	
-        return result[1]	
+        out = result[1][0]
+        printDBG('------->'+str(out))
+        out = result[1][0][0]
+        printDBG('------->'+str(out))        
+        if 'ok.ru/videoembed' in out: out = 'https://ok.ru/videoembed' + out.split('ok.ru/videoembed',1)[1]
+        return	[(out,'1')]
         

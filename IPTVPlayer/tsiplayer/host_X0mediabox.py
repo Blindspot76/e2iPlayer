@@ -238,7 +238,7 @@ class TSIPHost(TSCBaseHostClass,CaptchaHelper):
         sts, data = self.getPage(URL,self.defaultParams)
         if sts:
             data = json_loads(data)
-            data_episodes = data.get('episodes',[])
+            data_episodes = data.get('episodes',[data])
             for elm in data_episodes:
                 printDBG('eeeeeeeeeeeeeee'+str(elm))
                 titre = elm.get('title','')
@@ -256,7 +256,8 @@ class TSIPHost(TSCBaseHostClass,CaptchaHelper):
                 img = elm.get('images',{}).get('fanart',cItem['icon'])
                 img = img.replace('https:/img','https://img')
                 tab_elm.append((order,titre,img,elm)) 
-                tab_elm = sorted(tab_elm, key=lambda x: x[0], reverse=False)
+                tab_elm = sorted(tab_elm, key=lambda x: x[0], reverse=False) 
+                
         self.addDir({'import':cItem['import'],'good_for_fav':True,'elm':elm,'category' : 'host2','year':cItem.get('year',''),'url': '','title':titre+' [Arabic]','desc':cItem['desc'],'icon':img,'hst':'tshost','mode':'40','lng':'ar'} )
         for (order,titre,img,elm) in tab_elm:
             self.addDir({'import':cItem['import'],'good_for_fav':True,'elm':elm,'category' : 'host2','year':cItem.get('year',''),'url': '','title':titre,'desc':cItem['desc'],'icon':img,'hst':'tshost','mode':'40'} )

@@ -26,7 +26,7 @@ def getinfo():
     info_={}
     name = 'Akwam (New)'
     hst = tshost(name)	
-    if hst=='': hst = 'https://akwam.cz'
+    if hst=='': hst = 'https://akwam.in'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2.01 29/09/2020'
@@ -46,12 +46,12 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
         self.MAIN_URL = getinfo()['host']
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = MergeDicts(self.HEADER, {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'})
-        self.defaultParams = {'header':self.HEADER,'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HEADER,'no_redirection':True,'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheLinks = {}
         #self.getPage = self.cm.getPage
 
 
-    def getPage(self,baseUrl, addParams = {}, post_data = None):
+    def getPage1(self,baseUrl, addParams = {}, post_data = None):
         baseUrl = self.std_url(baseUrl)
         baseUrl = re.sub('(akwam\..{2,4}?)/', self.MAIN_URL.replace('https://','')+'/', baseUrl)
         i=0
@@ -70,6 +70,22 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
         return sts, data
 
 
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        baseUrl=self.std_url(baseUrl)
+        if addParams == {}: addParams = dict(self.defaultParams)
+        sts,data = self.cm.getPage(baseUrl, addParams, post_data)
+        printDBG(str(data.meta))
+        code = data.meta.get('status_code','')  
+        while ((code == 302) or (code == 301)):
+            new_url = data.meta.get('location','')
+            if not new_url.startswith('http'):
+                new_url = self.MAIN_URL + new_url
+            new_url=self.std_url(new_url)
+            sts,data = self.cm.getPage(new_url, addParams, post_data)
+            code = data.meta.get('status_code','')
+            printDBG(str(data.meta))
+        return sts, data
+        
     def showmenu0(self,cItem):
         self.addDir({'import':cItem['import'],'category' :'host2','title':'أفلام'   ,'icon':cItem['icon'],'mode':'20','sub_mode':0,'url':self.MAIN_URL+'/movies'})
         self.addDir({'import':cItem['import'],'category' :'host2','title':'مسلسلات' ,'icon':cItem['icon'],'mode':'20','sub_mode':1,'url':self.MAIN_URL+'/series'})	

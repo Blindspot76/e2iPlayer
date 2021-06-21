@@ -241,7 +241,8 @@ class urlparser:
                         'uptobox.com'     : self.pp.parserVSTREAM,                        
                         'streamtape.com'  : self.pp.parserVSTREAM, 
                         'evoload.io'      : self.pp.parserVSTREAM, 
-                        'dood.so'         : self.pp.parserVSTREAM,                          
+                        'dood.so'         : self.pp.parserDOOD,
+                        'doodstream.so'   : self.pp.parserDOOD,                        
                         'thevideobee.to'  : self.pp.parserUNI01,
                         'uqload.com'      : self.pp.parserUNI01,
                         'vidia.tv'        : self.pp.parserUNI01,
@@ -280,6 +281,8 @@ class urlparser:
                         'vidbom.com'      : self.pp.parserUNI01,
                         'vidbeem.com'     : self.pp.parserUNI01,
                         'vedbom.com'      : self.pp.parserUNI01,
+                        'vedpom.com'      : self.pp.parserUNI01, 
+                        'vedsharr.com'    : self.pp.parserUNI01,                         
                         'vedshar.com'     : self.pp.parserUNI01,                        
                         'asia2tv.cc'      : self.pp.parserUNI01,
                         'asiatv.online'   : self.pp.parserUNI01,						
@@ -298,10 +301,11 @@ class urlparser:
                         'playtube.ws'     : self.pp.parserUNI01,
                         'extremenow.net'  : self.pp.parserUNI01,
                         'streamsb.net'    : self.pp.parserUNI01,
+                        'sbembed1.com'    : self.pp.parserUNI01,
                         'kobatube.xyz'    : self.pp.parserUNI01, 
-                        'oktube.co'       : self.pp.parserUNI01,                  
+                        'oktube.co'       : self.pp.parserUNI01, 
                         'movcloud.net'    : self.pp.parserMOVCLOUD,                        
-                        'ninjastream.to'  : self.pp.parserNINJASTREAM,                        
+                        'ninjastream.to'  : self.pp.parserNINJASTREAMTO,                        
                         'movs4u.club'     : self.pp.parserMOVS4U,
                         'dustreaming.fr'  : self.pp.parserDUSTREAMING,
                         'fcdn.stream'     : self.pp.parserDUSTREAMING,                        
@@ -337,7 +341,8 @@ class urlparser:
                         'fembed.com'      : self.pp.parserXSTREAMCDNCOM, 
                         'uppom.live'      :	self.pp.downUPPOM, 	
                         'sandup.co'       : self.pp.downSANDUP,
-                        't7meel.co'       : self.pp.downTA7MEEL,                        
+                        't7meel.co'       : self.pp.downTA7MEEL,
+                        't7meel.site'     : self.pp.downTA7MEEL,                         
                         #					
                         #'hqq.tv'          : self.pp.parserHQQ,
                         'verystream.com'  : self.pp.parserVERYSTREAM,
@@ -413,6 +418,9 @@ class urlparser:
             host2 = host[host.find('.')+1:]
             printDBG('urlparser.getParser II try host[%s]->host2[%s]' % (host, host2))
             parser = self.hostMap.get(host2, None)
+            if None == parser:
+                printDBG('------------> Tester avec le Standard Parse <-------------')
+                parser = self.pp.parserUNI001
         return parser
 
     def checkHostSupport(self, url):
@@ -429,7 +437,8 @@ class urlparser:
         ret = 0
         parser = self.getParser(url, host)
         if None != parser:
-            return 1
+            if parser != self.pp.parserUNI001:
+                return 1
         elif self.isHostsNotSupported(host):
             return -1
         return ret
@@ -698,7 +707,47 @@ class pageParser(CaptchaHelper):
         for n in range(len(host)):
             s += chr(ord(host[n]) ^ ord('2'))
         return s
-        
+ 
+
+    def parserNINJASTREAMTO(self, baseUrl):
+        printDBG("parserNINJASTREAMTO baseUrl [%s]" % baseUrl)
+
+        COOKIE_FILE = GetCookieDir('ninjastream.cookie')
+        httpParams = {
+            'header': {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip',
+                'Referer': baseUrl.meta.get('Referer', baseUrl)
+            },
+            'use_cookie': True,
+            'load_cookie': True,
+            'save_cookie': True,
+            'cookiefile': COOKIE_FILE
+        }
+
+        urlsTab = []
+
+        sts, data = self.cm.getPage(baseUrl, httpParams)
+        if sts:
+            r = self.cm.ph.getSearchGroups(data, r'v-bind:[n|s]*stream="([^"]+?)"')[0].replace('&quot;', '"')
+            if not r:
+                r = self.cm.ph.getSearchGroups(data, r'v-bind:[n|s]*file="([^"]+?)"')[0].replace('&quot;', '"')
+            printDBG("parserNINJASTREAMTO r [%s]" % r)
+            httpParams['header']['X-Requested-With'] = 'XMLHttpRequest'
+            httpParams['header']['x-csrf-token'] = self.cm.ph.getSearchGroups(data, '''<[^>]+?csrf-token[^>]+?content=['"]([^'^"]+?)['"]''')[0]
+            httpParams['header']['x-xsrf-token'] = self.cm.getCookieItem(COOKIE_FILE, 'XSRF-TOKEN')
+            if r:
+                data = json_loads(r)
+                sts, data = self.cm.getPage('https://ninjastream.to/api/video/get', httpParams, {'id': data.get('hashid')})
+                if sts:
+                    data = json_loads(data)
+                    url = data['result']['playlist']
+                    urlsTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+
+        return urlsTab
+
+ 
     def parserJAWCLOUDCO(self, baseUrl):
         printDBG("parserJAWCLOUDCO baseUrl[%r]" % baseUrl)
         if 'embed' not in baseUrl:
@@ -2566,6 +2615,9 @@ class pageParser(CaptchaHelper):
             videoTab.append({'name':label, 'url':url})	
         return videoTab	
 
+    def parserUNI001(self, baseUrl):
+        return self.parserUNI01(baseUrl)
+
     def parserUNI01(self, baseUrl):
         printDBG("parserUNI01 baseUrl[%r]" % baseUrl)
         printDBG("parserUNI01"+str(strwithmeta(baseUrl).meta))
@@ -2579,6 +2631,7 @@ class pageParser(CaptchaHelper):
         if 'movs4u'      in baseUrl: HTTP_HEADER['Referer'] = ''
         if 'uqload'  in baseUrl: HTTP_HEADER['Referer'] = ''
         if 'asia2tv'  in baseUrl: HTTP_HEADER['Referer'] = 'https://asiatv.online'
+        if '/sbembed1.com/e/' in baseUrl: url = baseUrl.replace('/e/','/play/') 
         #printDBG("parserUNI01"+str(HTTP_HEADER))
         COOKIE_FILE = GetCookieDir('UNI01.cookie')	
         self.cm.clearCookie(COOKIE_FILE, ['__cfduid', 'cf_clearance'])
@@ -2586,7 +2639,7 @@ class pageParser(CaptchaHelper):
         sts, data = self.getPageCF(url, urlParams)
         #sts, data = self.cm.getPage(url)
         if not sts: return False
-        printDBG('data='+'#'+str(data)+'#')
+        #printDBG('data='+'#'+str(data)+'#')
         if 'ﾟωﾟ' in data:
             lst_pk = re.findall("(ﾟωﾟ.*?)<", data, re.S)
             if lst_pk:
@@ -2838,26 +2891,75 @@ class pageParser(CaptchaHelper):
         return data + ''.join([random.choice(t) for _ in range(10)])
         
     def parserDOOD(self, baseUrl):
-        videoTab = []
-        UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/66.0'
-        printDBG("parserFEURL baseUrl[%r]" % baseUrl)
-        HTTP_HEADER= {'User-Agent':UA}
-        urlParams = {'header': HTTP_HEADER}
-        sts, data = self.cm.getPage(baseUrl, urlParams)
-        if not sts: return False
-        lst_data = re.findall('(/pass_md5.*?)\'.*?(\?token=.*?)"', data, re.S)
-        if lst_data:
-            result = 'https://dood.to'+lst_data[0][0]
-            token = lst_data[0][1]
-            urlParams['header']['referer'] = baseUrl
-            sts, data = self.cm.getPage(result, urlParams)
-            if sts :
-                printDBG('data='+str(data))
-                link = self.dood_decode(data)+token+str(int(time.time() * 1000))
-                printDBG('link='+str(link))
-                link = strwithmeta(link, {'User-Agent':UA})
-                videoTab.append({'name':'[MP4]', 'url':link})
-        return videoTab
+        printDBG("parserDOOD baseUrl [%s]" % baseUrl)
+        
+        httpParams = {
+            'header' : {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip',
+                'Referer' : baseUrl.meta.get('Referer', baseUrl)
+            }, 
+            'use_cookie':True,
+            'load_cookie':True,
+            'save_cookie':True,
+            'cookiefile': GetCookieDir("dood.cookie")
+        }
+
+        urlsTab = []
+        
+        if '/d/' in baseUrl:
+            baseUrl = baseUrl.replace('/d/','/e/')
+        
+        sts, data = self.cm.getPage(baseUrl, httpParams)
+        
+        if sts:
+            printDBG("-----------------------")
+            printDBG(data)
+            printDBG("-----------------------")
+
+
+        subTracks=[]
+        #<track kind="captions" src="https://doodstream.com/srt/00705/s72n7d5hi6qc_Serbian.vtt" srclang="en" label="Serbian" default>
+        tracks = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '>', withMarkers=True)
+        for track in tracks:
+            track_kind = self.cm.ph.getSearchGroups(track, '''kind=['"]([^'^"]+?)['"]''')[0]
+            if 'caption' in track_kind:
+                srtUrl = self.cm.ph.getSearchGroups(track, '''src=['"]([^'^"]+?)['"]''')[0]
+                srtLabel= self.cm.ph.getSearchGroups(track, '''label=['"]([^'^"]+?)['"]''')[0]
+                srtFormat = srtUrl[-3:]
+                params = {'title': srtLabel, 'url': srtUrl, 'lang': srtLabel.lower()[:3], 'format': srtFormat}
+                printDBG(str(params))
+                subTracks.append(params)
+
+        #$.get('/pass_md5/3526522-87-9-1595176733-d1cadb0bad545cdcc61809e26c0ccf93/p3yuk59uqm525k1zc9boovu4'
+        #function makePlay(){for(var a="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",n=t.length,o=0;10>o;o++)a+=t.charAt(Math.floor(Math.random()*n));return a+"?token=p3yuk59uqm525k1zc9boovu4&expiry="+Date.now();};
+        pass_md5_url = self.cm.ph.getSearchGroups(data, "\$\.get\('(/pass_md5[^']+?)'")[0]
+        makePlay= self.cm.ph.getSearchGroups(data, "(function makePlay\(\)\{.*?\};)")[0]
+        if pass_md5_url and makePlay:        
+            pass_md5_url = self.cm.getFullUrl(pass_md5_url, self.cm.getBaseUrl(baseUrl))
+            sts, new_url = self.cm.getPage(pass_md5_url, httpParams)
+
+            if sts:
+                code =  "var url = '%s';\n%s\nconsole.log(url + makePlay());" % (new_url, makePlay)
+                
+                printDBG("-----------------------")
+                printDBG(code)
+                printDBG("-----------------------")
+
+                ret = js_execute(code)
+                newUrl = ret['data'].replace("\n","")
+                if newUrl:
+                    if subTracks:
+                        newUrl = urlparser.decorateUrl(newUrl, {'Referer': baseUrl,'external_sub_tracks':subTracks})
+                    else:
+                        newUrl = urlparser.decorateUrl(newUrl, {'Referer': baseUrl})
+                    params = {'name': 'link' , 'url': newUrl}
+                    printDBG(str(params))
+                    urlsTab.append(params)
+        
+        return urlsTab
+
 
     def parserOKSTREAM(self, baseUrl):
         videoTab = []

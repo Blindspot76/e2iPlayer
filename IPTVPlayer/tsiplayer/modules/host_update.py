@@ -122,17 +122,17 @@ class TSIPHost(TSCBaseHostClass):
         #	return ''		
         
         
-        crc=''
-        _url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/-/refs/master/logs_tree/?format=json&o'
-        try:
-            crc_data = re.findall('commit.*?id":"(.*?)"',self.cm.getPage(_url)[1], re.S)
-            if crc_data:
-                crc=crc_data[0]
-                printDBG('TSIplayer: crc = '+crc)
-            else: printDBG('TSIplayer: crc not found')  
-        except:
-            printDBG('TSIplayer: Get Main URL Error')		
-            return ''		
+        #crc=''
+        #_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/-/refs/master/logs_tree/?format=json&o'
+        #try:
+        #    crc_data = re.findall('commit.*?id":"(.*?)"',self.cm.getPage(_url)[1], re.S)
+        #    if crc_data:
+        #        crc=crc_data[0]
+        #        printDBG('TSIplayer: crc = '+crc)
+        #    else: printDBG('TSIplayer: crc not found')  
+        #except:
+        #    printDBG('TSIplayer: Get Main URL Error')		
+        #    return ''		
         
         
         
@@ -164,26 +164,26 @@ class TSIPHost(TSCBaseHostClass):
         except:
             printDBG( 'TSIplayer: Unpacking Error' )
             os_system ('rm -f %s' % source)
-            os_system ('rm -rf %siptv-host-e2iplayer-%s' % (dest, crc))
+            os_system ('rm -rf %siptv-host-e2iplayer' % (dest))
             return ''
 
         try:
-            od = '%siptv-host-e2iplayer-master-%s/'% (dest, crc)
+            od = '%siptv-host-e2iplayer-master/'% (dest)
             do = resolveFilename(SCOPE_PLUGINS, 'Extensions/') 
             cmd = 'cp -rf "%s"/* "%s"/ 2>&1' % (os_path.join(od, 'IPTVPlayer'), os_path.join(do, 'IPTVPlayer'))
             printDBG('<<<<<<<<<<<<<<<<<<<<<<<<<<cmd='+cmd)
             os_system (cmd)
             os_system ('sync')
-            printDBG('TSIplayer: Copy OK')			
+            printDBG('TSIplayer: Copy OK')		
         except:
             printDBG('TSIplayer: Copy Error')
             os_system ('rm -f %s' % source)
-            os_system ('rm -rf %siptv-host-e2iplayer-master-%s' % (dest, crc))
+            os_system ('rm -rf %siptv-host-e2iplayer-master' % (dest))
             return ''
 
-        printDBG( 'TSIplayer: Deleting temporary files' )
-        os_system ('rm -f %s' % source)
-        os_system ('rm -rf %siptv-host-e2iplayer-master-%s' % (dest, crc))
+        #printDBG( 'TSIplayer: Deleting temporary files' )
+        #os_system ('rm -f %s' % source)
+        #os_system ('rm -rf %siptv-host-e2iplayer-master-%s' % (dest, crc))
 
          
         if restart:

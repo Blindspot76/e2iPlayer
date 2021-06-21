@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # vStream https://github.com/Kodi-vStream/venom-xbmc-addons
 #
-from requests import Session, Request, RequestException
+from requests import post, Session, Request, RequestException, ConnectionError
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import addon, dialog, VSlog, VSPath, isMatrix
+from json import loads, dumps
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.util import urlEncode
 
 class cRequestHandler:
     REQUEST_TYPE_GET = 0
@@ -158,9 +160,11 @@ class cRequestHandler:
         else:
             method = "POST"
 
+
+        oResponse = None
         try:
             _request = Request(method, self.__sUrl, headers=self.__aHeaderEntries)
-            if method in ['POST', 'PATCH', 'PUT']:
+            if method in ['POST']:
                 _request.data = sParameters
 
             if self.__Cookie:
@@ -180,7 +184,7 @@ class cRequestHandler:
                 sContent = oResponse.content
 
                 #Necessaire pour Python 3
-                if isMatrix():
+                if isMatrix() and not 'youtube' in oResponse.url:
                     try:
                        sContent = sContent.decode('unicode-escape')
                     except:
@@ -190,6 +194,15 @@ class cRequestHandler:
                             pass
             else:
                 sContent = oResponse.json()
+
+        except ConnectionError as e:
+            # Retry with DNS only if addon is present
+            from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
+            if xbmcvfs.exists('special://home/addons/script.module.dnspython/') and self.__enableDNS == False:
+                self.__enableDNS = True
+                return self.__callRequest()
+            else:
+                error_msg = addon().VSlang(30470)
 
         except RequestException  as e:
             if 'CERTIFICATE_VERIFY_FAILED' in str(e) and self.BUG_SSL == False:
@@ -204,23 +217,50 @@ class cRequestHandler:
                 else:
                     error_msg = addon().VSlang(30470)
             else:
-                error_msg = "%s (%s),%s" % (addon().VSlang(30205), e.reason, self.__sUrl)
+                error_msg = "%s (%s),%s" % (addon().VSlang(30205), e, self.__sUrl)
 
             dialog().VSerror(error_msg)
             sContent = ''
 
-        if oResponse.status_code == 5013:
+        if oResponse.status_code in [503,403]:
+            #Default
+            CLOUDPROXY_ENDPOINT = 'http://localhost:8191/v1'
+            try:
+                json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                    'cmd': 'sessions.list'
+                }))
+            except:
+                dialog().VSerror("%s" % ("Page protege par Cloudflare, veuillez executer  FlareSolverr."))
 
-            # Protected by cloudFlare ?
-            from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import cloudflare
-            if cloudflare.CheckIfActive(sContent):
-                cookies = self.GetCookies()
-                VSlog('Page protegee par cloudflare')
-                CF = cloudflare.CloudflareBypass()
-                sContent = CF.GetHtml(self.__sUrl, sContent, cookies, sParameters, oResponse.headers)
-                self.__sRealUrl, self.__sResponseHeader = CF.GetReponseInfo()
+            #On regarde si une session existe deja.
+            if json_session.json()['sessions']:
+                cloudproxy_session = json_session.json()['sessions'][0]
+            else:
+                json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                    'cmd': 'sessions.create'
+                }))
+                response_session = loads(json_session.text)
+                cloudproxy_session = response_session['session']
 
-        if not sContent:
+            self.__aHeaderEntries['Content-Type'] = 'application/x-www-form-urlencoded' if (method == 'post') else 'application/json'
+
+            #Ont fait une requete.
+            json_response = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                'cmd': 'request.%s' % method.lower(),
+                'url': self.__sUrl,
+                'session': cloudproxy_session,
+                'postData': '%s' % urlEncode(sParameters) if (method.lower() == 'post') else ''
+            }))
+
+            http_code = json_response.status_code
+            response = loads(json_response.text)
+            if 'solution' in response:
+                if self.__sUrl != response['solution']['url']:
+                    self.__sRealUrl = response['solution']['url']
+
+                sContent = response['solution']['response']
+
+        if oResponse and not sContent:
             #Ignorer ces deux codes erreurs.
             ignoreStatus = [200,302]
             if oResponse.status_code not in ignoreStatus:
@@ -245,7 +285,11 @@ class cRequestHandler:
             import sys
             import dns.resolver
 
-            path = VSPath('special://home/addons/script.module.dnspython/lib/').decode('utf-8')
+            if isMatrix():
+                path = VSPath('special://home/addons/script.module.dnspython/lib/')
+            else:
+                path = VSPath('special://home/addons/script.module.dnspython/lib/').decode('utf-8')
+                             
             if path not in sys.path:
                 sys.path.append(path)
             host = args[0]

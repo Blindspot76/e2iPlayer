@@ -60,7 +60,7 @@ class TSIPHost(TSCBaseHostClass):
 
     def showmenu1(self,cItem):
         self.defaut_mobile = False
-        sts, data = self.getPage(self.MAIN_URL+'/homepage6/')
+        sts, data = self.getPage(self.MAIN_URL)
         if sts:
             gnr=cItem.get('sub_mode', 0)
             if gnr==1:

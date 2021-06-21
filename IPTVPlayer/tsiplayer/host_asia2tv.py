@@ -15,7 +15,7 @@ def getinfo():
     info_['name']=name
     info_['version']='1.4 20/02/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='21'
+    info_['cat_id']='99'
     info_['desc']='أفلام و مسلسلات آسياوية'
     info_['icon']='https://i.ibb.co/MpXLVK8/x2p8y3u4.png'
     info_['recherche_all']='1'
@@ -25,11 +25,11 @@ def getinfo():
     
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
-        TSCBaseHostClass.__init__(self,{'cookie':'asia2tv.cookie'})
-        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'
+        TSCBaseHostClass.__init__(self,{'cookie':'asia2tv_.cookie'})
+        #self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'
         self.MAIN_URL = getinfo()['host']
-        self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        #self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
+        #self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
     def showmenu0(self,cItem):
         hst='host2'

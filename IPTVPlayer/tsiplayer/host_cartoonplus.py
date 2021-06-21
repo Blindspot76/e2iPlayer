@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='كرتون+ (Android App)'
 	info_['version']='1.1 07/07/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='23'
+	info_['cat_id']='99'
 	info_['desc']='افلام و مسلسلات كرتون'
 	info_['icon']='https://image.winudf.com/v2/image/Y2FydG9vbnBsdXNwbHVzLmNvbS5jYXJ0b29ucGx1c3BsdXNfc2NyZWVuXzBfMTUyNTIwNzg4NF8wNTc/screen-0.jpg?h=800&fakeurl=1&type=.jpg'
 	info_['recherche_all']='0'

@@ -96,7 +96,7 @@ class TSIPHost(TSCBaseHostClass):
         desc = [('Quality','quality">(.*?)</span>','',''),('Category','class="cat">(.*?)<span class','','')]            
         next = ['rel="next".*?href="(.*?)"','20']        
         if cItem['url'].startswith('http'):        
-            self.add_menu(cItem,'','postDiv">.*?href="(.*?)".*?-src="(.*?)"(.*?)h1">(.*?)<','',[('','31',''),('movies_collections','30','URL')],ord=[0,3,1,2],Next=[1,'30'],u_titre=True,EPG=True,Desc=desc)		
+            self.add_menu(cItem,'','"postDiv.*?href="(.*?)".*?-src="(.*?)"(.*?)h1">(.*?)<','',[('','31',''),('movies_collections','30','URL')],ord=[0,3,1,2],Next=[1,'30'],u_titre=True,EPG=True,Desc=desc)		
         else:
             LINK = self.MAIN_URL+'/wp-admin/admin-ajax.php'          
             post_data ={}
@@ -110,7 +110,7 @@ class TSIPHost(TSCBaseHostClass):
                     post_data[pram_x1]=param_x2
             post_data['action']='fillter_all_movies'
             post_data['pagenum']=page+1
-            self.add_menu(cItem,'','postDiv">.*?href="(.*?)".*?src="(.*?)"(.*?)h1">(.*?)<','','31',LINK = LINK,post_data=post_data,ord=[0,3,1,2],u_titre=True,EPG=True,Desc=desc)		
+            self.add_menu(cItem,'','postDiv.{0,2}">.*?href="(.*?)".*?src="(.*?)"(.*?)h1">(.*?)<','','31',LINK = LINK,post_data=post_data,ord=[0,3,1,2],u_titre=True,EPG=True,Desc=desc)		
             self.addDir({'import':cItem['import'],'category':'host2', 'url':cItem['url'], 'title':tscolor('\c0000??00')+'Page Suivante', 'page':page+1, 'desc':'Page Suivante', 'icon':cItem['icon'], 'mode':'30'})					
         
     def showelms(self,cItem):
@@ -143,23 +143,11 @@ class TSIPHost(TSCBaseHostClass):
                 else:
                     self.addVideo({'import':cItem['import'], 'hst':'tshost', 'url':cItem['url'], 'title':cItem['title'], 'desc':cItem['desc'], 'icon':cItem['icon']})
         
-    def SearchResult(self,str_ch,page,extra):
-        elms = []
-        url_=self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
-        url_=self.std_url(url_)
-        sts, data = self.getPage(url_)
-        if sts:
-            lst_data=re.findall('postDiv">.*?href="(.*?)".*?-src="(.*?)"(.*?)h1">(.*?)<', data, re.S)			
-            for (url1,image,desc1,name_eng) in lst_data:
-                desc=''
-                name_eng=name_eng.replace('&#8211;','-')
-                mode = '31'
-                if 'movies_collections' in url1: mode = '30'				
-                desc,name_eng = self.uniform_titre(name_eng,1)
-                elm = {'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':str(name_eng), 'desc':desc, 'icon':image, 'mode':mode}
-                elms.append(elm)
-                self.addDir(elm)	
-        return elms
+    def SearchResult(self,str_ch,page,extra):   
+        url = self.MAIN_URL+'/page/'+str(page)+'?s='+str_ch
+        desc = [('Quality','quality">(.*?)</span>','',''),('Category','class="cat">(.*?)<span class','','')]            		 
+        self.add_menu({'import':extra,'url':url},'','postDiv.{0,2}">.*?href="(.*?)".*?-src="(.*?)"(.*?)h1">(.*?)<','','31',ord=[0,3,1,2],u_titre=True,EPG=True,Desc=desc)		
+
         
     def MediaBoxResult(self,str_ch,year_,extra):
         urltab=[]
@@ -213,8 +201,10 @@ class TSIPHost(TSCBaseHostClass):
         return urlTab
          
     def getVideos(self,videoUrl):
-        urlTab = []	
-        sts, data = self.cm.getPage(videoUrl)
+        urlTab = []
+        addParams = dict(self.defaultParams)
+        addParams['header']['Referer'] = self.MAIN_URL
+        sts, data = self.cm.getPage(videoUrl,addParams)
         if sts:			
             if 'adilbo_HTML_encoder' in data:
                 printDBG('ttttttttttttttttttttttttttt'+data)

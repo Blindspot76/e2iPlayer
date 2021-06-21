@@ -30,23 +30,26 @@ tunisia_gouv = [("", "None"),("Tunis","Tunis"),("Ariana","Ariana"),("Béja","Bé
 
 
 class URLResolver():
-	def __init__(self,sHosterUrl):
-		sHosterUrl = sHosterUrl.replace('\r','').replace('\n','')
-		self.sHosterUrl = sHosterUrl
-	def getLinks(self):
-		urlTab=[]
-		if config.plugins.iptvplayer.tsi_resolver.value=='tsiplayer':
-			ts_parse = ts_urlparser()
-			e2_parse = urlparser()
-		else:
-			ts_parse = urlparser()
-			e2_parse = ts_urlparser()
-			
-		if ts_parse.checkHostSupport(self.sHosterUrl)==1:
-			urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
-		else:
-			urlTab = e2_parse.getVideoLinkExt(self.sHosterUrl)			
-		return urlTab
+    def __init__(self,sHosterUrl):
+        sHosterUrl = sHosterUrl.replace('\r','').replace('\n','')
+        self.sHosterUrl = sHosterUrl
+    def getLinks(self):
+        urlTab=[]
+        if config.plugins.iptvplayer.tsi_resolver.value=='tsiplayer':
+            ts_parse = ts_urlparser()
+            e2_parse = urlparser()
+        else:
+            ts_parse = urlparser()
+            e2_parse = ts_urlparser()
+            
+        if ts_parse.checkHostSupport(self.sHosterUrl)==1:
+            urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
+        elif e2_parse.checkHostSupport(self.sHosterUrl)==1:
+            urlTab = e2_parse.getVideoLinkExt(self.sHosterUrl)
+        else:
+            printDBG('------------> Pas de parse Trouver <-------------')            
+            urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
+        return urlTab
 
         
 def printD(x1,x2=''):
@@ -568,7 +571,12 @@ class TSCBaseHostClass:
                             if '\\u0' in titre:
                                 titre = titre.decode('unicode_escape',errors='ignore')
                             titre = self.cleanHtmlStr(str(titre))
-                            if not any(word in titre for word in del_):
+                            cntrl = titre
+                            if del_ != []:
+                                if del_[0].startswith('url:'):
+                                    del_[0] = del_[0].replace('url:','')
+                                    cntrl = url
+                            if not any(word in cntrl for word in del_):
                                 if u_titre:
                                     desc1,titre = self.uniform_titre(titre,year_op)
                                     desc = desc1 + desc                             

@@ -37,16 +37,20 @@ class cPlayer():
         sIcon      = oGuiElement.getIcon()
         
         sMediaUrl  = oGuiElement.getMediaUrl()
-        sSiteUrl   = oGuiElement.getSiteUrl()         
-
+        sSiteUrl   = oGuiElement.getSiteUrl() 
+        printDBG('sMediaUrl:'+sMediaUrl)        
+        #PIK = self.MyPath() + "VStream_listing.dat"
+        
+        #data = [oGuiElement, '']
+        #with open(PIK, "a+") as f:
+        #    pickle.dump(data, f)        
+        #return ''
 
         PIK = self.MyPath() + ("tmdb/VStream_listing_%s.dat" % sId)
         time_now = round(time.time() * 1000)
         data = [oGuiElement, '',time_now]
         with open(PIK, "a+b") as f:
-            pickle.dump(data, f)        
-   
-        return ''
+            pickle.dump(data, f)  
         
     def MyPath(self):
         return GetCacheSubDir('Tsiplayer')

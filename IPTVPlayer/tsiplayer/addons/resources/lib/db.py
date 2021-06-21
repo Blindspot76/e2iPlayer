@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # vStream https://github.com/Kodi-vStream/venom-xbmc-addons
 
+import json
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
 
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.inputParameterHandler import cInputParameterHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.util import QuotePlus, Unquote
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import dialog, addon, VSlog, VSPath, isMatrix
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import dialog, addon, VSlog, VSPath, isMatrix, xbmc
 
 SITE_IDENTIFIER = 'cDb'
 SITE_NAME = 'DB'
@@ -16,10 +17,28 @@ except:
     from pysqlite2 import dbapi2 as sqlite
 
 class cDb:
+    #On chercher le profil courant.
+    request = {
+        "jsonrpc": "2.0",
+        "method": "Profiles.GetCurrentProfile",
+        "params": {
+            "properties": ["thumbnail", "lockmode"]
+        },
+        "id": 1
+    }
 
-    # important seul xbmcvfs peux lire le special
-    from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetCacheSubDir
-    DB = GetCacheSubDir('Tsiplayer')+'vstream.db'
+    req = json.dumps(request)
+    
+    #On recupere le nom.
+    name = 'TSIPlayer'
+
+    #Le cas par defaut.
+    if name == 'Master user':
+        from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetCacheSubDir
+        DB = GetCacheSubDir('Tsiplayer')+'vstream.db'
+    else:
+        from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetCacheSubDir
+        DB = GetCacheSubDir('Tsiplayer')+'vstream.db'
 
     try:
         REALDB = VSPath(DB).decode('utf-8')
@@ -259,7 +278,7 @@ class cDb:
         site = QuotePlus(meta['site'])
         # hoster = meta['hoster']
         point = meta['point']
-        ex = "DELETE FROM resume WHERE hoster = '%s'" % site
+        ex = "DELETE FROM resume WHERE title = '%s'" % title
         try:
             self.dbcur.execute(ex)
         except Exception:
@@ -275,24 +294,28 @@ class cDb:
             pass
 
     def get_resume(self, meta):
-        # title = self.str_conv(meta['title'])
-        site = QuotePlus(meta['site'])
+        title = self.str_conv(meta['title'])
+        # site = QuotePlus(meta['site'])
 
-        sql_select = "SELECT * FROM resume WHERE hoster = '%s'" % site
+        sql_select = "SELECT point FROM resume WHERE title = '%s'" % title
+        # sql_select = "SELECT * FROM resume WHERE hoster = '%s'" % site
 
         try:
             self.dbcur.execute(sql_select)
-            # matchedrow = self.dbcur.fetchone()
-            matchedrow = self.dbcur.fetchall()
-            return matchedrow
-        except Exception:
-            VSlog('SQL ERROR %s' % sql_select)
+            matchedrow = self.dbcur.fetchone()
+            # matchedrow = self.dbcur.fetchall()
+            if not matchedrow:
+                return 0
+            return float(matchedrow[0])
+        
+        except Exception as e:
+            VSlog('SQL ERROR : %s' % sql_select)
             return None
 
     def del_resume(self, meta):
-        site = QuotePlus(meta['site'])
+        title = QuotePlus(meta['title'])
 
-        sql_select = "DELETE FROM resume WHERE hoster = '%s'" % site
+        sql_select = "DELETE FROM resume WHERE title = '%s'" % title
 
         try:
             self.dbcur.execute(sql_select)
@@ -366,7 +389,12 @@ class cDb:
 
         # Supprimer toute une catégorie
         elif sCat:
-            sql_delete = "DELETE FROM favorite WHERE cat = '%s'" % sCat
+            catList = ('1', '7')    # films, saga
+            if sCat not in catList:
+                catList = ('2', '3', '4', '8')
+                if sCat not in catList:
+                    catList = ('0', sCat)
+            sql_delete = "DELETE FROM favorite WHERE cat in %s" % str(catList)
 
 
         if sql_delete:
@@ -382,10 +410,10 @@ class cDb:
                     
                 dialog().VSinfo(addon().VSlang(30044))
                 cGui().updateDirectory()
-                return False, False
+                return True
             except Exception:
                 VSlog('SQL ERROR %s' % sql_delete)
-                return False, False
+        return False
 
     # ***********************************
     #   Download fonctions

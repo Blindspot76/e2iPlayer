@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.parser import cParser
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.hosters.hoster import iHoster
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resourcesimport re
+import re
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcgui
 
 class cHoster(iHoster):

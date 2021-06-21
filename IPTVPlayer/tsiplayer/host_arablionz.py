@@ -9,7 +9,7 @@ def getinfo():
     info_={}
     name = 'Arblionz'
     hst = tshost(name)	
-    if hst=='': hst = 'https://arblionz.cam'
+    if hst=='': hst = 'https://arblionz.plus'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2 13/03/2021'
@@ -51,7 +51,7 @@ class TSIPHost(TSCBaseHostClass):
         return sts,data
 
     def showmenu(self,cItem):
-        TAB = [('افلام','','10',0),('مسلسلات','','10',1),('أخري','','10',2)]
+        TAB = [('افلام','/browse','10',0),('مسلسلات','/browse','10',1),('أخري','/browse','10',2)]
         self.add_menu(cItem,'','','','','',TAB=TAB,search=True)
 
     def showmenu1(self,cItem):
@@ -60,14 +60,14 @@ class TSIPHost(TSCBaseHostClass):
     def showitms(self,cItem):
         desc = [('Rating','class="vote">(.*?)</div>','',''),('Quality','class="Qlty".*?>(.*?)</span>','',''),('Year','class="year">(.*?)</span>','','')]
         next = ['class="page-link".*?href="(.*?)"','20']
-        mode = [('','20','URL'),('/episode/','video','URL'),('/film/','video','URL')]
+        mode = [('','20','URL'),('/episode/','video','URL'),('/film/','video','URL'),('/wwe/','video','URL')]
         self.add_menu(cItem,'','<article.*?title">(.*?)<(.*?)src="(.*?)"(.*?)href="(.*?)"','',mode,ord=[4,0,2,1,3],Desc=desc,Next=next,u_titre=True,EPG=True)		
 
     def SearchResult(self,str_ch,page,extra):
         elms = []
         url = self.MAIN_URL+'/search?s='+str_ch
         desc = [('Rating','class="vote">(.*?)</div>','',''),('Quality','class="Qlty".*?>(.*?)</span>','',''),('Year','class="year">(.*?)</span>','','')]
-        mode = [('','20','URL'),('/episode/','video','URL'),('/film/','video','URL')]
+        mode = [('','20','URL'),('/episode/','video','URL'),('/film/','video','URL'),('/wwe/','video','URL')]
         data = self.add_menu({'import':extra,'url':url},'','<article.*?title">(.*?)<(.*?)src="(.*?)"(.*?)href="(.*?)"','',mode,ord=[4,0,2,1,3],Desc=desc,u_titre=True,EPG=True,year_op=1)		
         return data[2]
         

@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-TSIPlayer_VERSION="2021.04.13.0"
+TSIPlayer_VERSION="2021.06.05.0"
