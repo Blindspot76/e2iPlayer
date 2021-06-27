@@ -45,6 +45,8 @@ class cDb:
     except AttributeError:
         REALDB = VSPath(DB)
 
+    del request, req, name    # delete des objets temporaires
+
     def __init__(self):
 
         VSlog('DB engine for db : ' + sqlite.__name__)
@@ -251,7 +253,7 @@ class cDb:
             if matchedrow:
                 return 1
             return 0
-        except Exception:
+        except Exception as e:
             VSlog('SQL ERROR %s' % sql_select)
             return None
 

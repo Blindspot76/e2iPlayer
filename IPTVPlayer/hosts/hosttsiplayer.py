@@ -113,8 +113,8 @@ class TSIPlayer(CBaseHostClass):
         self.tsiplayer_host({'cat_id':'901','ordre':1})        
         
         if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/'):
-            if os.path.exists('/usr/lib/enigma2/python/Plugins/tsiplayer/'):
-                self.addDir({'name':'cat','category' : 'Devmod','title':'Tools','desc':'','icon':'https://i.ibb.co/Sc31b4P/development-icon-131032-1.png'} )
+            #if os.path.exists('/usr/lib/enigma2/python/Plugins/tsiplayer/'):
+            self.addDir({'name':'cat','category' : 'Devmod','title':'Tools','desc':'','icon':'https://i.ibb.co/Sc31b4P/development-icon-131032-1.png'} )
 
 
 
@@ -166,13 +166,20 @@ class TSIPlayer(CBaseHostClass):
 
     def SportLiveReplay(self):
         self.tsiplayer_host({'cat_id':'10'})
+        #if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/resources/'):
+        desc=''    
+        desc=desc + tscolor('\c00????00')+'Info:'+tscolor('\c00??????')+' '+'Youtube'+'\\n'
+        desc=desc+tscolor('\c00????00')+'Version:'+tscolor('\c00??????')+' '+'1.1 24/06/2021'+'\\n'
+        desc=desc+tscolor('\c00????00')+'Developpeur:'+tscolor('\c00??????')+' '+'E2IPlayer | '+ tscolor('\c00????00')+'Adaptation pour Tsiplayer: '+tscolor('\c00??????')+'RGYSoft'+'\\n'
+        elm = {'category': 'host2', 'import': 'from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.host_youtube import ', 'icon': 'https://i.ibb.co/cgRTW3r/youtube.png', 'mode': '00', 'title': 'Youtube','desc':desc}
+        self.addDir(elm )
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Sport Replay |★●-----','desc':'Replay Sport'})
         self.tsiplayer_host({'cat_id':'25'})
         self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Sport Live |★●-----','desc':'Replay Sport'})
         self.tsiplayer_host({'cat_id':'26'})	
         
     def AddonsCat(self):
-        self.tsiplayer_host({'cat_id':'902'})		
+        self.tsiplayer_host({'cat_id':'902'})	
                                 
     def DevCat(self):
         self.addDir({'name':'cat','category' : 'Addons','title':'Addons','desc':'','icon':'https://i.ibb.co/cv2fZ8y/add-ons-icon-11.png'} )        
@@ -200,6 +207,7 @@ class TSIPlayer(CBaseHostClass):
 # HOST tsiplayer
 ###################################################	
     def tsiplayer_get_host(self,cItem,type_):
+        printDBG('-----> check type_'+type_)
         ordre = -1
         if type_ == 'private' :
             folder='/usr/lib/enigma2/python/Plugins/tsiplayer/'
@@ -225,17 +233,22 @@ class TSIPlayer(CBaseHostClass):
         devmod=cItem.get('devmod','')
 
         lst=[]
+        printDBG('-----> check Folder'+folder)
         if os.path.exists(folder):
             lst=os.listdir(folder)
             lst.sort()
             for (file_) in lst:
+                printDBG('-----> check Host'+file_)
                 if (file_.endswith('.py'))and((file_.startswith('host_')) or ((file_.startswith('hide_')))):
                     path_=folder+'/'+file_
                     import_str=import_+file_.replace('.py',' import ')
+                    printDBG('-----> check Host1'+file_)
                     if 'vstream' in file_:
                         try:
+                            printDBG('-----> check Host2'+file_)
                             exec (import_str+'getinfo')
                             info=getinfo()   
+                            printDBG('-----> check info'+str(info))
                         except Exception, e:
                             info={}
                             info['warning']=' >>>>>>> Problem in this host <<<<<<<'
@@ -339,8 +352,8 @@ class TSIPlayer(CBaseHostClass):
     def tsiplayer_host(self,cItem):
         self.tsiplayer_get_host(cItem,'private')
         self.tsiplayer_get_host(cItem,'public')
-        if os.path.exists('/usr/lib/enigma2/python/Plugins/tsiplayer/'):
-            self.tsiplayer_get_host(cItem,'addons')
+        #if os.path.exists('/usr/lib/enigma2/python/Plugins/tsiplayer/'):
+        self.tsiplayer_get_host(cItem,'addons')
         self.tsiplayer_get_host(cItem,'system')
         self.tsiplayer_get_addons_host(cItem)
                         
@@ -423,7 +436,7 @@ class TSIPlayer(CBaseHostClass):
             self.host_.currList=[]
             self.host_.SearchResult(str_ch,page,extra=cItem['import'])
             self.currList=self.host_.currList
-            if page>0:
+            if (type(page) != str) and (page>0):
                 self.addDir({'import':cItem['import'],'category':'_next_page','title': tscolor('\c0000??00')+'Page Suivante','icon':img, 'search_item':False,'page':page+1,'searchPattern':str_ch,'hst':hst})	
         else:
             exec('self.'+hst+'_search(str_ch,page)')

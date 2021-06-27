@@ -121,8 +121,8 @@ class TSIPHost(TSCBaseHostClass):
     def SearchResult(self,str_ch,page,extra):
         url = self.MAIN_URL+'/page/'+str(page)+'/?search='+str_ch
         desc  = [('Genre','class="genres">(.*?)</span>','',''),('Imdb','box-imdb">(.*?)</div>','',''),('Year','</path>(.*?)</span>','',''),('Quality','class="quality">(.*?)</span>','','')]
-        self.add_menu({'import':extra,'url':url+'&post_type=movies','icon':''},'class="colsbox(.*?)(?:<footer|loop-episode)','col-post-movie">.*?src="(.*?)"(.*?)<h3.*?href="(.*?)".*?>(.*?)</h3>(.*?)</div>.{1,50}</div>','','video',Titre='Movies',ord=[2,3,0,1,4],Desc=desc,u_titre=True,EPG=True)		
-        self.add_menu({'import':extra,'url':url+'&post_type=tvshows','icon':''},'class="colsbox(.*?)(?:<footer|loop-episode)','col-post-movie">.*?src="(.*?)"(.*?)<h3.*?href="(.*?)".*?>(.*?)</h3>(.*?)</div>.{1,50}</div>','','21',Titre='TV Shows',ord=[2,3,0,1,4],Desc=desc,u_titre=True,EPG=True)		
+        self.add_menu({'import':extra,'url':url+'&post_type=movies','icon':''},'class="colsbox(.*?)(?:<footer|loop-episode)','col-post-movie">.*?src="(.*?)"(.*?)<h3.*?href="(.*?)".*?>(.*?)</h3>(.*?)</div>.{1,50}</div>','','video',Titre='Movies',ord=[2,3,0,1,4],Desc=desc,u_titre=True,EPG=True,add_vid=False)		
+        self.add_menu({'import':extra,'url':url+'&post_type=tvshows','icon':''},'class="colsbox(.*?)(?:<footer|loop-episode)','col-post-movie">.*?src="(.*?)"(.*?)<h3.*?href="(.*?)".*?>(.*?)</h3>(.*?)</div>.{1,50}</div>','','21',Titre='TV Shows',ord=[2,3,0,1,4],Desc=desc,u_titre=True,EPG=True,add_vid=False)		
 
     def MediaBoxResult(self,str_ch,year_,extra):
         urltab=[]

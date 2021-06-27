@@ -8,7 +8,7 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.inputP
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.outputParameterHandler import cOutputParameterHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import dialog, addon, VSlog
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
+
 
 class cHosterGui:
 
@@ -471,7 +471,7 @@ class cHosterGui:
         sTitle = oInputParameterHandler.getValue('sTitle')
         siteUrl = oInputParameterHandler.getValue('siteUrl')
         sCat = oInputParameterHandler.getValue('sCat')
-        printDBG('-----> sMediaUrl='+sMediaUrl)
+
         if not sTitle:
             sTitle = sFileName
 

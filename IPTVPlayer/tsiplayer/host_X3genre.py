@@ -24,7 +24,7 @@ import time
 ###################################################	
 def getinfo():
     info_={}
-    info_['name']=tscolor('\c0000????')+' >●★| Ramadan 2021 |★●<'
+    info_['name']=' >●★| Ramadan 2021 |★●<'
     info_['version']='2.0 13/04/2021'
     info_['dev']='RGYSoft'
     info_['cat_id']='21'

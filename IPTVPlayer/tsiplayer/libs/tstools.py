@@ -41,14 +41,24 @@ class URLResolver():
         else:
             ts_parse = urlparser()
             e2_parse = ts_urlparser()
-            
-        if ts_parse.checkHostSupport(self.sHosterUrl)==1:
-            urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
-        elif e2_parse.checkHostSupport(self.sHosterUrl)==1:
-            urlTab = e2_parse.getVideoLinkExt(self.sHosterUrl)
-        else:
-            printDBG('------------> Pas de parse Trouver <-------------')            
-            urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
+
+        # Youtube exception
+        if (self.sHosterUrl.startswith('https://www.youtube.') or self.sHosterUrl.startswith('http://www.youtube.')):
+            if (config.plugins.iptvplayer.tsi_resolver.value=='tsiplayer') and (os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/youtubedl_data/youtube_dl')):
+                urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
+            elif (config.plugins.iptvplayer.tsi_resolver.value=='tsiplayer'):
+                urlTab = e2_parse.getVideoLinkExt(self.sHosterUrl)
+            else:
+                urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)               
+                
+        else:        
+            if ts_parse.checkHostSupport(self.sHosterUrl)==1:
+                urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
+            elif e2_parse.checkHostSupport(self.sHosterUrl)==1:
+                urlTab = e2_parse.getVideoLinkExt(self.sHosterUrl)
+            else:
+                printDBG('------------> Pas de parse Trouver <-------------')            
+                urlTab = ts_parse.getVideoLinkExt(self.sHosterUrl)
         return urlTab
 
         

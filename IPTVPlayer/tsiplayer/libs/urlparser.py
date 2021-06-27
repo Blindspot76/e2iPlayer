@@ -37,15 +37,46 @@ from binascii import unhexlify
 from hashlib import md5
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 import os,json,io
-#from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.youtube_dl.extractor import (YoutubePlaylistIE,YoutubeIE,)
-#from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.youtube_dl import YoutubeDL
+try:
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.youtubedl_data.youtube_dl.extractor import (YoutubePlaylistIE,YoutubeIE,)
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.youtubedl_data.youtube_dl import YoutubeDL
+    class YDL(YoutubeDL):
+        def __init__(self, override=None):
+            # Different instances of the downloader can't share the same dictionary
+            # some test set the "sublang" parameter, which would break the md5 checks.
+            params = get_params(override=override)
+            super(YDL, self).__init__(params, auto_init=False)
+            self.result = []
+
+        def to_screen(self, s, skip_eol=None):
+            print(s)
+
+        def trouble(self, s, tb=None):
+            raise Exception(s)
+
+        def download(self, x):
+            self.result.append(x)
+
+        def expect_warning(self, regex):
+            # Silence an expected warning matching a regex
+            old_report_warning = self.report_warning
+
+            def report_warning(self, message):
+                if re.match(regex, message):
+                    return
+                old_report_warning(message)
+            self.report_warning = types.MethodType(report_warning, self)	
+except:
+    pass
 
 def get_params(override=None):
     parameters=''
-    PARAMETERS_FILE = "/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/youtube_dl/parameters.json"
+    PARAMETERS_FILE = "/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/youtubedl_data/parameters.json"
     with io.open(PARAMETERS_FILE, encoding='utf-8') as pf:
         parameters = json.load(pf)
     return parameters
+    
+
 
 
 def urlEncodeNonAscii(b):
@@ -330,7 +361,7 @@ class urlparser:
                         'vidtodo.com'     : self.pp.parserVIDTODOCOM,						
                         'tune.pk'         : self.pp.parseTUNEPK,
                         #'dailymotion.com' : self.pp.parserDAILYMOTION,
-                        #'youtube.com'     : self.pp.parserYOUTUBE1, 
+                        'youtube.com'     : self.pp.parserYOUTUBE1, 
                         #'youtu.be'        : self.pp.parserYOUTUBE,
                         'ok.ru'           : self.pp.parserOKRU,						
                         'flashx.tv'       : self.pp.parserFLASHXTV, 
@@ -376,6 +407,7 @@ class urlparser:
                         #'faststream.in'   : self.pp.parserVIDSTREAM,   						 
                         'waaw.tv'         : self.pp.parserHQQ,
                                                 }
+        #self.hostMap('youtube.com') = self.pp.parserYOUTUBE1 
         return
 
     def checkHostNotSupportbyname(self, name):
@@ -1603,6 +1635,7 @@ class pageParser(CaptchaHelper):
             url = str(elm.get('url',''))
             #url = str(elm.get('fragment_base_url',elm.get('url','')))
             printDBG('url='+url)
+            printDBG('elm='+str(elm))
             format_id = str(elm.get('format_id','NONE!'))
             ext = str(elm.get('ext','NONE!'))
             tbr = str(elm.get('tbr','NONE!'))
@@ -1610,6 +1643,10 @@ class pageParser(CaptchaHelper):
             resolution = str(elm.get('width',''))+'x'+str(elm.get('height',''))
             if 'None' not in resolution:
                 titre = str(elm.get('format_note','NONE!'))
+                if titre=='NONE!':
+                    height= str(elm.get('height','NONE_'))
+                    protocol = str(elm.get('protocol',''))
+                    titre = protocol.title()+' '+height+'P'
                 acodec = str(elm.get('acodec','NONE!'))+'@'+str(elm.get('abr','NONE!'))+'k'+' ('+str(elm.get('asr','NONE!'))+'Hz)'
                 if 'DASH video' in titre: titre = resolution
                 titre = titre +' '+ tbr+'k'
@@ -1619,10 +1656,13 @@ class pageParser(CaptchaHelper):
                 else:
                     if 'none' in acodec:
                         url = decorateUrl("merge://audio_url|video_url", {'audio_url':url_a, 'video_url':url})
-                        titre = 'DASH | ' + titre		
-                    lst.append((int(tbr),{'name':titre, 'url':url}))
-        lst.sort(key=lambda x: x[0])
-        for (x1,vid) in lst:
+                        titre = 'DASH | ' + titre
+                        ind = 0
+                    else:
+                        ind = 1
+                    lst.append((int(tbr),ind,{'name':titre, 'url':url}))
+        lst.sort(key=lambda x: (x[1],x[0]),reverse=True)
+        for (x1,x2,vid) in lst:
             vidTab.append(vid)
         return vidTab
     
