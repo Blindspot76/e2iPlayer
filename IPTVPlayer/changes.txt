@@ -1,3 +1,6 @@
+#2021.07.02.01
+-Videa törölve
+-DMDAMedia hozzáadva (HU) - Béta
 #2021.06.29.01
 -Kisebb javítások (USTVGO, WebCamera.PL)
 #2021.06.27.01

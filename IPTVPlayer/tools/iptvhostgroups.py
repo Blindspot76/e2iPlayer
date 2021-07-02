@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-05-04 by Blindspot - modified iptvhostgroups
+# 2021-07-02 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -67,6 +67,7 @@ class IPTVHostsGroups:
         'filmezz' : [ 'hungarian', 'moviesandseries'] ,
         'nonstopmozi' : [ 'hungarian', 'moviesandseries'] ,
         'mozicsillag' : [ 'hungarian', 'moviesandseries'] ,
+        'dmdamedia' : [ 'hungarian', 'moviesandseries'] ,
         'm4sport' : [ 'hungarian', 'sport'] ,
         'autohu' : [ 'hungarian', 'sport'] ,
         'sonyplayer' : [ 'hungarian', 'moviesandseries'] ,

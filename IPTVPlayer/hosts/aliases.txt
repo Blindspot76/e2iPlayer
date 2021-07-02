@@ -185,6 +185,7 @@
 "hostwatchcartoononline": "https://www.wcoforever.com/",
 "hostwatchwrestling": "http://watchwrestlingup.live/",
 "hostwatchwrestlinguno": "http://watchwrestling.la/",
+"hostwebhuplayer": "WebHu Player",
 "hostwebstream": "\"Web\" streams player",
 "hostwgrane": "http://wgrane.pl/",
 "hostwolnelekturypl": "http://wolnelektury.pl/",
@@ -198,6 +199,6 @@
 "hostyoutube": "https://youtube.com/",
 "hostzaluknijcc": "https://zaluknij.cc/",
 "hostzdfmediathek": "https://www.zdf.de/"
-"hostupdatehosts": "Magyar Változat Telepítő"
+"hostupdatehosts": "Magyar Változat Telepítő",
 }
 

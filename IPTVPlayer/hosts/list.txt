@@ -36,6 +36,7 @@ hostdancetrippin
 hostddl
 hostdixmax
 hostdokumentalnenet
+hostdmdamedia
 hostdpstreamingcx
 hostdrdk
 hostdsda
@@ -51,7 +52,6 @@ hostfavourites
 hostfenixsite
 hostfilma24hdcom
 hostfilma24io
-hostfilman
 hostfilmaoncom
 hostfilmancc
 hostfilmativa
@@ -179,9 +179,7 @@ hostuktvplay
 hosturllist
 hostustreamtv
 hostustvgo
-hostvevo
 hostvidcorncom
-hostvidea
 hostvimeo
 hostvizjerpl
 hostvodpl
@@ -189,6 +187,7 @@ hostvumedicom
 hostwatchcartoononline
 hostwatchwrestling
 hostwatchwrestlinguno
+hostwebhuplayer
 hostwebstream
 hostwgrane
 hostwolnelekturypl
@@ -202,6 +201,5 @@ hostyifytv
 hostyoutube
 hostzaluknijcc
 hostzdfmediathek
-hostwebhuplayer
 hostupdatehosts
 
