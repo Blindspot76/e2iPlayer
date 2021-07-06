@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.07.02. 
+# 2021.07.06. 
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -116,8 +116,8 @@ class Dmdamedia(CBaseHostClass):
         printDBG('Dmdamedia.listMainMenu')
         MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Filmek'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.'},
                         {'category':'list_items',            'title': _('Sorozatok'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.'},
-                        {'category':'search',          'title': _('Keresés'),    'search_item':True, 'desc':'Ez a funkció jelenleg fejlesztés alatt áll.'},
-                        {'category':'search_history',  'title': _('Keresési előzmények'),'desc':'Ez a funkció jelenleg fejlesztés alatt áll.'             }]
+                        {'category':'search',          'title': _('Keresés'), 'search_item':True},
+                        {'category':'search_history',  'title': _('Keresési előzmények')}]
         self.listsTab(MAIN_CAT_TAB, cItem) 
 
     def listItemsF(self, cItem, name):
@@ -268,10 +268,9 @@ class Dmdamedia(CBaseHostClass):
                     self.addDir(params)
                 approve = False
 	
-    def listFiltersF(self, cItem, direct):
+    def listFiltersF(self, cItem):
         printDBG('Dmdamedia.listFiltersFilmek')
-        url = 'https://dmdamedia.eu/film'
-        self.direct = direct                
+        url = 'https://dmdamedia.eu/film'               
         sts, data = self.getPage(url)
                         
         if not sts:
@@ -283,10 +282,9 @@ class Dmdamedia(CBaseHostClass):
             params = {'category':'list_filters','title':title, 'icon': icon , 'url': url}
             self.addDir(params)
    
-    def listFiltersS(self, cItem, direct):
+    def listFiltersS(self, cItem):
         printDBG('Dmdamedia.listFiltersSorozatok')
-        url = 'https://dmdamedia.eu/'
-        self.direct = direct                
+        url = 'https://dmdamedia.eu/'               
         sts, data = self.getPage(url)
                         
         if not sts:
@@ -338,6 +336,16 @@ class Dmdamedia(CBaseHostClass):
             title = title.replace(" ", "_")
         if "Állatfarm" in title:
             title = title.replace("Állatfarm", "allatfarm")
+        if "terminator_a_halaloszto" in title:
+            title = title.replace("terminator_a_halaloszto", "terminator_1")
+        if "terminator_2_az_itelet_napja" in title:
+            title = title.replace("_az_itelet_napja", "")
+        if "terminator_3_a_gepek_lazadasa" in title:
+            title = title.replace("_a_gepek_lazadasa", "")
+        if "terminator_4_megvaltas" in title:
+            title = title.replace("_megvaltas", "")
+        if "terminator_5_genisys" in title:
+            title = title.replace("_genisys", "")
         title = title + "_film"
         filmurl = url + title
         sts, data = self.getPage(filmurl)
@@ -497,6 +505,7 @@ class Dmdamedia(CBaseHostClass):
         category = self.currItem.get("category", '')
         title = self.currItem.get("title", '')
         icon = self.currItem.get("icon", '')
+        url = self.currItem.get("url", '')
         
         printDBG( "handleService: >> name[%s], category[%s], title[%s], icon[%s] " % (name, category, title, icon) )
         self.currList = []
@@ -507,22 +516,22 @@ class Dmdamedia(CBaseHostClass):
             self.listFiltersF(self.currItem, title)
         elif category == 'list_items' and title == "Sorozatok":
             self.listFiltersS(self.currItem, title)
-        elif category == 'list_filters' and self.direct == "Filmek":
+        elif category == 'list_filters' and "film" in url:
             self.listItemsF(self.currItem, title)
-        elif category == 'list_filters' and self.direct == "Sorozatok":
+        elif category == 'list_filters' and "film" not in url:
             self.listItemsS(self.currItem, title)
-        elif category == 'explore_item' and self.direct == "Filmek":
+        elif category == 'explore_item' and "film" in url:
             self.exploreItemsF(self.currItem, title, icon)
         elif category == 'explore_item' and "évad" in title:
             self.exploreItemsE(self.currItem, title, icon)
         elif category == 'explore_item' and "rész" in title:
             self.exploreItemsEL(self.currItem, title, icon)			
-        elif category == 'explore_item' and self.direct == "Sorozatok":
-            self.exploreItemsS(self.currItem, title, icon)					
-        elif category in ["search", "search_next_page"]:
+        elif category == 'explore_item' and "film" not in url:
+            self.exploreItemsS(self.currItem, title, icon)
+        elif category == 'search':
             cItem = dict(self.currItem)
             cItem.update({'search_item':False, 'name':'category'}) 
-            self.listSearchResult(cItem, searchPattern, searchType)
+            self.listSearchResult(cItem, searchPattern, searchType)			
         elif category == "search_history":
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
@@ -530,10 +539,50 @@ class Dmdamedia(CBaseHostClass):
         
         CBaseHostClass.endHandleService(self, index, refresh)
     
-    def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("Dmdamedia.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        printDBG(cItem)
     
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("Dmdamedia.listSearchResult - Filmek cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG(cItem)
+        url = 'https://dmdamedia.eu/film'
+        sts, data = self.getPage(url)           
+        if not sts:
+            return
+        movies = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="','"/></a>')
+        point = searchPattern.split()
+        for p in point:
+            printDBG(p)
+            p = p.lower()
+            for m in movies:
+                title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
+                tik = title.split()				    
+                for t in tik:
+                    t = t.lower()
+                    if p in t:
+                         icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
+                         cleanurl = url.strip('film')
+                         icon = cleanurl+icon
+                         params = {'category':'explore_item','title':title, 'icon': icon , 'url': url}
+                         self.addDir(params)
+	    printDBG("Dmdamedia.listSearchResult - Sorozatok cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG(cItem)
+        url = 'https://dmdamedia.eu/'	
+        sts, data = self.getPage(url)           
+        if not sts:
+            return
+        movies = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="','"/></a>')
+        point = searchPattern.split()
+        for p in point:
+            printDBG(p)
+            p = p.lower()
+            for m in movies:
+                title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
+                tik = title.split()				    
+                for t in tik:
+                    t = t.lower()
+                    if p in t:
+                         icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
+                         params = {'category':'explore_item','title':title, 'icon': icon , 'url': url}
+                         self.addDir(params)
 
 class IPTVHost(CHostBase):
 

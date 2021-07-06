@@ -1,3 +1,5 @@
+#2021.07.06.01
+-DMDAMedia - Kereső hozzáadva (1.1)
 #2021.07.02.01
 -Videa törölve
 -DMDAMedia hozzáadva (HU) - Béta
