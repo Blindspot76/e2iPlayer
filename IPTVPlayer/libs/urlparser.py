@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-
+# Modified by Blindspot - 2021.07.08.
 ###################################################
 # LOCAL import
 ###################################################
@@ -215,6 +215,7 @@ class urlparser:
                        'divxstage.to':          self.pp.parserDIVXSTAGE     ,
                        'donevideo.com':         self.pp.parserLIMEVIDEO     ,
                        'dood.to':               self.pp.parserDOOD          ,
+                       'dood.so':               self.pp.parserDOOD          ,
                        'dood.watch':            self.pp.parserDOOD          ,
                        'doodstream.com':        self.pp.parserDOOD          ,
                        'dotstream.tv':          self.pp.parserDOTSTREAMTV   ,
@@ -545,7 +546,8 @@ class urlparser:
                        'uptostream.com':        self.pp.parserUPTOSTREAMCOM  ,
                        'upvid.co':              self.pp.parserWATCHUPVIDCO   ,
                        'upvid.mobi':            self.pp.parserUPFILEMOBI     ,
-                       'upvideo.cc':            self.pp.parserONLYSTREAM   ,
+                       'upvideo.cc':            self.pp.parserONLYSTREAM     ,
+                       'upvideo.to':            self.pp.parserONLYSTREAM     ,
                        'userscloud.com':        self.pp.parserUSERSCLOUDCOM ,
                        'ustream.tv':            self.pp.parserUSTREAMTV     ,
                        'ustreamix.com':         self.pp.parserUSTREAMIXCOM  ,
