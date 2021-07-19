@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 2021.07.06. 
+# 2021.07.19. 
 ###################################################
 HOST_VERSION = "1.1"
 ###################################################
@@ -352,8 +352,7 @@ class Dmdamedia(CBaseHostClass):
         if not sts:
             return
         meg = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="lista">Megosztók</div>	','<div class="info">')
-        if meg == '':
-            meg = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="lista">Megosztók - feliratos</div>	','<div class="info">')
+        mega = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="lista">Megosztók - feliratos</div>	','<div class="info">')
         for m in meg:
             utl = self.cm.ph.getAllItemsBeetwenMarkers(m,'<a class="','</a>')
             printDBG(m)
@@ -366,6 +365,21 @@ class Dmdamedia(CBaseHostClass):
                     i = i.replace('">', '')
                     title = self.cim + '(' + self.cm.ph.getDataBeetwenMarkers(data, '<div class="infotab-time">','</div>', False) [1] + ')' + " - " + i.replace('?a=', '')
                     url = filmurl + i
+                    desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
+                    params = {'title': title,  'icon': icon, 'url': url, 'desc': desc}
+                    self.addVideo(params)
+        for o in mega:
+            uzl = self.cm.ph.getAllItemsBeetwenMarkers(o,'<a class="','</a>')
+            printDBG(o)
+            for k in uzl:
+                ui = self.cm.ph.getAllItemsBeetwenMarkers(k,'" a href="','">')
+                printDBG(k)
+                for b in ui:
+                    printDBG(b)
+                    b = b.replace('" a href="', '')
+                    b = b.replace('">', '')
+                    title = self.cim + '(' + self.cm.ph.getDataBeetwenMarkers(data, '<div class="infotab-time">','</div>', False) [1] + ')' + " - " + b.replace('?a=', '')
+                    url = filmurl + b
                     desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
                     params = {'title': title,  'icon': icon, 'url': url, 'desc': desc}
                     self.addVideo(params)
@@ -476,8 +490,7 @@ class Dmdamedia(CBaseHostClass):
         sts, data = self.getPage(url)
         normurl = url
         meg = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="lista">Megosztók</div>	','<div class="video">')
-        if meg == '':
-            meg = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="lista">Megosztók - feliratos</div>	','<div class="video">')
+        mega = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="lista">Megosztók - feliratos</div>	','<div class="video">')
         for m in meg:
             utl = self.cm.ph.getAllItemsBeetwenMarkers(m,'<a class="','</a>')
             printDBG(m)
@@ -490,6 +503,23 @@ class Dmdamedia(CBaseHostClass):
                     i = i.replace('">', '')
                     title = self.realtitle + '(' + self.cm.ph.getDataBeetwenMarkers(data, '<div class="infotab-time">','</div>', False) [1] + ')' + " - " + i.replace('?a=', '')
                     url = normurl + i
+                    printDBG(url)
+                    desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
+                    params = {'title': title,  'icon': icon, 'url': url, 'desc':desc}
+                    self.addVideo(params)
+                    printDBG(params) 
+        for e in mega:
+            uti = self.cm.ph.getAllItemsBeetwenMarkers(e,'<a class="','</a>')
+            printDBG(e)
+            for k in uti:
+                ukl = self.cm.ph.getAllItemsBeetwenMarkers(k,'" a href="','">')
+                printDBG(k)
+                for v in ukl:
+                    printDBG(v)
+                    v = v.replace('" a href="', '')
+                    v = v.replace('">', '')
+                    title = self.realtitle + '(' + self.cm.ph.getDataBeetwenMarkers(data, '<div class="infotab-time">','</div>', False) [1] + ')' + " - " + v.replace('?a=', '')
+                    url = normurl + v
                     printDBG(url)
                     desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
                     params = {'title': title,  'icon': icon, 'url': url, 'desc':desc}
@@ -513,9 +543,9 @@ class Dmdamedia(CBaseHostClass):
         if name == None:
             self.listMainMenu({'name':'category'})
         elif category == 'list_items' and title == "Filmek":
-            self.listFiltersF(self.currItem, title)
+            self.listFiltersF(self.currItem)
         elif category == 'list_items' and title == "Sorozatok":
-            self.listFiltersS(self.currItem, title)
+            self.listFiltersS(self.currItem)
         elif category == 'list_filters' and "film" in url:
             self.listItemsF(self.currItem, title)
         elif category == 'list_filters' and "film" not in url:
