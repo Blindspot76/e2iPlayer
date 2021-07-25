@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
+# Modified by Blindspot 2021-07-25
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify
@@ -33,7 +34,7 @@ config.plugins.iptvplayer.eurosportplayer_showauto = ConfigYesNo(default=True)
 config.plugins.iptvplayer.eurosportplayer_showambient = ConfigYesNo(default=True)
 eurosportLanguages = [
     ("all", _("All")), 
-    ("Ambient Sound", _("Ambient Sound")), 
+    ("Kommentátor Nélkül", _("Ambient Sound")), 
     ("Danish", _("Danish")), 
     ("Dutch", _("Dutch")), 
     ("English", _("English")), 
@@ -56,7 +57,7 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("e-mail") + ":", config.plugins.iptvplayer.eurosportplayer_login))
     optionList.append(getConfigListEntry(_("password") + ":", config.plugins.iptvplayer.eurosportplayer_password))
     optionList.append(getConfigListEntry(_("show automatic resolution option") + ":", config.plugins.iptvplayer.eurosportplayer_showauto))
-    optionList.append(getConfigListEntry(_("show streams with ambiental sound") + ":", config.plugins.iptvplayer.eurosportplayer_showambient))
+    optionList.append(getConfigListEntry(_("Kommentátor nélküli adás megjelenítése") + ":", config.plugins.iptvplayer.eurosportplayer_showambient))
     optionList.append(getConfigListEntry(_("preferred language") + ":", config.plugins.iptvplayer.eurosportplayer_showlanguage))
     optionList.append(getConfigListEntry(_("show streams only with min resolution") + ":", config.plugins.iptvplayer.eurosportplayer_minres))
 
@@ -135,8 +136,8 @@ class EuroSportPlayer(CBaseHostClass):
 
         try:
             CAT_TAB = [
-                       {'category': 'on_air', 'title': _('On Air'), },
-                       {'category': 'schedule', 'title': _('Schedule'), },
+                       {'category': 'on_air', 'title': _('Élő Közvetítések'), },
+                       {'category': 'schedule', 'title': _('Műsorvisszanéző'), },
                        {'category': 'vod_sport_filters', 'title': _('All Sports'), } #,
                        #{'category':'search',             'title': _('Search'),          'search_item':True    },
                        #{'category':'search_history',     'title': _('Search history')}
