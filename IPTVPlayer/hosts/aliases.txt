@@ -63,6 +63,7 @@
 "hostfilmixco": "https://filmix.co/",
 "hostfilmoviplex": "https://www.filmoviplex.com/",
 "hostfilmpalast": "http://filmpalast.to/",
+"hostfilmpapa": "FilmPapa HD",
 "hostfilmpertutti": "https://www.filmpertutti.onl/",
 "hostfilmstreamhdit": "http://filmstreamhd.it/",
 "hostfilmstreamvkcom": "http://filmstreamvk.club/",
@@ -175,6 +176,7 @@
 "hosttvrepublika": "http://telewizjarepublika.pl/",
 "hosttwitchtv": "https://twitch.tv/",
 "hostuktvplay": "https://uktvplay.uktv.co.uk/",
+"hostupdatehosts": "Magyar Változat Telepítő",
 "hosturllist": "Urllists player",
 "hostustreamtv": "https://video.ibm.com/",
 "hostvidcorncom": "https://vidcorn.tv/",
@@ -199,6 +201,5 @@
 "hostyoutube": "https://youtube.com/",
 "hostzaluknijcc": "https://zaluknij.cc/",
 "hostzdfmediathek": "https://www.zdf.de/"
-"hostupdatehosts": "Magyar Változat Telepítő",
 }
 

@@ -2,7 +2,7 @@
 ###################################################
 # 2021-04-11 by Blindspot - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "4.4"
+HOST_VERSION = "4.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -128,6 +128,7 @@ class updatehosts(CBaseHostClass):
         self.dstn_dir = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzXKDMhJrEwt0s1NLC5JLQIANWAGVg=='))
         self.EPLRUC = zlib.decompress(base64.b64decode('eJzTTy1J1k/Ny0zPTTTSTzXKLMhJrEwtykksLknOz83NLAEAv1kMNw=='))
         self.UPDATEHOSTS = zlib.decompress(base64.b64decode('eJwrLUhJLEnNyC8uKQYAHAAEtQ=='))
+        self.DMDAMEDIA = zlib.decompress(base64.b64decode('eNpLyU1JzE1NyUwEABILA5c='))
         self.SONYPLAYER = zlib.decompress(base64.b64decode('eJwrzs+rLMhJrEwtAgAYFQRX'))
         self.MYTVTELENOR = zlib.decompress(base64.b64decode('eJzLrSwpK0nNSc3LLwIAHQwEyg=='))
         self.RTLMOST = zlib.decompress(base64.b64decode('eJwrKsnJzS8uAQAMVAMW'))
@@ -221,8 +222,8 @@ class updatehosts(CBaseHostClass):
                 self.aid_ki = 'ID: ' + n_bulst + '\n'
             else:
                 self.aid_ki = ''
-            msg_urllist = self.aid_ki + 'Blindspot féle urllist.stream fájlt lehet itt telepíteni, frissíteni.\nA stream fájlt az "Urllists player" hosttal (Egyéb csoport) lehet lejátszani a Live streams menüpontban...\n\nA "WEB HU PLAYER" host használatát javasoljuk, mert hamarosan a tartalom csak ott lesz elérhető!!!'
-            msg_info = 'v' + HOST_VERSION + '  |  E2iPlayer verzió:  ' + self.vivn + '  |  ' + zlib.decompress(base64.b64decode('eJwrT03KKC3ISaxMLXJIz03MzNFLzs8FAF5sCGA=')) + '  -  Alec\n\n' + msg_uve + msg_muve + msg_huve
+            msg_urllist = self.aid_ki + 'urllist.stream fájlt lehet itt telepíteni, frissíteni.\nA stream fájlt az "Urllists player" hosttal (Egyéb csoport) lehet lejátszani a Live streams menüpontban...\n\nA "WEB HU PLAYER" host használatát javasoljuk, mert hamarosan a tartalom csak ott lesz elérhető!!!'
+            msg_info = 'v' + HOST_VERSION + '  |  E2iPlayer verzió:  ' + self.vivn + '  |  ' + zlib.decompress(base64.b64decode('eNpLysnMSykuyC8xN3NIK0pNzU3MzNHLKOXlAgB85gjk')) + '\n' + msg_uve
             params = dict(cItem)
             params = {'title':'Információ', 'desc':msg_info}
             self.addMarker(params)

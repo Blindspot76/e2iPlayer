@@ -1,3 +1,6 @@
+#2021.07.25.01
+-FilmPapa hozzáadva (HU) - Béta
+-YouTube javítása folyamatban
 #2021.07.19.01
 -DMDAMedia frissítve (Feliratos filmek támogatása)
 -Kisebb javítások
