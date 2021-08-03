@@ -23,7 +23,7 @@ import re
 import datetime
 import urllib
 ###################################################
-#repo.mvshrk.xyz/plugins/
+
 def gettytul():
     return 'https://dmdamedia.hu' 
 

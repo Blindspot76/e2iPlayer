@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2021.07.14.
+# Modified by Blindspot - 2021.08.03.
 ###################################################
 # LOCAL import
 ###################################################
@@ -3064,6 +3064,7 @@ class pageParser(CaptchaHelper):
         return videoUrls
 
     def parserYOUTUBE(self, url):
+        sts, datal = self.cm.getPage(url)
         def __getLinkQuality( itemLink ):
             val = itemLink['format'].split('x', 1)[0].split('p', 1)[0]
             try:
@@ -3084,26 +3085,36 @@ class pageParser(CaptchaHelper):
                 height = "360"
                 dash    = False
                 age     = False
-
-            tmpTab, dashTab = self.getYTParser().getDirectLinks(url, formats, dash, dashSepareteList = True, allowAgeGate = age)
-            #tmpTab = CSelOneLink(tmpTab, __getLinkQuality, int(height)).getSortedLinks()
-            #dashTab = CSelOneLink(dashTab, __getLinkQuality, int(height)).getSortedLinks()
-
+        if '"is_viewed_live","value":"True"' in datal:
+            data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '"},"heartbeatParams":', False) [1]	
+            sts, data = self.cm.getPage(data)
+            if not sts:
+                data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '","probeUrl"', False) [1]
+                sts, data = self.cm.getPage(data)
+            data = data.split()
+            url = data[-1]
             videoUrls = []
-            for item in tmpTab:
-                url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
-                videoUrls.append({ 'name': 'YouTube | {0}: {1}'.format(item['ext'], item['format']), 'url':url, 'format':item.get('format', '')})
-            for item in dashTab:
-                url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
-                if item.get('ext', '') == 'mpd':
-                    videoUrls.append({'name': 'YouTube | dash: ' + item['name'], 'url':url, 'format':item.get('format', '')})
-                else:
-                    videoUrls.append({'name': 'YouTube | custom dash: ' + item['format'], 'url':url, 'format':item.get('format', '')})
-
-            videoUrls = CSelOneLink(videoUrls, __getLinkQuality, int(height)).getSortedLinks()
+            uri = urlparser.decorateParamsFromUrl(url)
+            videoUrls.append({'name':'direct link', 'url':uri})
             return videoUrls
+        else:
+           tmpTab, dashTab = self.getYTParser().getDirectLinks(url, formats, dash, dashSepareteList = True, allowAgeGate = age)
+           #tmpTab = CSelOneLink(tmpTab, __getLinkQuality, int(height)).getSortedLinks()
+           #dashTab = CSelOneLink(dashTab, __getLinkQuality, int(height)).getSortedLinks()
 
-        return False
+           videoUrls = []
+           for item in tmpTab:
+               url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
+               videoUrls.append({ 'name': 'YouTube | {0}: {1}'.format(item['ext'], item['format']), 'url':url, 'format':item.get('format', '')})
+           for item in dashTab:
+               url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
+               if item.get('ext', '') == 'mpd':
+                   videoUrls.append({'name': 'YouTube | dash: ' + item['name'], 'url':url, 'format':item.get('format', '')})
+               else:
+                   videoUrls.append({'name': 'YouTube | custom dash: ' + item['format'], 'url':url, 'format':item.get('format', '')})
+
+           videoUrls = CSelOneLink(videoUrls, __getLinkQuality, int(height)).getSortedLinks()
+           return videoUrls
 
     def parserTINYMOV(self, url):
         printDBG('parserTINYMOV url[%s]' % url)
