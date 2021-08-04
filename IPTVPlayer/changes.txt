@@ -1,3 +1,7 @@
+#2021.08.04.01
+-Youtube további javítások:
+ -Ikonképek helyes megjelenítése
+ -Felkapott videók kategóriák szerinti megjelenítése
 #2021.08.03.01
 -YouTube javítva 
 #2021.07.25.02

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2021-05-10
+# Blindspot - 2021-08-04
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, IsExecutable, printExc, byteify
+from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
 from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
@@ -66,7 +67,7 @@ class Youtube(CBaseHostClass):
           'desc': _('Search youtube materials '),
           'search_item': True},
          {'category': 'feeds',
-          'title': _('Felkapott Videók'),
+          'title': _('Felfedezés'),
           'desc': _('Népszerű Videók Böngészése')},
          {'category': 'search_history',
           'title': _('Search history'),
@@ -80,6 +81,13 @@ class Youtube(CBaseHostClass):
                               #("Program",            "show"    ),
                               #("traylist",           "traylist"),
         self.ytp = YouTubeParser()
+        self.HTTP_HEADER = {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36',
+                            'X-YouTube-Client-Name': '1',
+                            'X-YouTube-Client-Version': '2.20201112.04.01',
+                            'X-Requested-With': 'XMLHttpRequest'
+                            }
+        self.http_params = {'header': self.HTTP_HEADER, 'return_data': True}
         self.currFileHost = None
 
     def _getCategory(self, url):
@@ -170,30 +178,33 @@ class Youtube(CBaseHostClass):
 
     def listFeeds(self, cItem):
         printDBG('Youtube.listFeeds cItem[%s]' % (cItem))
-
-        category = cItem.get("category", "")
-
-        if category == "feeds":
-            url = "https://www.youtube.com/feed/trending"
-            tmpList = self.ytp.getFeedsList(url)
-            for item in tmpList:
-                self.addDir(item)
-
-        elif category.startswith("feeds_"):
-            topic = category[6:]
-            url = cItem.get('url', '')
-            tmpList = self.ytp.getVideoFromFeed(url)
-
-            for item in tmpList:
-                item.update({'name': 'category'})
-                if 'video' == item['type']:
-                    self.addVideo(item)
-                elif 'more' == item['type']:
-                    self.addMore(item)
-                else:
-                    if item['category'] in ["channel", "playlist", "movie", "traylist"] or item['category'].startswith("feeds"):
-                        item['good_for_fav'] = True
-                    self.addDir(item)
+        if cItem['category'] == "feeds_video":
+            sts, data = self.cm.getPage(cItem['url'], self.http_params)
+            data2 = self.cm.ph.getAllItemsBeetwenMarkers(data, "videoRenderer", "watchEndpoint")
+            for item in data2:
+                url = "https://www.youtube.com/watch?v=" + self.cm.ph.getDataBeetwenMarkers(item, 'videoId":"', '","thumbnail":', False) [1]
+                icon = self.cm.ph.getDataBeetwenMarkers(item, '},{"url":"', '==', False) [1]
+                title = self.cm.ph.getDataBeetwenMarkers(item, '"title":{"runs":[{"text":"', '"}]', False) [1]
+                desc = "Készítette: " + self.cm.ph.getDataBeetwenMarkers(item, 'longBylineText":{"runs":[{"text":"', '","navigationEndpoint"', False) [1] + "\n" + "Megjelent " + self.cm.ph.getDataBeetwenMarkers(item, '"publishedTimeText":{"simpleText":"', '"},"lengthText":', False) [1] + "\n" + "Videó hossza: " + self.cm.ph.getDataBeetwenMarkers(item, '"lengthText":{"accessibility":{"accessibilityData":{"label":"', '"}},"simpleText":', False) [1] + "\n" + self.cm.ph.getDataBeetwenMarkers(item, '"viewCountText":{"simpleText":"', '"},"navigationEndpoint":', False) [1]
+                params = {'title':title, 'url': url, 'icon': icon, 'desc': desc}
+                self.addVideo(params)
+        else:
+           title = "Felkapott"
+           url = "https://www.youtube.com/feed/trending"
+           params = {'category':'feeds_video','title':title, 'url': url}
+           self.addDir(params)
+           title = "Zene"
+           url = "https://www.youtube.com/feed/trending?bp=4gINGgt5dG1hX2NoYXJ0cw%3D%3D"
+           params = {'category':'feeds_video','title':title, 'url': url}
+           self.addDir(params)
+           title = "Játék"
+           url = "https://www.youtube.com/feed/trending?bp=4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D"
+           params = {'category':'feeds_video','title':title, 'url': url}
+           self.addDir(params)
+           title = "Filmek"
+           url = "https://www.youtube.com/feed/trending?bp=4gIKGgh0cmFpbGVycw%3D%3D"
+           params = {'category':'feeds_video','title':title, 'url': url}
+           self.addDir(params)
 
     def getVideos(self, cItem):
         printDBG('Youtube.getVideos cItem[%s]' % (cItem))
