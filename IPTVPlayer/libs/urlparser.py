@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2021.08.03.
+# Modified by Blindspot - 2021.08.05.
 ###################################################
 # LOCAL import
 ###################################################
@@ -3065,6 +3065,29 @@ class pageParser(CaptchaHelper):
 
     def parserYOUTUBE(self, url):
         sts, datal = self.cm.getPage(url)
+        videoUrls = []
+        if "channel" and "live" in url:
+            url = url.replace("live", "")
+            sts, datal = self.cm.getPage(url)
+            data1 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '{"videoRenderer":{"videoId":"', '","thumbnail":{"thumbnails":', False)
+            data2 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '}]},"title":{"runs":[{"text":"', '"}],"accessibility":', False)
+            for item in data1:
+                url = "https://youtube.com/watch?v=" + item
+                sts, datal = self.cm.getPage(url)
+                data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '"},"heartbeatParams":', False) [1]	
+                sts, data = self.cm.getPage(data)
+                if not sts:
+                    data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '","probeUrl"', False) [1]
+                    sts, data = self.cm.getPage(data)
+                data = data.split()
+                url = data[-1]
+                uri = urlparser.decorateParamsFromUrl(url)
+                name = data2[data1.index(item)]
+                videoUrls.append({'name':name, 'url':uri})
+            return videoUrls
+           
+        if "channel" in url or "user" in url:
+            url = "https://youtube.com/watch?v=" + self.cm.ph.getDataBeetwenMarkers(datal, 'gridVideoRenderer":{"videoId":"', '","thumbnail":', False) [1]
         def __getLinkQuality( itemLink ):
             val = itemLink['format'].split('x', 1)[0].split('p', 1)[0]
             try:

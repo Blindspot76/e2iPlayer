@@ -1,3 +1,7 @@
+#2021.08.05.01
+-YouTube bővítések:
+ -Csatorna és Felhasználó kezelése a listában
+ -Több élő stream kezelése adott csatornán belül
 #2021.08.04.01
 -Youtube további javítások:
  -Ikonképek helyes megjelenítése
