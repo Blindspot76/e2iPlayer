@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2021.08.05.
+# Modified by Blindspot - 2021.08.06.
 ###################################################
 # LOCAL import
 ###################################################
@@ -3066,11 +3066,15 @@ class pageParser(CaptchaHelper):
     def parserYOUTUBE(self, url):
         sts, datal = self.cm.getPage(url)
         videoUrls = []
-        if "channel" and "live" in url:
+        if "channel" and "live" in url or "user" and "live" in url:
             url = url.replace("live", "")
             sts, datal = self.cm.getPage(url)
             data1 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '{"videoRenderer":{"videoId":"', '","thumbnail":{"thumbnails":', False)
+            if not data1:
+			    data1 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '{"horizontalListRenderer":{"items":[{"gridVideoRenderer":{"videoId":"', '","thumbnail":{"thumbnails":', False)
             data2 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '}]},"title":{"runs":[{"text":"', '"}],"accessibility":', False)
+            if not data2:
+			    data2 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '"simpleText":"', '"},"navigationEndpoint":', False)
             for item in data1:
                 url = "https://youtube.com/watch?v=" + item
                 sts, datal = self.cm.getPage(url)

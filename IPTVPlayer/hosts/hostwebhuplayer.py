@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-12-18 - Web HU Player
+# 2021-08-06 - Web HU Player
 ###################################################
-HOST_VERSION = "2.9"
+HOST_VERSION = "3.0"
 ###################################################
 # LOCAL import
 ###################################################
@@ -118,25 +118,25 @@ class webhuplayer(CBaseHostClass):
                 self.aid_ki = 'Megnézve: ' + n_yt + '\n\n'
             else:
                 self.aid_ki = ''
-            msg_yt_tartalom = self.aid_ki + 'YouTube tartalmak megjelenítése...'
+            msg_yt_tartalom = self.aid_ki + 'YouTube tartalmak megjelenítése'
             n_utso = self.malvadst('1', '10', 'hu_utso_tartalom')
             if n_utso != '' and self.aid:
                 self.aid_ki = 'Megnézve: ' + n_utso + '\n\n'
             else:
                 self.aid_ki = ''
-            msg_utnez_tartalom = self.aid_ki + 'Utoljára nézett tartalmak megjelenítése...'
+            msg_utnez_tartalom = self.aid_ki + 'Utoljára nézett tartalmak megjelenítése'
             n_antrt = self.malvadst('1', '10', 'hu_ajltt_tartalom')
             if n_antrt != '' and self.aid:
                 self.aid_ki = 'Megnézve: ' + n_antrt + '\n\n'
             else:
                 self.aid_ki = ''
-            msg_wh_ajlt_tart = self.aid_ki + 'Ajánlott, nézett tartalmak megjelenítése...'
+            msg_wh_ajlt_tart = self.aid_ki + 'Ajánlott, nézett tartalmak megjelenítése'
             n_if = self.malvadst('1', '10', 'hu_informacio')
             if n_if != '' and self.aid:
                 self.aid_ki = 'Megnézve: ' + n_if + '\n\n'
             else:
                 self.aid_ki = ''
-            msg_info = self.aid_ki + 'Információk megjelenítése...'
+            msg_info = self.aid_ki + 'Információk megjelenítése'
             n_fr = self.malvadst('1', '10', 'hu_fofrissites')
             if n_fr != '' and self.aid:
                 self.aid_ki = 'Megnézve: ' + n_fr + '\n\n'
@@ -147,7 +147,7 @@ class webhuplayer(CBaseHostClass):
                             {'category': 'list_main', 'title': 'YouTube tartalmak', 'tab_id': 'youtartalom', 'desc': msg_yt_tartalom, 'icon':self.ICON_IDOJARAS},
                             {'category': 'list_main', 'title': 'Utoljára nézett tartalmak', 'tab_id': 'ut_nez_tart', 'desc': msg_utnez_tartalom, 'icon':self.DEFAULT_ICON_URL},
                             {'category': 'list_main', 'title': 'Ajánlott, nézett tartalmak', 'tab_id': 'wh_ajlt_tart', 'desc': msg_wh_ajlt_tart, 'icon':self.DEFAULT_ICON_URL},
-                            {'category': 'list_main', 'title': 'Tartalom frissítés, telepítés...', 'tab_id': 'fofrissites', 'desc': msg_frissites, 'icon':self.ICON_FRISSIT}
+                            {'category': 'list_main', 'title': 'Tartalom frissítés, telepítés', 'tab_id': 'fofrissites', 'desc': msg_frissites, 'icon':self.ICON_FRISSIT}
                            ]
             self.listsTab(MAIN_CAT_TAB, cItem)
             params = dict(cItem)
@@ -269,13 +269,13 @@ class webhuplayer(CBaseHostClass):
                     self.aid_ki = 'Megnézve: ' + n_aktt + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_webes_meglevo = self.aid_ki + 'Aktuális webes tartalmak...'
+                msg_webes_meglevo = self.aid_ki + 'Aktuális webes tartalmak'
                 n_akttu = self.malvadst('1', '10', 'hu_webes_uj_tartalom')
                 if n_akttu != '' and self.aid:
                     self.aid_ki = 'Megnézve: ' + n_akttu + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_webes_uj = self.aid_ki + 'Új tartalmak megjelenítése a legutolsó frissítés óta...'
+                msg_webes_uj = self.aid_ki + 'Új tartalmak megjelenítése a legutolsó frissítés óta'
                 vrz, dtm = self.gvsn(self.fwan)
                 n_aktv = self.malvadst('1', '10', 'hu_aktualis_verzio')
                 if n_aktv != '' and self.aid:
@@ -285,14 +285,14 @@ class webhuplayer(CBaseHostClass):
                 if vrz > 0 and dtm != '':
                     vlrs = 'Verzió:  ' + vrz + '  |  Dátuma:  ' + dtm
                     avrzl = '  -  v' + vrz
-                msg_webes_akt = self.aid_ki + 'Aktuális verzió leírása, új és frissített tartalmak bemutatása...\n' + vlrs
+                msg_webes_akt = self.aid_ki + 'Aktuális verzió leírása, új és frissített tartalmak bemutatása\n' + vlrs
                 akt_vrz_l = 'Aktuális verzió leírása' + avrzl
                 n_akk = self.malvadst('1', '10', 'hu_webes_kereses')
                 if n_akk != '' and self.aid:
                     self.aid_ki = 'Megnézve: ' + n_akk + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_webes_kereses = self.aid_ki + 'Keresés az aktuális webes tartalmak megnevezéseiben...\nA folyamat időigényes lehet, akár 1-2 percig is eltarthat...  Légy türelmes!'                
+                msg_webes_kereses = self.aid_ki + 'Keresés az aktuális webes tartalmak megnevezéseiben\nA folyamat időigényes lehet, akár 1-2 percig is eltarthat...  Légy türelmes!'                
                 WEBES_CAT_TAB = [{'category': 'list_second', 'title': 'Aktuális tartalmak', 'tab_id': 'meg_webes', 'desc': msg_webes_meglevo},
                                  {'category': 'list_second', 'title': 'Újdonságok, új tartalmak', 'tab_id': 'meg_webes_u', 'desc': msg_webes_uj},
                                  {'category': 'list_second', 'title': akt_vrz_l, 'tab_id': 'akt_webes', 'desc': msg_webes_akt},
@@ -309,11 +309,11 @@ class webhuplayer(CBaseHostClass):
         try:
             self.susn('2', '10', 'hu_ajltt_tartalom')
             tab_ams = 'whu_ajnlt_musor'
-            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint...')
+            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint')
             tab_adt = 'whu_ajnlt_datum'
-            desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
+            desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint')
             tab_anzt = 'whu_ajnlt_nezettseg'
-            desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
+            desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint')
             A_CAT_TAB = [{'category':'list_six', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
                          {'category':'list_six', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt},
                          {'category':'list_six', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams},
@@ -331,19 +331,19 @@ class webhuplayer(CBaseHostClass):
                     self.aid_ki = 'Megnézve: ' + n_ytt + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_yt_meglevo = self.aid_ki + 'YouTube tartalmak megjelenítése...'
+                msg_yt_meglevo = self.aid_ki + 'YouTube tartalmak megjelenítése'
                 n_yttu = self.malvadst('1', '10', 'hu_yt_uj_tartalom')
                 if n_yttu != '' and self.aid:
                     self.aid_ki = 'Megnézve: ' + n_yttu + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_yt_uj = self.aid_ki + 'Új tartalmak megjelenítése a legutolsó frissítés óta...'
+                msg_yt_uj = self.aid_ki + 'Új tartalmak megjelenítése a legutolsó frissítés óta'
                 n_ytk = self.malvadst('1', '10', 'hu_yt_kereses')
                 if n_ytk != '' and self.aid:
                     self.aid_ki = 'Megnézve: ' + n_ytk + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_yt_kereses = self.aid_ki + 'Keresés az aktuális YouTube tartalmak megnevezéseiben...\nA folyamat időigényes lehet, akár 1-2 percig is eltarthat...  Légy türelmes!'
+                msg_yt_kereses = self.aid_ki + 'Keresés az aktuális YouTube tartalmak megnevezéseiben\nA folyamat időigényes lehet, akár 1-2 percig is eltarthat...  Légy türelmes!'
                 YT_CAT_TAB = [{'category': 'list_second', 'title': 'Aktuális YouTube tartalmak', 'tab_id': 'meg_yt', 'desc': msg_yt_meglevo},
                               {'category': 'list_second', 'title': 'Újdonságok, új tartalmak', 'tab_id': 'meg_ytu', 'desc': msg_yt_uj},
                               {'category': 'search', 'title': 'Keresés', 'search_item': True, 'tab_id': 's_yt', 'desc': msg_yt_kereses}                        
@@ -422,13 +422,13 @@ class webhuplayer(CBaseHostClass):
                     self.aid_ki = 'Megnézve: ' + n_wfr + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_webes_frissit = self.aid_ki + 'Webes tartalom frissítése...'
+                msg_webes_frissit = self.aid_ki + 'Webes tartalom frissítése'
                 n_yfr = self.malvadst('1', '10', 'hu_yt_frissites')
                 if n_yfr != '' and self.aid:
                     self.aid_ki = 'Megnézve: ' + n_yfr + '\n\n'
                 else:
                     self.aid_ki = ''
-                msg_yt_frissit = self.aid_ki + 'YouTube tartalom frissítése...'
+                msg_yt_frissit = self.aid_ki + 'YouTube tartalom frissítése'
                 self.wupt = []
                 self.yupt = []
                 self.dtcffn()
@@ -536,7 +536,7 @@ class webhuplayer(CBaseHostClass):
                             else:
                                 self.addVideo(ipv)
             else:
-                msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez...'
+                msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
             return
@@ -629,7 +629,7 @@ class webhuplayer(CBaseHostClass):
                             else:
                                 self.addVideo(ipv)
             else:
-                msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez...'
+                msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
             return        
@@ -1164,13 +1164,13 @@ class webhuplayer(CBaseHostClass):
             if Which('python2') == '':
                 msg = 'Hiba: 100 - Python 2.7 kell a használathoz!'
             elif Which('unzip') == '':
-                msg = 'Hiba: 101 - unzip kell a használathoz, kérjük telepítsd azt!'
+                msg = 'Hiba: 101 - unzip kell a használathoz, kérjük telepítsd!'
             elif Which('cp') == '':
-                msg = 'Hiba: 102 - cp kell a használathoz, kérjük telepítsd azt!'
+                msg = 'Hiba: 102 - cp kell a használathoz, kérjük telepítsd!'
             elif not os.path.isdir(self.IH):
                 msg = 'Hiba: 103 - Nem megfelelő E2iPlayer könyvtár!'
             elif FOUND_SUB == False:
-                msg = 'Hiba: 104 - Sajnos nem kompatibilis a set-top-box rendszered a használathoz!\nsubprocess modul kell a használathoz, telepítsd azt!'
+                msg = 'Hiba: 104 - Sajnos nem kompatibilis a set-top-box rendszered a használathoz!\nsubprocess modul kell a használathoz, telepítsd!'
             else:
                 valasz = True
         except Exception:
@@ -1439,16 +1439,16 @@ class webhuplayer(CBaseHostClass):
                                                             evo += ev
                                                             uvo += uv
                                             if evo == 0 and uvo == 0:
-                                                dsz = 'Nincs semmi teendő!  A Web média tartalom megfelelő...'
+                                                dsz = 'Nincs semmi teendő!  A Web média tartalom megfelelő.'
                                             else:
                                                 vsz = '  -  Frissítés szükséges'
                                                 if uvo > 0:
                                                     if evo > 0:
-                                                        dsz = str(uvo) + ' új műsor és ' + str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
+                                                        dsz = str(uvo) + ' új műsor és ' + str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető.'
                                                     else:
-                                                        dsz = str(uvo) + ' új műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
+                                                        dsz = str(uvo) + ' új műsor található!  OK gomb megnyomása után a tartalom frissíthető.'
                                                 else:
-                                                    dsz = str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
+                                                    dsz = str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető.'
         except Exception:
             if fileExists(destination):
                 rm(destination) 
@@ -1520,16 +1520,16 @@ class webhuplayer(CBaseHostClass):
                                                             evo += ev
                                                             uvo += uv
                                             if evo == 0 and uvo == 0:
-                                                dsz = 'Nincs semmi teendő!  A YouTube média tartalom megfelelő...'
+                                                dsz = 'Nincs semmi teendő!  A YouTube média tartalom megfelelő.'
                                             else:
                                                 vsz = '  -  Frissítés szükséges'
                                                 if uvo > 0:
                                                     if evo > 0:
-                                                        dsz = str(uvo) + ' új műsor és ' + str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
+                                                        dsz = str(uvo) + ' új műsor és ' + str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető.'
                                                     else:
-                                                        dsz = str(uvo) + ' új műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
+                                                        dsz = str(uvo) + ' új műsor található!  OK gomb megnyomása után a tartalom frissíthető.'
                                                 else:
-                                                    dsz = str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
+                                                    dsz = str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető.'
         except Exception:
             if fileExists(destination):
                 rm(destination) 
