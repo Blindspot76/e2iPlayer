@@ -598,18 +598,7 @@ class YouTubeParser():
             else:
                 # new search
                 # url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s' % (pattern, searchType, sortBy)
-                url = 'https://www.youtube.com/results?search_query=' + pattern + '&sp='
-                if searchType == 'video':
-#                    url += 'EgIQAQ%253D%253D'
-                    url += 'CA%sSAhAB' % sortBy
-                if searchType == 'channel':
-#                    url += 'EgIQAg%253D%253D'
-                    url += 'CA%sSAhAC' % sortBy
-                if searchType == 'playlist':
-#                    url += 'EgIQAw%253D%253D'
-                    url += 'CA%sSAhAD' % sortBy
-                if searchType == 'live':
-                    url += 'EgJAAQ%253D%253D'
+                url = 'https://www.youtube.com/results?search_query=' + pattern
 
                 sts, data = self.cm.getPage(url, self.http_params)
 
