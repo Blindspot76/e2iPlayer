@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2021.08.06.
+# Modified by Blindspot - 2021.08.10.
 ###################################################
 # LOCAL import
 ###################################################
@@ -3083,11 +3083,14 @@ class pageParser(CaptchaHelper):
                 if not sts:
                     data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '","probeUrl"', False) [1]
                     sts, data = self.cm.getPage(data)
-                data = data.split()
-                url = data[-1]
-                uri = urlparser.decorateParamsFromUrl(url)
-                name = data2[data1.index(item)]
-                videoUrls.append({'name':name, 'url':uri})
+                try:
+                   data = data.split()
+                   url = data[-1]
+                   uri = urlparser.decorateParamsFromUrl(url)
+                   name = data2[data1.index(item)]
+                   videoUrls.append({'name':name, 'url':uri})
+                except:
+				   pass
             return videoUrls
            
         if "channel" in url or "user" in url:

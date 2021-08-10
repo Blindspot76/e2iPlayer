@@ -153,7 +153,6 @@ hostshahiidanimenet
 hostshoutcast
 hostskstream
 hostsolarmovie
-hostsonyplayer
 hostsovdub
 hostspiegeltv
 hostsportdeutschland
