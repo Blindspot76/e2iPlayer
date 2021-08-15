@@ -1,3 +1,5 @@
+#2021.08.15.01
+-YouTube keresési eredmények rendezése javítva
 #2021.08.10.01
 -SonyPlayer törölve
 -YouTube Multistream támogatás javítva

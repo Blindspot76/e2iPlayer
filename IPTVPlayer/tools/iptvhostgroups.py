@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-08-10 by Blindspot - modified iptvhostgroups
+# 2021-08-15 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -75,7 +75,6 @@ class IPTVHostsGroups:
         'rtlmost' : [ 'hungarian', 'moviesandseries'] ,
         'mindigtv' : [ 'hungarian', 'live'] ,
         'mindigo' : [ 'hungarian', 'live'] ,
-        'videa' : [ 'hungarian'] ,
         'mytvtelenor' : [ 'hungarian', 'live'] ,
         '1tvru': [ 'russian' ],
         '123movieshd' : [ 'english', 'moviesandseries'] ,

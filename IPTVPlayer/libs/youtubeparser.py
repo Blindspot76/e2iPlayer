@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# Blindspot - 2021.08.08.
+# Blindspot - 2021.08.15.
 ###################################################
 # LOCAL import
 ###################################################
@@ -35,7 +35,7 @@ config.plugins.iptvplayer.ytUseDF = ConfigYesNo(default=True)
 config.plugins.iptvplayer.ytAgeGate = ConfigYesNo(default=False)
 config.plugins.iptvplayer.ytVP9 = ConfigYesNo(default=False)
 config.plugins.iptvplayer.ytShowDash = ConfigSelection(default="auto", choices=[("auto", _("Auto")), ("true", _("Yes")), ("false", _("No"))])
-config.plugins.iptvplayer.ytSortBy = ConfigSelection(default="A", choices=[("A", _("Relevance")), ("I", _("Upload date")), ("M", _("View count")), ("E", _("Rating"))])
+config.plugins.iptvplayer.ytSortBy = ConfigSelection(default="I", choices=[("A", _("Relevance")), ("I", _("Upload date")), ("M", _("View count")), ("E", _("Rating"))])
 
 
 class YouTubeParser():
@@ -576,7 +576,7 @@ class YouTubeParser():
     # SEARCH PARSER
     ########################################################
     #def getVideosFromSearch(self, pattern, page='1'):
-    def getSearchResult(self, pattern, searchType, page, nextPageCategory, sortBy='A', url=''):
+    def getSearchResult(self, pattern, searchType, page, nextPageCategory, sortBy="I", url=''):
         printDBG('YouTubeParser.getSearchResult pattern[%s], searchType[%s], page[%s]' % (pattern, searchType, page))
         currList = []
 
@@ -598,7 +598,15 @@ class YouTubeParser():
             else:
                 # new search
                 # url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s' % (pattern, searchType, sortBy)
-                url = 'https://www.youtube.com/results?search_query=' + pattern
+                if sortBy == "I":
+                    sort = "CAI%253D"
+                if sortBy == "A":
+                    sort = "CAASAhAB"
+                if sortBy == "M":
+                    sort = "CAMSAhAB"
+                if sortBy == "E":
+                    sort = "CAESAhAB"
+                url = 'https://www.youtube.com/results?search_query=' + pattern + "&sp=" + sort
 
                 sts, data = self.cm.getPage(url, self.http_params)
 
