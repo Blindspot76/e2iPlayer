@@ -1,3 +1,5 @@
+#2021.08.16.01
+-YouTube: Csatorna, lejátszási lista és élő adás keresése javítva
 #2021.08.15.01
 -YouTube keresési eredmények rendezése javítva
 #2021.08.10.01
