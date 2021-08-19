@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2021-08-04
+# Blindspot - 2021-08-19
 ###################################################
 # LOCAL import
 ###################################################
@@ -58,7 +58,7 @@ class Youtube(CBaseHostClass):
         printDBG("Youtube.__init__")
         CBaseHostClass.__init__(self, {'history': 'ytlist', 'cookie': 'youtube.cookie'})
         self.UTLIST_FILE = 'ytlist.txt'
-        self.DEFAULT_ICON_URL = 'https://www.mm229.com/images/youtube-button-psd-450203.png'
+        self.DEFAULT_ICON_URL = 'https://greencarrier.com/wp-content/uploads/2016/10/youtube-logo.png'
         self.MAIN_GROUPED_TAB = [{'category': 'from_file',
           'title': _('User links'),
           'desc': _('User links stored in the ytlist.txt file.')},
@@ -67,8 +67,8 @@ class Youtube(CBaseHostClass):
           'desc': _('Search youtube materials '),
           'search_item': True},
          {'category': 'feeds',
-          'title': _('Felfedezés'),
-          'desc': _('Népszerű Videók Böngészése')},
+          'title': _('Explore'),
+          'desc': _('Popular trending videos')},
          {'category': 'search_history',
           'title': _('Search history'),
           'desc': _('History of searched phrases.')}]
@@ -189,19 +189,19 @@ class Youtube(CBaseHostClass):
                 params = {'title':title, 'url': url, 'icon': icon, 'desc': desc}
                 self.addVideo(params)
         else:
-           title = "Felkapott"
+           title = "Trending videos"
            url = "https://www.youtube.com/feed/trending"
            params = {'category':'feeds_video','title':title, 'url': url}
            self.addDir(params)
-           title = "Zene"
+           title = "Music"
            url = "https://www.youtube.com/feed/trending?bp=4gINGgt5dG1hX2NoYXJ0cw%3D%3D"
            params = {'category':'feeds_video','title':title, 'url': url}
            self.addDir(params)
-           title = "Játék"
+           title = "Gaming"
            url = "https://www.youtube.com/feed/trending?bp=4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D"
            params = {'category':'feeds_video','title':title, 'url': url}
            self.addDir(params)
-           title = "Filmek"
+           title = "Films"
            url = "https://www.youtube.com/feed/trending?bp=4gIKGgh0cmFpbGVycw%3D%3D"
            params = {'category':'feeds_video','title':title, 'url': url}
            self.addDir(params)
