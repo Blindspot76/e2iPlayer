@@ -58,7 +58,7 @@ class Youtube(CBaseHostClass):
         printDBG("Youtube.__init__")
         CBaseHostClass.__init__(self, {'history': 'ytlist', 'cookie': 'youtube.cookie'})
         self.UTLIST_FILE = 'ytlist.txt'
-        self.DEFAULT_ICON_URL = 'https://greencarrier.com/wp-content/uploads/2016/10/youtube-logo.png'
+        self.DEFAULT_ICON_URL = 'https://www.mm229.com/images/youtube-button-psd-450203.png'
         self.MAIN_GROUPED_TAB = [{'category': 'from_file',
           'title': _('User links'),
           'desc': _('User links stored in the ytlist.txt file.')},

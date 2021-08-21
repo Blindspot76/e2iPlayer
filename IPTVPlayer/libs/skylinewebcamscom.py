@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-
+# Blindspot - 2021.08.21
 ###################################################
 # LOCAL import
 ###################################################
@@ -53,26 +53,21 @@ class WkylinewebcamsComApi:
         self.cacheList = {}
         self.mainMenuCache = {}
         self.lang = config.plugins.iptvplayer.skylinewebcams_lang.value
-
-    def getFullUrl(self, url):
-        if url == '':
-            return ''
-        if url.startswith('//'):
-            return 'http:' + url
-        if url.startswith('http'):
-            return url
-        elif url.startswith('/'):
-            url = url[1:]
-        return self.MAIN_URL + url
-
-    def cleanHtmlStr(self, str):
-        return CBaseHostClass.cleanHtmlStr(str)
-
+    
     def getMainMenu(self, cItem):
         printDBG("WkylinewebcamsCom.getMainMenu")
-        STATIC_TAB = [{'title': _('NEW'), 'url': self.getFullUrl('/skyline/morewebcams.php?w=new&l=' + self.lang), 'cat': 'list_cams2'},
-                      {'title': _('NEARBY CAMS'), 'url': self.getFullUrl('/skyline/morewebcams.php?w=you&l=' + self.lang), 'cat': 'list_cams2'},
-                      {'title': _('Top Live Cams'), 'url': self.getFullUrl(self.lang + '/top-live-cams.html'), 'cat': 'list_cams'},
+        STATIC_TAB = [{'title': _('NEW'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/new-livecams.html', 'cat': 'list_cams'},
+                      {'title': _('City Views'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/city-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Top Live Cams'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/top-live-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Beaches'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/beach-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Landscapes'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/nature-mountain-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Landscapes'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/nature-mountain-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Marinas'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/seaport-cams.html', 'cat': 'list_cams'},
+                      {'title': _('UNESCO'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/unesco-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Ski slopes'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/ski-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Animals'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/animals-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Volcanoes'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/volcanoes-cams.html', 'cat': 'list_cams'},
+                      {'title': _('Lakes'), 'url': "https://www.skylinewebcams.com/" + self.lang + '/live-cams-category/lake-cams.html', 'cat': 'list_cams'}
                       ]
 
         list = []
@@ -109,60 +104,22 @@ class WkylinewebcamsComApi:
                 params.update(item)
                 list.insert(0, params)
         return list
-
-    def listCams2(self, cItem):
-        printDBG("WkylinewebcamsCom.listCams2")
-        list = []
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts:
-            return list
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>')
-        for item in data:
-            url = self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0]
-            icon = self.cm.ph.getSearchGroups(item, '''src="([^"]+?)"''', 1, True)[0]
-            if url == '':
-                continue
-            title = self.cleanHtmlStr(item)
-            params = dict(cItem)
-            params.update({'title': title, 'url': self.getFullUrl(url), 'icon': self.getFullUrl(icon), 'type': 'video'})
-            list.append(params)
-        return list
-
+    
     def listCams(self, cItem):
         printDBG("WkylinewebcamsCom.listCams")
         list = []
         sts, data = self.cm.getPage(cItem['url'])
         if not sts:
             return list
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="col-sm-6 col-md-4 webcam">', '</div>')
+        cam = self.cm.ph.getDataBeetwenMarkers(data, '/h1><hr></div><a href="', '</div></div></div><div class="footer"') [1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(cam, '><a href="', '</p></div></a>')
         for item in data:
-            url = self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0]
-            icon = self.cm.ph.getSearchGroups(item, '''"([^"]+?\.jpg)"''', 1, True)[0]
-            if '' == url:
-                continue
-            title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt="([^"]+?)"''', 1, True)[0])
-            desc = self.cleanHtmlStr(item)
+            url = "https://www.skylinewebcams.com/" + self.cm.ph.getDataBeetwenMarkers(item, '><a href="', '"', False) [1]
+            icon = self.cm.ph.getDataBeetwenMarkers(item, '<img src="', '"', False) [1]
+            title = self.cm.ph.getDataBeetwenMarkers(item, 'alt="', '"', False) [1]
+            desc = self.cm.ph.getDataBeetwenMarkers(item, 'class="subt">', '</p>', False) [1]
             params = dict(cItem)
-            params.update({'title': title, 'url': self.getFullUrl(url), 'icon': self.getFullUrl(icon), 'desc': desc, 'type': 'video'})
-            list.append(params)
-        return list
-
-    def exploreItem(self, cItem):
-        printDBG("WkylinewebcamsCom.exploreItem")
-        list = []
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts:
-            return list
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="col-sm-6 col-md-4 webcam">', '</div>')
-        for item in data:
-            url = self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0]
-            icon = self.cm.ph.getSearchGroups(item, '''"([^"]+?\.jpg)"''', 1, True)[0]
-            if '' == url:
-                continue
-            title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt="([^"]+?)"''', 1, True)[0])
-            desc = self.cleanHtmlStr(item)
-            params = dict(cItem)
-            params.update({'title': title, 'url': self.getFullUrl(url), 'icon': self.getFullUrl(icon), 'desc': desc, 'type': 'video'})
+            params.update({'title': title, 'url': url, 'icon': icon, 'desc': desc, 'type': 'video'})
             list.append(params)
         return list
 
@@ -182,12 +139,8 @@ class WkylinewebcamsComApi:
                 params = dict(cItem)
                 params.update(item)
                 list.append(params)
-        elif 'list_cams2' == cat:
-            return self.listCams2(cItem)
         elif 'list_cams' == cat:
             return self.listCams(cItem)
-        elif 'explore_item' == cat:
-            return self.exploreItem(cItem)
 
         return list
 
@@ -197,18 +150,7 @@ class WkylinewebcamsComApi:
         sts, data = self.cm.getPage(cItem['url'])
         if not sts:
             return urlsTab
-        url = self.cm.ph.getSearchGroups(data, '''['"](http[^"^']+?m3u8[^"^']*?)["']''', 1, True)[0]
-        if url.startswith('http'):
-            urlsTab = getDirectM3U8Playlist(url)
-        data = self.cm.ph.getSearchGroups(data, '''href=['"]([^"^']+?/timelapse\.php[^"^']*?)['"][^>]+?title=['"]([^'^"]+?)['"]''', 2, True)
-        name = data[1]
-        url = self.getFullUrl(data[0].replace('&amp;', '&'))
-        if not url.startswith('http'):
-            return urlsTab
-        sts, data = self.cm.getPage(url)
-        if not sts:
-            return urlsTab
-        url = self.cm.ph.getSearchGroups(data, '''url:['"]([^"^']+?)["']''', 1, True)[0]
-        if '://' in url:
-            urlsTab.append({'name': name, 'url': url})
+        id = self.cm.ph.getDataBeetwenMarkers(data, "source:'livee.m3u8?a=", "',", False) [1]
+        url = "https://hd-auth.skylinewebcams.com/live.m3u8?a=" + id
+        urlsTab.append({'name': cItem['title'], 'url': url})
         return urlsTab
