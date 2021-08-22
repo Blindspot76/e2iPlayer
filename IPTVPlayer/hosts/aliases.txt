@@ -64,6 +64,7 @@
 "hostfilmoviplex": "https://www.filmoviplex.com/",
 "hostfilmpalast": "http://filmpalast.to/",
 "hostfilmpapa": "FilmPapa HD",
+"hostfilmvilag": "FilmVilág2",
 "hostfilmpertutti": "https://www.filmpertutti.onl/",
 "hostfilmstreamhdit": "http://filmstreamhd.it/",
 "hostfilmstreamvkcom": "http://filmstreamvk.club/",

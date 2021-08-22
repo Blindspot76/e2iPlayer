@@ -65,6 +65,7 @@ hostfilmpapa
 hostfilmpertutti
 hostfilmstreamhdit
 hostfilmstreamvkcom
+hostfilmvilag
 hostfilmynadzis
 hostforjatn
 hostfrancetv
