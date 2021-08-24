@@ -2,7 +2,10 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit    import TranslateTXT as _, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes              import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.asynccall         import MainSessionWrapper
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon       import common, CParsingHelper
+try:
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon3       import common, CParsingHelper
+except:
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon2       import common, CParsingHelper
 #from Plugins.Extensions.IPTVPlayer.libs.pCommon                import common, CParsingHelper 
 from Plugins.Extensions.IPTVPlayer.libs.urlparser               import urlparser
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser     import urlparser as ts_urlparser
@@ -15,7 +18,13 @@ import os
 import re
 import base64
 import hashlib
-import urllib,cookielib,time
+import time
+try:
+    import urllib2
+    import urllib
+except ImportError:
+    import urllib.parse as urllib
+    
 import threading
 import sys
 
@@ -348,9 +357,10 @@ class TsThread(threading.Thread):
         self._target = target
         self._args = args
         threading.Thread.__init__(self)
+        
     def run(self):
         self._target(*self._args)
-
+        
 class TSCBaseHostClass:
     def __init__(self, params={}):
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
@@ -387,6 +397,22 @@ class TSCBaseHostClass:
         if addParams == {}: addParams = dict(self.defaultParams)
         return self.cm.getPage(baseUrl, addParams, post_data)
 
+    def getPage_(self, baseUrl, addParams = {}, post_data = None):
+        baseUrl=self.std_url(baseUrl)
+        if addParams == {}: addParams = dict(self.defaultParams)
+        sts,data = self.cm.getPage(baseUrl, addParams, post_data)
+        printDBG(str(data.meta))
+        code = data.meta.get('status_code','')  
+        while ((code == 302) or (code == 301)):
+            new_url = data.meta.get('location','')
+            if not new_url.startswith('http'):
+                new_url = self.MAIN_URL + new_url
+            new_url=self.std_url(new_url)
+            sts,data = self.cm.getPage(new_url, addParams, post_data)
+            code = data.meta.get('status_code','')
+            printDBG(str(data.meta))
+        return sts, data
+
     def get_url_page(self,url,page,type_=1):
         if page > 1:
             if type_==1:
@@ -410,7 +436,7 @@ class TSCBaseHostClass:
             self.showelms(cItem)		
         return True
         
-    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}],year_op=0,del_titre=''):
+    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}],year_op=0,del_titre='',addParams={}):
         if isinstance(mode_, str):
             mode = mode_
         else:
@@ -437,9 +463,9 @@ class TSCBaseHostClass:
                 printDBG('link4:'+LINK)
                 
                 if post_data !='':
-                    sts, data = self.getPage(LINK,post_data=post_data)
+                    sts, data = self.getPage(LINK,addParams,post_data=post_data)
                 else:
-                    sts, data = self.getPage(LINK)
+                    sts, data = self.getPage(LINK,addParams)
                 if not sts: data=''
             #printDBG('DATA:'+data)
             if pat1 !='':
@@ -660,7 +686,7 @@ class TSCBaseHostClass:
     def std_url(self,url):
         url1=url
         printDBG('url0='+url1)
-        if '\u0' in url1: url1 = str(url1.decode('unicode_escape',errors='ignore'))
+        if r'\u0' in url1: url1 = str(url1.decode('unicode_escape',errors='ignore'))
         url1=url1.replace('\\/','/')     
         url1=url1.replace('://','rgy11soft')
         url1=url1.replace('?','rgy22soft')        

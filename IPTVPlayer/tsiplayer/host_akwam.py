@@ -14,8 +14,7 @@ except:
     pass 
     
 import re
-import urllib
-import cookielib
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import Quote
 import time
 
 
@@ -228,10 +227,10 @@ class TSIPHost(TSCBaseHostClass, CaptchaHelper):
     def MediaBoxResult(self,str_ch,year_,extra):
         urltab=[]
         str_ch_o = str_ch
-        str_ch = urllib.quote(str_ch_o+' '+year_)
+        str_ch = Quote(str_ch_o+' '+year_)
         result = self.SearchResult(str_ch,1,'')
         if result ==[]:
-            str_ch = urllib.quote(str_ch_o)
+            str_ch = Quote(str_ch_o)
             result = self.SearchResult(str_ch,1,'')
         for elm in result:
             titre     = elm['title']

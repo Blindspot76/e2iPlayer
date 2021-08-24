@@ -15,7 +15,15 @@
 
 """Unpacker for Dean Edward's p.a.c.k.e.r"""
 
-import re,urllib2
+
+try:
+    # For Python 3.0 and later
+    from urllib.parse import unquote
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import unquote
+
+import re
 import string
 #import xbmc
 
@@ -63,11 +71,11 @@ class cPacker():
                     return chr(b if (90 if c <= "Z" else 122) >= b else b - 26)
 
                 str = re.sub(r"[a-zA-Z]", openload_re, a[0]);
-                str = urllib2.unquote(str)
+                str = unquote(str)
 
         elif str.find("decodeURIComponent") == 0:
             str = re.sub(r"(^decodeURIComponent\s*\(\s*('|\"))|(('|\")\s*\)$)", "", str);
-            str = urllib2.unquote(str)
+            str = unquote(str)
         elif str.find("\"") == 0:
             str = re.sub(r"(^\")|(\"$)|(\".*?\")", "", str);
         elif str.find("'") == 0:
@@ -120,7 +128,7 @@ class cPacker():
 def UnpackingError(Exception):
     #Badly packed source or general error.#
     #xbmc.log(str(Exception))
-    print Exception
+    print (Exception)
     pass
 
 

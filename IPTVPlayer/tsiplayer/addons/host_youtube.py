@@ -2,8 +2,9 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools                                 import printDBG
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools                          import TSCBaseHostClass,tscolor
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.youtubedl_data.youtubeparser   import YouTubeParser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils                            import QuotePlus
 from Components.config                                                             import config
-import json,urllib
+import json
 
 def getinfo():	
     info_={}
@@ -35,7 +36,7 @@ class TSIPHost(TSCBaseHostClass):
         type_ = page
         printDBG('------------->type_ =' + type_)        
         page=0
-        tmpList = self.ytp.getSearchResult(urllib.quote_plus(str_ch), type_, page, 'search', config.plugins.iptvplayer.ytSortBy.value)
+        tmpList = self.ytp.getSearchResult(QuotePlus(str_ch), type_, page, 'search', config.plugins.iptvplayer.ytSortBy.value)
         printDBG('result ='+str(tmpList))
         self.SetResult(tmpList,extra,type_)
      
@@ -44,7 +45,7 @@ class TSIPHost(TSCBaseHostClass):
         url     = cItem.get("url", "")
         str_ch  = cItem.get("str_ch", "")
         type_   = cItem.get("type_", "video")
-        tmpList = self.ytp.getSearchResult(urllib.quote_plus(str_ch), type_, page, 'search', config.plugins.iptvplayer.ytSortBy.value,url)
+        tmpList = self.ytp.getSearchResult(QuotePlus(str_ch), type_, page, 'search', config.plugins.iptvplayer.ytSortBy.value,url)
         printDBG('result ='+str(tmpList))
         self.SetResult(tmpList,cItem['import'],type_)
 

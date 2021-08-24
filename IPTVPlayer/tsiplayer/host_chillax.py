@@ -5,7 +5,6 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClas
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, SAWLIVETV_decryptPlayerParams
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
 ###################################################
 
 
@@ -39,21 +38,6 @@ class TSIPHost(TSCBaseHostClass):
 
         self.getPage = self.cm.getPage
          
-
-    def getPage1(self,baseUrl, addParams = {}, post_data = None):
-        sts = False
-        try:
-            oRequestHandler = cRequestHandler(baseUrl)
-            if post_data:
-                oRequestHandler.setRequestType(cRequestHandler.REQUEST_TYPE_POST)
-                oRequestHandler.addParametersLine(post_data)			
-            if addParams!={}:
-                oRequestHandler.addParameters(addParams)
-            sHtmlContent    = oRequestHandler.request()
-            sts = True	
-        except Exception, e:
-            sHtmlContent='ERREUR:'+str(e)	
-        return sts, sHtmlContent
 
 
 

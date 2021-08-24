@@ -220,7 +220,7 @@ class cGui:
             oOutputParameterHandler.addParameter('sCat', sCat)
 
         sItemUrl = self.__createItemUrl(oGuiElement, oOutputParameterHandler)
-
+        printDBG('addFolder0002:')
         oOutputParameterHandler.addParameter('sTitleWatched', oGuiElement.getTitleWatched())
         if cGui.CONTENT in ('movies', 'tvshows', 'episodes'):
             self.createContexMenuinfo(oGuiElement, oOutputParameterHandler)
@@ -244,6 +244,7 @@ class cGui:
         #oOutputParameterHandler.clearParameter()
 
     def TsiplayerWrite(self,oGuiElement, oOutputParameterHandler):
+        printDBG('__addFolder0001:')
         sPluginPath='Tsiplayer'
         sParams    = oOutputParameterHandler.getParameterAsUri()     
         sId        = oGuiElement.getSiteName()
@@ -252,11 +253,17 @@ class cGui:
         sIcon      = oGuiElement.getIcon()
         sThumbnail = oGuiElement.getThumbnail()
         sMeta      = oGuiElement.getMeta()
-        sItemUrl = '%s?site=%s&function=%s&title=%s&meta=%s&%s' % (sPluginPath, sId, sFunction, urllib.quote_plus(str(sLabel)),sMeta, sParams)
-        if sIcon == 'special://home/addons/plugin.video.vstream/resources/art/':
+        printDBG("2")
+        
+        sItemUrl = '%s?site=%s&function=%s&title=%s&meta=%s&%s' % (sPluginPath, sId, sFunction, QuotePlus(str(sLabel)),sMeta, sParams)
+        printDBG("3")
+        if (sIcon == 'special://home/addons/plugin.video.vstream/resources/art/'):
             sIcon = sThumbnail  
         #PIK = self.MyPath() + "VStream_listing.dat"
-        PIK = self.MyPath() + ("tmdb/VStream_listing_%s.dat" % sId)
+        printDBG("1")
+        PIK = self.MyPath() + ("tmdb/VStream_listing1_%s.dat" % sId)
+        printDBG("20000")
+        printDBG(PIK)
         time_now = round(time.time() * 1000)
         data = [oGuiElement, oOutputParameterHandler,time_now]
         with open(PIK, "a+b") as f:
@@ -264,6 +271,7 @@ class cGui:
         return ''
         
     def MyPath(self):
+        printDBG("3")
         return GetCacheSubDir('Tsiplayer')
         
     # affiche les liens playable

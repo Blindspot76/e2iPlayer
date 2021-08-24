@@ -2,6 +2,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools             import printDBG,GetTmpDir
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools      import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils        import download_url
 ###################################################
 from os import remove as os_remove, path as os_path, system as os_system
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
@@ -146,9 +147,10 @@ class TSIPHost(TSCBaseHostClass):
         #_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/repository/archive.tar.gz?ref=master' 
         _url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/-/archive/master/iptv-host-e2iplayer-master.tar.gz'
         try:
-            output = open(source,'wb')
-            output.write(self.getPage(_url)[1])
-            output.close() 
+            download_url(_url,source)
+            #output = open(source,'wb')
+            #output.write(self.getPage(_url)[1])
+            #output.close() 
             os_system ('sync')
             printDBG('TSIplayer: Download iptv-host-e2iplayer.tar.gz OK' )
         except:
@@ -208,11 +210,13 @@ class TSIPHost(TSCBaseHostClass):
         #_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/repository/archive.zip' 
         _url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/-/archive/master/iptv-host-e2iplayer-master.zip' 
         try:
-            output = open(source,'wb')
-            output.write(self.cm.getPage(_url)[1])
-            output.close() 
+        
+            download_url(_url,source)
+            #output = open(source,'w')
+            #output.write(self.cm.getPage(_url)[1])
+            #output.close() 
             os_system ('sync')
-            printDBG('TSIplayer: Download archive.zip OK' )
+            DBG('TSIplayer: Download archive.zip OK' )
         except:
             if os_path.exists(source): os_remove(source)
             printDBG('TSIplayer: Download Error archive.zip' )	

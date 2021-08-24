@@ -236,6 +236,12 @@ class TSIPHost(TSCBaseHostClass):
                         meta = {'iptv_proto':'m3u8','Referer':videoUrl}
                         url_=strwithmeta(Liste_els_3[0], meta)
                         urlTab.append((url_,'3'))
+                    else:
+                        Liste_els_3 = re.findall('file":"(.*?)"', data, re.S)	
+                        if Liste_els_3:			
+                            meta = {'iptv_proto':'m3u8','Referer':videoUrl}
+                            url_=strwithmeta(Liste_els_3[0].replace('\\',''), meta)
+                            urlTab.append((url_,'3'))
         return urlTab
         
     def getArticle(self, cItem):

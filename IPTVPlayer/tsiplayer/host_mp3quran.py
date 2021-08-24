@@ -5,8 +5,6 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClas
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Components.config import config
 import re
-import urllib
-import HTMLParser
 
 
 def getinfo():

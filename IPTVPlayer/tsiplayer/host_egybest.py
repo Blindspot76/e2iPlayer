@@ -161,7 +161,8 @@ class TSIPHost(TSCBaseHostClass):
                 if lst_data0: rate=lst_data0[0]
                 else: rate = ''
                 desc=tscolor('\c00????00')+'Rating: '+tscolor('\c00??????')+self.cleanHtmlStr(rate)+'/10 | '+tscolor('\c00????00')+'Qual: '+tscolor('\c00??????')+qual
-                x1,titre=self.uniform_titre(str(name_eng.decode('unicode_escape')))
+                #x1,titre=self.uniform_titre(str(name_eng.decode('unicode_escape')))
+                x1,titre=self.uniform_titre(str(name_eng))
                 titre=titre.replace('()','')
                 self.addDir({'import':cItem['import'],'good_for_fav':True, 'name':'categories', 'category':hst, 'url':base+url1, 'title':titre, 'desc':desc,'EPG':True,'hst':'tshost', 'icon':image, 'mode':'31'} )							
             self.addDir({'import':cItem['import'],'name':'categories', 'category':hst, 'url':url0, 'title':tscolor('\c0090??20')+_('Next page'), 'page':page+1, 'desc':'', 'icon':img, 'mode':'30'})	
@@ -322,7 +323,7 @@ class TSIPHost(TSCBaseHostClass):
             try:
                 printDBG('try resolve url0: '+videoUrl)
                 urlTab = self.parserVIDSTREAM(videoUrl,'egy')
-            except Exception, e:
+            except Exception as e:
                 printDBG('ERREUR:'+str(e))
         else:
             addParams0 = dict(self.defaultParams)
@@ -345,7 +346,7 @@ class TSIPHost(TSCBaseHostClass):
                     try:				
                         printDBG('try resolve url1: '+URL)
                         urlTab = self.parserVIDSTREAM(URL)
-                    except Exception, e:
+                    except Exception as e:
                         printDBG('ERREUR:'+str(e))				     
         return urlTab	 							
         

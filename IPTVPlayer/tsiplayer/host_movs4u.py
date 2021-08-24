@@ -16,7 +16,6 @@ from binascii import unhexlify
 from hashlib import md5
 import base64
 import re
-import cookielib
 import time
 import urllib
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser  import urlparser as ts_urlparser

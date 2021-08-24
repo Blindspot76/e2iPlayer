@@ -5,10 +5,6 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClas
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Components.config import config
 import re
-import urllib
-import HTMLParser
-
-tunisia_gouv_code = [0,23,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24]
 
 def getinfo():
 	info_={}

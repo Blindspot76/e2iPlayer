@@ -9,14 +9,14 @@ except:
     pass 
 import urllib
 import re,os
-import time,cookielib
+import time
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 
 def getinfo():
     info_={}
     name = 'Cima4u.Tv'
     hst = tshost(name)	
-    if hst=='': hst = 'https://w3.cima4u.show'
+    if hst=='': hst = 'https://cima4u.ws'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.1.01 05/07/2020' 
@@ -45,51 +45,6 @@ class TSIPHost(TSCBaseHostClass):
         if addParams == {}: addParams = dict(self.defaultParams)
         addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)			
-
-    def getPage1(self,baseUrl, addParams = {}, post_data = None):
-        if addParams == {}: addParams = dict(self.defaultParams) 
-        sts, data = self.cm.getPage(baseUrl,addParams,post_data)
-        if not data: data=strwithmeta('',{})
-        printDBG('ddddaaattttaaaa'+str(data.meta))
-        #printDBG('ddddaaattttaaaa'+data)
-        if ('!![]+!![]' in data) or (data.meta.get('status_code',0)==503):
-            try:
-                if os.path.exists(self.COOKIE_FILE):
-                    os.remove(self.COOKIE_FILE)
-                    printDBG('cookie removed')
-                printDBG('Start CLoudflare  Vstream methode')
-                oRequestHandler = cRequestHandler(baseUrl)
-                if post_data:
-                    post_data_vstream = ''
-                    for key in post_data:
-                        if post_data_vstream=='':
-                            post_data_vstream=key+'='+post_data[key]
-                        else:
-                            post_data_vstream=post_data_vstream+'&'+key+'='+post_data[key]					
-                    oRequestHandler.setRequestType(cRequestHandler.REQUEST_TYPE_POST)
-                    oRequestHandler.addParametersLine(post_data_vstream)					
-                data = oRequestHandler.request()
-                sts = True
-                printDBG('cook_vstream_file='+self.up.getDomain(baseUrl).replace('.','_'))
-                cook = GestionCookie().Readcookie(self.up.getDomain(baseUrl).replace('.','_'))
-                printDBG('cook_vstream='+cook)
-                #printDBG('cook_vstream='+data)
-                if ';' in cook: cook_tab = cook.split(';')
-                else: cook_tab = cook
-                cj = self.cm.getCookie(self.COOKIE_FILE)
-                for item in cook_tab:
-                    if '=' in item:	
-                        printDBG('item='+item)		
-                        cookieKey, cookieValue = item.split('=')
-                        cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=cookieValue, port=None, port_specified=False, domain='.'+self.cm.getBaseUrl(baseUrl, True), domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=time.time()+3600*48, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
-                        cj.set_cookie(cookieItem)
-                cj.save(self.COOKIE_FILE, ignore_discard = True)
-            except Exception, e:
-                printDBG('ERREUR:'+str(e))
-                printDBG('Start CLoudflare  E2iplayer methode')
-                addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
-                sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)	
-        return sts, data	
 
          
     def showmenu0(self,cItem):

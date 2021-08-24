@@ -106,15 +106,12 @@ class TSIPlayer(CBaseHostClass):
             
         self.addDir({'name':'cat','category' : 'FilmsSeriesEn','title':'English section','desc':'Films, Series & Animes (Eng)','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
         self.addDir({'name':'cat','category' : 'SportLiveReplay','title':'LIVE & Replay','desc':'Live & Replay','icon':'https://i.ibb.co/Fgk8Yq4/tsiplayer-films.png'} )	
+        self.addDir({'name':'cat','category' : 'Addons','title':'Addons','desc':'','icon':'https://i.ibb.co/cv2fZ8y/add-ons-icon-11.png'} )
 
-        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/TSmedia'):
-            self.tsiplayer_host({'cat_id':'903'})
         self.addDir({'name':'cat','category' : 'Trash','title':'Trash','desc':'','icon':'https://i.ibb.co/9424kFw/Cancel-Subscription.png'} )
         self.tsiplayer_host({'cat_id':'901','ordre':1})        
         
-        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/'):
-            #if os.path.exists('/usr/lib/enigma2/python/Plugins/tsiplayer/'):
-            self.addDir({'name':'cat','category' : 'Devmod','title':'Tools','desc':'','icon':'https://i.ibb.co/Sc31b4P/development-icon-131032-1.png'} )
+
 
 
 
@@ -179,7 +176,9 @@ class TSIPlayer(CBaseHostClass):
         self.tsiplayer_host({'cat_id':'26'})	
         
     def AddonsCat(self):
-        self.tsiplayer_host({'cat_id':'902'})	
+        self.tsiplayer_host({'cat_id':'902'})
+        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/TSmedia'):
+            self.tsiplayer_host({'cat_id':'903'})        
                                 
     def DevCat(self):
         self.addDir({'name':'cat','category' : 'Addons','title':'Addons','desc':'','icon':'https://i.ibb.co/cv2fZ8y/add-ons-icon-11.png'} )        
@@ -243,13 +242,13 @@ class TSIPlayer(CBaseHostClass):
                     path_=folder+'/'+file_
                     import_str=import_+file_.replace('.py',' import ')
                     printDBG('-----> check Host1'+file_)
-                    if 'vstream' in file_:
+                    if 'vstream1' in file_:
                         try:
                             printDBG('-----> check Host2'+file_)
                             exec (import_str+'getinfo')
                             info=getinfo()   
                             printDBG('-----> check info'+str(info))
-                        except Exception, e:
+                        except Exception as e:
                             info={}
                             info['warning']=' >>>>>>> Problem in this host <<<<<<<'
                             info['desc']=str(e)
@@ -260,9 +259,12 @@ class TSIPlayer(CBaseHostClass):
                             info['dev']=''                 
                     else:
                         try:
-                            exec (import_str+'getinfo')
+                            printDBG('------------->IMPORT:'+import_str+'getinfo'+'<--------------------')
+                            prg = import_str+'getinfo' 
+                            #exec prg
+                            exec (prg, globals())
                             info=getinfo()
-                        except Exception, e:
+                        except Exception as e:
                             info={}
                             info['warning']=' >>>>>>> Problem in this host <<<<<<<'
                             info['desc']=str(e)
@@ -296,7 +298,8 @@ class TSIPlayer(CBaseHostClass):
                             show = True	
                             if ordre >-1:
                                 show = False
-                                exec (import_str+'TSIPHost as UpdateHost')
+                                #exec (import_str+'TSIPHost as UpdateHost')
+                                exec (import_str+'TSIPHost as UpdateHost', globals())
                                 updateHost_ = UpdateHost()								
                                 updateHost_.GetVersions()
                                 if (updateHost_.tsiplayerversion != updateHost_.tsiplayerremote) and ordre==0:
@@ -331,7 +334,7 @@ class TSIPlayer(CBaseHostClass):
                     try:
                         exec (import_str+'getinfo')
                         info=getinfo()
-                    except Exception, e:
+                    except Exception as e:
                         info={}
                         info['warning']=' >>>>>>> Problem in this host <<<<<<<'
                         info['desc']=str(e)
@@ -341,7 +344,7 @@ class TSIPlayer(CBaseHostClass):
                     try:
                         exec (import_str+'getHosts')
                         hsts=getHosts()
-                    except Exception, e:
+                    except Exception as e:
                         hsts=[]
                     for (cat_id_,elm_) in hsts:
                         if cat_id==cat_id_:
@@ -367,7 +370,7 @@ class TSIPlayer(CBaseHostClass):
                 self.cm.getPage(_url)
             except:
                 printDBG('erreur')'''
-            exec (import_str+'TSIPHost')
+            exec (import_str+'TSIPHost',globals())
             self.import_str=import_str
             self.host_ = TSIPHost()	
         self.host_.currList=[]
@@ -415,7 +418,7 @@ class TSIPlayer(CBaseHostClass):
                 except:
                     sys.argv = ''
                 exec('self.'+category+'_host(self.currItem)')
-            except Exception, e:
+            except Exception as e:
                 self.PrintExTs(e)
                 printDBG('erreeuuu')
 

@@ -165,7 +165,7 @@ class TSIPHost(TSCBaseHostClass):
             printDBG('argv:'+str(argv)+'#')
             lst=start(argv)
             printDBG(str(lst))
-        except Exception, e:
+        except Exception as e:
             lst=None
             self.PrintExTs(e)
         if lst:

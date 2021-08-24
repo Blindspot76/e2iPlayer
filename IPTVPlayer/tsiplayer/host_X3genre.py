@@ -14,8 +14,6 @@ except:
     pass 
     
 import re
-import urllib
-import cookielib
 import time
 
 

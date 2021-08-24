@@ -169,7 +169,7 @@ class TSIPHost(TSCBaseHostClass):
         title_=cItem['title']
         sts, data = self.getPage(url)
         if sts:
-            Liste_films_data = re.findall('submit">مشاهدة و تحميل</button>', data, re.S)
+            Liste_films_data = re.findall('id="EmbedScmain"', data, re.S)
             if Liste_films_data:
                 self.addVideo({'import':cItem['import'],'category' : 'host2','title':title_,'url':url,'desc':'','icon':cItem['icon'],'hst':'tshost','good_for_fav':True})	
             else:

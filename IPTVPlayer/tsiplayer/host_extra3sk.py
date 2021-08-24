@@ -84,7 +84,7 @@ class TSIPHost(TSCBaseHostClass):
                 self.addDir({'import':cItem['import'],'category' : 'host2','title':'Page Suivante','url':cItem['url'],'page':page+1,'mode':'30','sub_mode':sub_mode})
 
     def showelms(self,cItem):
-		self.add_menu(cItem,'class="eplist(.*?)</div>','href="(.*?)".*?title.*?>(.*?)</a>','','video')		
+        self.add_menu(cItem,'class="eplist(.*?)</div>','href="(.*?)".*?title.*?>(.*?)</a>','','video')		
 
 
 

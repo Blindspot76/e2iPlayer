@@ -174,7 +174,7 @@ class TSIPHost(TSCBaseHostClass):
                 image   = 'file:///usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/resources/art/sites/'+file_+'.png'
                 import_ = self.MAIN_IMP+'.' + file_+' import '
                 printDBG('import_+SITE_DESC='+import_+'SITE_DESC')
-                exec (import_+'SITE_DESC')
+                exec (import_+'SITE_DESC',globals())
                 desc = convert_desc(SITE_DESC) 
                 elm={'import':cItem['import'],'category' : 'host2','argv':elm,'sSiteName':file_,'params':params,'import_':import_,'title':file_.replace('_','.').title(),'desc':desc,'icon':image,'mode':'10'}
                 self.addDir(elm)	
@@ -379,7 +379,7 @@ class TSIPHost(TSCBaseHostClass):
                 oHoster.setUrl(sMediaUrl)				
                 aLink = oHoster.getMediaLink()
                 printDBG('aLink='+str(aLink))
-            except Exception, e:
+            except Exception as e:
                 aLink = [False,'']
                 printExc()
             if aLink:
@@ -388,7 +388,7 @@ class TSIPHost(TSCBaseHostClass):
                     if'||'in URL: urls = URL.split('||')
                     else: urls = [URL]
                     for URL in urls:
-                        if URL.strip()<>'':
+                        if URL.strip()!='':
                             label=''
                             if '|tag:' in URL: URL,label = URL.split('|tag:',1)
                             URL,meta = get_url_meta(URL)

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor,TsThread
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import IsPython3
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
@@ -9,7 +11,11 @@ from tsiplayer.libs.packer import cPacker
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 ###################################################
-
+try:
+    import _thread
+except:
+    pass
+    
 import re,os.path
 import base64
 import difflib
@@ -394,27 +400,39 @@ class TSIPHost(TSCBaseHostClass,CaptchaHelper):
                         self.addVideo({'import':cItem['import'],'category' : 'host2','url': Url,'title':titre_,'desc':tscolor('\c00????00')+Name+tscolor('\c00??????')+'\n'+Desc,'icon':Image,'hst':'tshost','Type_':Type_} )
         elif lng=='ar':
             hsts = ['host_egybest','host_faselhd','host_akoam','host_akwam','host_movs4u','host_cima4u','host_arablionz','host_arabseed']
-            threads = []
-            for hst in hsts:
-                Extra  = 'from tsiplayer.'+hst+' import '
-                str_ch = elm.get('title','')
-                year   = cItem.get('year','')
-                threads.append(TsThread(self.get_results,Extra,str_ch,year))
-            for i in threads:
-                i.start()
-                i.join(timeout=4)
+            hsts1 = []
+            if IsPython3():       
+                for hst in hsts:          
+                    Extra  = 'from tsiplayer.'+hst+' import '
+                    str_ch = elm.get('title','')
+                    year   = cItem.get('year','')
+                    _thread.start_new_thread( self.get_results, (Extra,str_ch,year,) )   
+                GetIPTVSleep().Sleep(5)
+            else:
+                threads = []
+                for hst in hsts:
+                    Extra  = 'from tsiplayer.'+hst+' import '
+                    str_ch = elm.get('title','')
+                    year   = cItem.get('year','')
+                    threads.append(TsThread(self.get_results,Extra,str_ch,year))
+                for i in threads:
+                    i.start()
+                    i.join(timeout=4)
 
-
+        
     def get_results(self,Extra,str_ch,year):
         printDBG('--------------> startstart '+Extra+'<----------------')
-        exec (Extra+'TSIPHost')
+        exec (Extra+'TSIPHost',globals())
         host = TSIPHost()				
         urlTab = host.MediaBoxResult(str_ch,year,Extra)				
         printDBG('result='+str(urlTab))
         if len(urlTab)>0:
+            printDBG('1')
             elm_1 = urlTab[0]
             ratio = difflib.SequenceMatcher(None,elm_1['titre'], str_ch).ratio()
+            printDBG('2')
             elm_1['title'] = elm_1['title']+' ('+str(ratio)+')'
+            printDBG('3')
             if elm_1.get('category','')=='video':
                 self.addVideo(elm_1)
             else: self.addDir(elm_1)        

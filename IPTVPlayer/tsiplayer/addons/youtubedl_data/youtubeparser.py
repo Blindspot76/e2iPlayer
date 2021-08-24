@@ -19,7 +19,10 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 import re
 import urllib
 import codecs
-from urlparse import urlparse, urlunparse, parse_qsl
+try:
+    from urlparse import urlparse, urlunparse, parse_qsl
+except:
+    from urllib.parse import urlparse, urlunparse, parse_qsl
 from datetime import timedelta
 from Components.config import config, ConfigSelection, ConfigYesNo
 ###################################################

@@ -4,7 +4,7 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit       import SetIPTVPlayerLastHostError
-import re,urllib,cookielib,time
+import re,urllib,time
 
 def getinfo():
     info_={}

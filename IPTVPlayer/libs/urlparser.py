@@ -654,6 +654,7 @@ class urlparser:
                        'vshare.eu':             self.pp.parserVSHAREEU      ,
                        'vshare.io':             self.pp.parserVSHAREIO       ,
                        'vsports.pt':            self.pp.parserSAPOPT     ,
+                       'vudeo.net':             self.pp.parserONLYSTREAM    ,
                        'vup.to':                self.pp.parserONLYSTREAM    ,
                        'waaw.tv':               self.pp.parserNETUTV         ,
                        'waaw.to':               self.pp.parserNETUTV         ,

@@ -77,7 +77,7 @@ class TSIPHost(TSCBaseHostClass):
 			else:
 				desc = ''
 			titre = elm['name']
-			if '\u' in titre: titre = str(titre.decode('unicode-escape'))
+			if r'\u' in titre: titre = str(titre.decode('unicode-escape'))
 			url_inf = cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_vod_info&vod_id='+str(elm['stream_id'])
 			self.addVideo({'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'host2','url': Url,'url_inf':url_inf,'title':titre,'icon':stream_icon,'desc':desc,'hst':'direct','EPG':True})
 		
@@ -93,7 +93,7 @@ class TSIPHost(TSCBaseHostClass):
 			genre = str(elm.get('genre',''))
 			desc = tscolor('\c00????00')+'GENRE: '+tscolor('\c00??????')+str(genre)+'\n'+tscolor('\c00????00')+' RATING:'+tscolor('\c00??????')+str(rating)+'/10 \n'+tscolor('\c00????00')+'Plot: '+tscolor('\c00??????')+str(plot)
 			titre = elm['name']
-			if '\u' in titre: titre = str(titre.decode('unicode-escape'))
+			if r'\u' in titre: titre = str(titre.decode('unicode-escape'))
 			url_inf = cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_series_info&series_id='+str(elm['series_id'])
 			self.addDir({'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'host2','url_inf':url_inf,'url': str(elm['series_id']),'title':titre,'icon':stream_icon,'desc':desc,'hst':'xtream_vod','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'23','EPG':True})
 		
@@ -143,7 +143,7 @@ class TSIPHost(TSCBaseHostClass):
 			if ( season == saison):
 				if xua!='':
 					link  = strwithmeta(link,{'User-Agent' : xua})
-				if '\u' in titre: titre = str(titre.decode('unicode-escape'))
+				if r'\u' in titre: titre = str(titre.decode('unicode-escape'))
 				params = {'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'video','url': link,'title':titre,'icon':img_,'desc':cItem.get('desc',''),'hst':'direct'} 
 				self.addVideo(params)	
 

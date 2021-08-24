@@ -35,8 +35,8 @@ class none_(object):
     def __iter__(self):
         return iter([self, self, self])
 
-DialogProgress = none_()
 
+        
 class listitem(none_):
 
     #ListItem([label, label2, iconImage, thumbnailImage, path])
@@ -125,15 +125,17 @@ class dialog():
         printDBG('VSerror: '+str(e))
         return
 
-class progress(DialogProgress):
+class progress():
     def VScreate(self, title='vStream', desc=''):
-        return ''
+        return self
     def VSupdate(self, dialog, total, text=''):
         count=0
     def VSupdatesearch(self, dialog, total, text=''):
         count=0
     def VSclose(self, dialog=''):
         return
+    def iscanceled(self):
+        return False
 
 
 class window():

@@ -6,16 +6,9 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor,tshost
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser    import urlparser as ts_urlparser
-
-try:
-    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
-    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
-except:
-    pass 
-    
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import Quote,Unquote  
+  
 import re
-import urllib
-import cookielib
 import time
 
 
@@ -230,7 +223,7 @@ class TSIPHost(TSCBaseHostClass):
     def MediaBoxResult(self,str_ch,year_,extra):
         urltab=[]
         str_ch = str_ch+' '+year_
-        str_ch = urllib.quote(str_ch)
+        str_ch = Quote(str_ch)
         url_=self.MAIN_URL+'/search/'+str_ch+'/page/1'
         sts, data = self.getPage(url_)
         if sts:
@@ -257,7 +250,7 @@ class TSIPHost(TSCBaseHostClass):
                 cookies_ = self.cm.getCookieItems(self.COOKIE_FILE)
                 printDBG('cookies_='+str(cookies_))
                 if 'golink' in cookies_:        
-                    link_from_cookie = json_loads(urllib.unquote(cookies_['golink']))['route'].replace('download','watching')
+                    link_from_cookie = json_loads(Unquote(cookies_['golink']))['route'].replace('download','watching')
                     printDBG('link_from_cookie='+link_from_cookie)
                     paramsUrl = dict(self.defaultParams)
                     paramsUrl['header']['Referer'] = cItem['url']

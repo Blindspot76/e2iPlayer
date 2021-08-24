@@ -4,7 +4,10 @@
 # LOCAL import
 ###################################################
 #from Plugins.Extensions.IPTVPlayer.libs.pCommon                    import common
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon          import common
+try:
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon3       import common, CParsingHelper
+except:
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon2       import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit       import SetIPTVPlayerLastHostError, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper   import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes                 import strwithmeta
@@ -18,6 +21,8 @@ from Plugins.Extensions.IPTVPlayer.libs.e2ijson                    import loads 
 from Plugins.Extensions.IPTVPlayer.libs                            import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.packer           import cPacker
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util     import AADecoder,decodeAA,JJDecoder,cParser,JSUnfuck
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils            import IsPython3
+
 
 ###################################################
 # FOREIGN import
@@ -29,7 +34,12 @@ import random
 import string
 import time
 import urllib
-from urlparse import urlparse, parse_qs
+try:
+    from urlparse import urlparse, parse_qs
+except:
+    from urllib.parse import urlparse, parse_qs
+
+
 from Components.config import config
 ###################################################
 
@@ -505,7 +515,7 @@ class urlparser:
         try:
             ret = self.getVideoLink(url, True)
             
-            if isinstance(ret, basestring):
+            if isinstance(ret, str):
                 if 0 < len(ret):
                     host = self.getHostName(url)
                     videoTab.append({'name': host, 'url': ret})
@@ -628,7 +638,7 @@ class pageParser(CaptchaHelper):
             baseUrl = baseUrl.replace('uptobox.com/', 'uptostream.com/')
         hst_name = self.getHostName(baseUrl, True)
         printDBG("Host Name="+hst_name)
-        exec "from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters." + hst_name + " import cHoster"
+        exec ("from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters." + hst_name + " import cHoster")
         oHoster = cHoster()
         referer = strwithmeta(baseUrl).meta.get('Referer','')
         if 'userload' in baseUrl:
@@ -641,7 +651,7 @@ class pageParser(CaptchaHelper):
             if'||'in URL: urls = URL.split('||')
             else: urls = [URL]
             for URL in urls:
-                if URL.strip()<>'':
+                if URL.strip()!='':
                     label=''
                     if '|tag:' in URL: URL,label = URL.split('|tag:',1)
                     if '|User-Agent=' in URL:
@@ -2741,8 +2751,9 @@ class pageParser(CaptchaHelper):
         cookieHeader = self.cm.getCookieHeader(GetCookieDir('UNI01.cookie'))
         for item in items:
             printDBG('item='+str(item))
-
-            if isinstance(item, unicode): item = str(item)
+            if not IsPython3():
+                if isinstance(item, unicode):
+                    item = str(item)
             if isinstance(item, str): 
                 if not item.startswith('http'): item = urlparser.getDomain(baseUrl,False)+item
                 url = strwithmeta(item,  {'Cookie':cookieHeader,'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})

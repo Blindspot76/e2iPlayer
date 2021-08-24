@@ -3,8 +3,16 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetCookieDir, GetCacheSubDir
 import re,sys,time,os
-import urllib,urllib2
-import htmlentitydefs
+try:
+    import htmlentitydefs
+    import urllib
+    import urllib2
+
+except ImportError:
+    import html.entities as htmlentitydefs
+    import urllib.parse as urllib
+    import urllib.request as urllib2
+
 import unicodedata
 import string
 
@@ -128,7 +136,7 @@ class addon():
         
         
 
-class progress(DialogProgress):
+class progress():
     def VScreate(self, title='vStream', desc=''):
         return ''
     def VSupdate(self, dialog, total, text=''):
@@ -173,50 +181,69 @@ class dialog():
         return
   
 class cParser:
-    def parseSingleResult(self, sHtmlContent, sPattern):     
-	aMatches = re.compile(sPattern).findall(sHtmlContent)
-	if (len(aMatches) == 1):
-                aMatches[0] = self.__replaceSpecialCharacters(aMatches[0])
-		return True, aMatches[0]
+
+    def parseSingleResult(self, sHtmlContent, sPattern):
+        aMatches = re.compile(sPattern).findall(sHtmlContent)
+        if (len(aMatches) == 1):
+            aMatches[0] = self.__replaceSpecialCharacters(aMatches[0])
+            return True, aMatches[0]
         return False, aMatches
 
     def __replaceSpecialCharacters(self, sString):
-        return sString.replace('\\/','/').replace('&amp;','&').replace('\xc9','E').replace('&#8211;', '-').replace('&#038;', '&').replace('&rsquo;','\'').replace('\r','').replace('\n','').replace('\t','').replace('&#039;',"'").replace('&quot;','"').replace('&gt;','>').replace('&lt;','<').replace('&nbsp;','')
+        """ /!\ pas les mêmes tirets, tiret moyen et cadratin."""
+        return sString.replace('\r', '').replace('\n', '').replace('\t', '').replace('\\/', '/').replace('&amp;', '&')\
+                      .replace('&#039;', "'").replace('&#8211;', '-').replace('&#8212;', '-').replace('&eacute;', 'é')\
+                      .replace('&acirc;', 'â').replace('&ecirc;', 'ê').replace('&icirc;', 'î').replace('&ocirc;', 'ô')\
+                      .replace('&hellip;', '...').replace('&quot;', '"').replace('&gt;', '>').replace('&egrave;', 'è')\
+                      .replace('&ccedil;', 'ç').replace('&laquo;', '<<').replace('&raquo;', '>>').replace('\xc9', 'E')\
+                      .replace('&ndash;', '-').replace('&ugrave;', 'ù').replace('&agrave;', 'à').replace('&lt;', '<')\
+                      .replace('&rsquo;', "'").replace('&lsquo;', '\'').replace('&nbsp;', '').replace('&#8217;', "'")\
+                      .replace('&#8230;', '...').replace('&#8242;', "'").replace('&#884;', '\'').replace('&#39;', '\'')\
+                      .replace('&#038;', '&').replace('&iuml;', 'ï').replace('–', '-').replace('—', '-')
 
-    def parse(self, sHtmlContent, sPattern, iMinFoundValue = 1):
+    def parse(self, sHtmlContent, sPattern, iMinFoundValue=1):
         sHtmlContent = self.__replaceSpecialCharacters(str(sHtmlContent))
         aMatches = re.compile(sPattern, re.IGNORECASE).findall(sHtmlContent)
-        if (len(aMatches) >= iMinFoundValue):                
+
+        # extrait la page html après retraitement vStream
+        # fh = open('c:\\test.txt', "w")
+        # fh.write(sHtmlContent)
+        # fh.close()
+
+        if (len(aMatches) >= iMinFoundValue):
             return True, aMatches
         return False, aMatches
 
     def replace(self, sPattern, sReplaceString, sValue):
-         return re.sub(sPattern, sReplaceString, sValue)
+        return re.sub(sPattern, sReplaceString, sValue)
 
     def escape(self, sValue):
         return re.escape(sValue)
-    
+
     def getNumberFromString(self, sValue):
-        sPattern = "\d+"
+        sPattern = '\d+'
         aMatches = re.findall(sPattern, sValue)
         if (len(aMatches) > 0):
             return aMatches[0]
         return 0
-        
+
     def titleParse(self, sHtmlContent, sPattern):
         sHtmlContent = self.__replaceSpecialCharacters(str(sHtmlContent))
         aMatches = re.compile(sPattern, re.IGNORECASE)
-        try: 
-            [m.groupdict() for m in aMatches.finditer(sHtmlContent)]              
+        try:
+            [m.groupdict() for m in aMatches.finditer(sHtmlContent)]
             return m.groupdict()
         except:
             return {'title': sHtmlContent}
 
-    def abParse(self,sHtmlContent,start, end=None, startoffset=0):
-        #usage oParser.abParse(sHtmlContent,"start","end")
-        #startoffset (int) décale le début pour ne pas prendre en compte start dans le résultat final si besoin
-        #usage2 oParser.abParse(sHtmlContent,"start","end",6)
-        #ex youtube.py
+    def abParse(self, sHtmlContent, start, end=None, startoffset=0):
+        # usage oParser.abParse(sHtmlContent, 'start', 'end')
+        # startoffset (int) décale le début pour ne pas prendre en compte start dans le résultat final si besoin
+        # la fin est recherchée forcement après le début
+        # la recherche de fin n'est pas obligatoire
+        # usage2 oParser.abParse(sHtmlContent, 'start', 'end', 6)
+        # ex youtube.py
+        
         startIdx = sHtmlContent.find(start)
         if startIdx == -1:  # rien trouvé, retourner le texte complet
             return sHtmlContent
@@ -226,7 +253,6 @@ class cParser:
             if endIdx > 0:
                 return sHtmlContent[startoffset + startIdx: startoffset + startIdx + endIdx]
         return sHtmlContent[startoffset + startIdx:]
-
 class cOutputParameterHandler:
 
     def __init__(self):
@@ -285,7 +311,7 @@ class cPluginHandler:
 
     def getPluginHandle(self):
         try:
-            return int( sys.argv[ 1 ] )
+            return int(sys.argv[1])
         except:
             return 0
 
@@ -297,35 +323,21 @@ class cPluginHandler:
 
     def __getFileNamesFromFolder(self, sFolder):
         aNameList = []
-        #items = os.listdir(unicode(sFolder, 'utf-8'))
         folder, items = xbmcvfs.listdir(sFolder)
         items.sort()
         for sItemName in items:
-            
+
             if not sItemName.endswith(".py"):
                 continue
-            
 
-            #sFilePath = os.path.join(unicode(sFolder, 'utf-8'), sItemName)
             sFilePath = "/".join([sFolder, sItemName])
-            #size
-            # sSize = 0
-            # try:
-            #     file=open(sFilePath)
-            #     Content = file.read()
-            #     sSize = len(Content)
-            #     file.close()
-            # except: pass
 
             # xbox hack
             sFilePath = sFilePath.replace('\\', '/')
 
-            #cConfig().log("Load Plugin %s : Size %s" % (sItemName, sSize))
-            VSlog("Load Plugin %s" % (sItemName))
+            VSlog("Load Plugin %s" % sItemName)
 
-            #if (os.path.isdir(sFilePath) == False):
             if (xbmcvfs.exists(sFilePath) == True):
-                #if (str(sFilePath.lower()).endswith('py')):
                 if (sFilePath.lower().endswith('py')):
                     sItemName = sItemName.replace('.py', '')
                     aNameList.append(sItemName)
@@ -333,40 +345,21 @@ class cPluginHandler:
 
     def __importPlugin(self, sName):
         try:
-            exec "from resources.sites import " + sName
-            exec "sSiteName = " + sName + ".SITE_NAME"
-            exec "sSiteDesc = " + sName + ".SITE_DESC"
+            exec("from resources.sites import " + sName, globals())
+            exec("sSiteName = " + sName + ".SITE_NAME", globals())
+            exec("sSiteDesc = " + sName + ".SITE_DESC", globals())
             sPluginSettingsName = 'plugin_' + sName
             return sSiteName, sPluginSettingsName, sSiteDesc
-        except Exception, e:
-            VSlog("Cant import plugin " + str(sName))
+        except Exception as e:
+            VSlog("Cannot import plugin " + str(sName))
+            VSlog("Detail de l\'erreur " + str(e))
             return False, False
 
-    # def getRootFolder(self):
-    #     sRootFolder = cConfig().getAddonPath()
-    #     cConfig().log("Root Folder " + sRootFolder)
-    #     return sRootFolder
-
-    # def getRootArt(self):
-    #     oConfig = cConfig()
-
-    #     sFolder =  self.getRootFolder()
-    #     sFolder = os.path.join(sFolder, 'resources/art/').decode("utf-8")
-
-    #     sFolder = sFolder.replace('\\', '/')
-    #     return sFolder
-
-    def getAvailablePlugins(self,force = False):
-        #oConfig = cConfig()
+    def getAvailablePlugins(self, force=False):
         addons = addon()
 
-        #sFolder =  self.getRootFolder()
-        #sFolder = os.path.join(sFolder, 'resources/sites')
-        sFolder = "/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/emu/vstream/resources/sites"
-
-        # xbox hack
+        sFolder = "special://home/addons/plugin.video.vstream/resources/sites"
         sFolder = sFolder.replace('\\', '/')
-        #cConfig().log("Sites Folder " + sFolder)
         VSlog("Sites Folder " + sFolder)
 
         aFileNames = self.__getFileNamesFromFolder(sFolder)
@@ -387,23 +380,13 @@ class cPluginHandler:
                     if (bPlugin == 'true') or (force == True):
                         aPlugins.append(self.__createAvailablePluginsItem(sSiteName, sFileName, sSiteDesc))
                 else:
-                   # settings nicht gefunden, also schalten wir es trotzdem sichtbar
-                   aPlugins.append(self.__createAvailablePluginsItem(sSiteName, sFileName, sSiteDesc))
+                    # settings nicht gefunden, also schalten wir es trotzdem sichtbar
+                    aPlugins.append(self.__createAvailablePluginsItem(sSiteName, sFileName, sSiteDesc))
 
         return aPlugins
 
-
     def getAllPlugins(self):
-        #oConfig = cConfig()
-
-        #sFolder =  self.getRootFolder()
-        #sFolder = os.path.join(sFolder, 'resources/sites')
-        #print sFolder
-        
-
         sFolder = "special://home/addons/plugin.video.vstream/resources/sites"
-
-        # xbox hack
         sFolder = sFolder.replace('\\', '/')
         VSlog("Sites Folder " + sFolder)
 
@@ -588,53 +571,47 @@ class cUtil:
 
         return name
 
-    def FormatSerie(self,string):
+    def FormatSerie(self, string):
 
-        #xbmc.log(string)
+        # vire doubles espaces
+        string = re.sub(' +', ' ', string)
 
-        #vire doubles espaces
-        string = re.sub(' +',' ',string)
-
-        #vire espace a la fin
+        # vire espace a la fin
         if string.endswith(' '):
             string = string[:-1]
 
-        #vire espace au debut
+        # vire espace au debut
         if string.startswith(' '):
             string = string[1:]
 
-        #convertion unicode
-        string = string.decode("utf-8")
-
         SXEX = ''
-        #m = re.search( ur'(?i)(\wpisode ([0-9\.\-\_]+))(?:$| [^a\u00E0])',string,re.UNICODE)
-        m = re.search( ur'(?i)(\wpisode ([0-9\.\-\_]+))',string,re.UNICODE)
+        m = re.search('(?i)(\wpisode ([0-9\.\-\_]+))', string, re.UNICODE)
         if m:
-            #ok y a des episodes
-            string = string.replace(m.group(1),'')
-            #SXEX + "%02d" % int(m.group(2))
+            # ok y a des episodes
+            string = string.replace(m.group(1), '')
+            # SXEX + '%02d' % int(m.group(2))
             SXEX = m.group(2)
             if len(SXEX) < 2:
                 SXEX = '0' + SXEX
             SXEX = 'E' + SXEX
 
-            #pr les saisons
+            # pr les saisons
             m = re.search('(?i)(s(?:aison )*([0-9]+))', string)
             if m:
-                string = string.replace(m.group(1),'')
-                SXEX = 'S' + "%02d" % int(m.group(2)) + SXEX
+                string = string.replace(m.group(1), '')
+                SXEX = 'S' + '%02d' % int(m.group(2)) + SXEX
             string = string + ' ' + SXEX
 
         else:
-            #pas d'episode mais y a t il des saisons ?
+            # pas d'episode mais y a t il des saisons ?
             m = re.search('(?i)(s(?:aison )*([0-9]+))(?:$| )', string)
             if m:
-                string = string.replace(m.group(1),'')
-                SXEX = 'S' + "%02d" % int(m.group(2))
+                string = string.replace(m.group(1), '')
+                SXEX = 'S' + '%02d' % int(m.group(2))
 
                 string = string + ' ' + SXEX
 
-        #reconvertion utf-8
+        # reconvertion utf-8
         return string.encode('utf-8')
 
     def EvalJSString(self,s):
@@ -752,7 +729,7 @@ class cPacker():
 def UnpackingError(Exception):
     #Badly packed source or general error.#
     #xbmc.log(str(Exception))
-    print Exception
+    print (Exception)
     pass
 
 
@@ -1308,7 +1285,7 @@ class JJDecoder(object):
 							data = data[1:]
 							match += 1
 					continue
-			print 'No match : ' + data
+			print ('No match : ' + data)
 			break
 		return out
 
@@ -1480,7 +1457,7 @@ class AADecoder(object):
         pattern = (r"\(ﾟДﾟ\)\[ﾟoﾟ\]\+ *(.+?)\(ﾟДﾟ\)\[ﾟoﾟ\]\)")
         result = re.search(pattern, self.encoded_str, re.DOTALL)
         if result is None:
-            print "AADecoder: data not found"
+            print ("AADecoder: data not found")
             return False
 
         data = result.group(1)
@@ -1494,7 +1471,7 @@ class AADecoder(object):
         while data != '':
             # Check new char
             if data.find(begin_char) != 0:
-                print "AADecoder: data not found"
+                print ("AADecoder: data not found")
                 return False
 
             data = data[len(begin_char):]
@@ -1518,14 +1495,14 @@ class AADecoder(object):
             str_char = self.decode_char(enc_char, radix)
             
             if str_char == "":
-                print "no match :  "
-                print  data + "\nout = " + out + "\n"
+                print ("no match :  ")
+                print  (data + "\nout = " + out + "\n")
                 return False
             
             out += chr(int(str_char, radix))
 
         if out == "":
-            print "no match : " + data
+            print ("no match : " + data)
             return False
 
         return out

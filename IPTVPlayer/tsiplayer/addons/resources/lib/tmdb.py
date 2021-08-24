@@ -68,7 +68,7 @@ class cTMDb:
 
     # important seul xbmcvfs peux lire le special
     if not isMatrix():
-        REALCACHE = VSPath(CACHE).decode('utf-8')
+        REALCACHE = VSPath(CACHE)
     else:
         REALCACHE = VSPath(CACHE)
 

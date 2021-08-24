@@ -109,8 +109,8 @@ class TSIPHost(TSCBaseHostClass):
             self.add_menu(cItem,'Blocks">(.*?)</ul>','class="MovieBlock.*?href="(.*?)".*?(?:image=|img src=)"(.*?)"(.*?)<h4>(.*?)</h4>(.*?)</a>','','21',LINK = LINK,post_data=post_data,ind_0 = -1,ord=[0,3,1,2,4],Desc=desc,Next=next,u_titre=True,EPG=True)		
  
     def showelms(self,cItem):
-		self.add_menu(cItem,'','(Trailer).*?src="(.*?)"','','video',post_data = {'href':cItem['url']},ord=[1,0],corr_=False,add_vid=False,LINK=self.MAIN_URL+'/wp-content/themes/Elshaikh2021/Ajaxat/Home/LoadTrailer.php',hst='none')	
-		self.add_menu(cItem,'class="ContainerEpisodesList(.*?)</div>','href="(.*?)".*?>(.*?)</a>','','video',u_titre=True,EPG=True)		
+        self.add_menu(cItem,'','(Trailer).*?src="(.*?)"','','video',post_data = {'href':cItem['url']},ord=[1,0],corr_=False,add_vid=False,LINK=self.MAIN_URL+'/wp-content/themes/Elshaikh2021/Ajaxat/Home/LoadTrailer.php',hst='none')	
+        self.add_menu(cItem,'class="ContainerEpisodesList(.*?)</div>','href="(.*?)".*?>(.*?)</a>','','video',u_titre=True,EPG=True)		
 
 
 
