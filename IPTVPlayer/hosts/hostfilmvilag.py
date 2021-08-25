@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.08.22. Blindspot
+# 2021.08.25. Blindspot
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -82,9 +82,9 @@ class FilmVilag(CBaseHostClass):
     
     def listMainMenu(self, cItem):   
         printDBG('FilmVilag.listMainMenu')
-        MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Kategóriák')},
-                        {'category':'search',          'title': _('Keresés'), 'search_item':True, 'desc': "Ez a funkció fejlesztés alatt áll."},
-                        {'category':'search_history',  'title': _('Keresési előzmények'), 'desc': "Ez a funkció fejlesztés alatt áll."}]
+        MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Kategóriák'), 'desc': "Egyes videómegosztók pillanatnyilag nem támogatottak"},
+                        {'category':'search',          'title': _('Keresés'), 'search_item':True, 'desc': "Egyes videómegosztók pillanatnyilag nem támogatottak"},
+                        {'category':'search_history',  'title': _('Keresési előzmények'), 'desc': "Egyes videómegosztók pillanatnyilag nem támogatottak"}]
         self.listsTab(MAIN_CAT_TAB, cItem) 
 
     def getdesc(self, title):
@@ -118,7 +118,7 @@ class FilmVilag(CBaseHostClass):
             if desc:
                 desc = "Tartalom: " +  desc
             if not desc:
-                desc  = "A film tartalma jelenleg nem elérhető"
+                desc  = "A film tartalma jelenleg érhető el."
             params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
             self.addVideo(params)
         if "Következő &raquo" in data:
@@ -202,7 +202,30 @@ class FilmVilag(CBaseHostClass):
     
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FilmVilag.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        pass
+        url = 'http://katalogus.eoldal.hu/'
+        s = searchPattern.replace(" ", "+")
+        sts, data = self.getPage(url, self.defaultParams, {'uid':664389, 'key': s})
+        if not sts:
+		    return
+        results = self.cm.ph.getDataBeetwenMarkers(data, '<ul>', '</ul>', False) [1]
+        printDBG(results)
+        results = self.cm.ph.getAllItemsBeetwenMarkers(results, 'a href="', '">', False)
+        printDBG(results)
+        for n in results:
+            if results.index(n) != 0:
+                sts, data = self.getPage(n)
+                result = self.cm.ph.getDataBeetwenMarkers(data, '<div class="article">', '<div class="article-cont-clear clear">', False) [1]
+                printDBG(result)
+                title = self.cm.ph.getDataBeetwenMarkers(result, 'span class="span-a-title">','</span>', False) [1]
+                printDBG(title)
+                url = self.cm.ph.getDataBeetwenMarkers(result, '" src="','"', False) [1]
+                desc = self.getdesc(title)
+                if desc:
+                    desc = "Tartalom: " +  desc
+                if not desc:
+                    desc  = "A film tartalma jelenleg nem elérhető"
+                params = {'title':title, 'icon': False , 'url': url, 'desc': desc}
+                self.addVideo(params)
 
 class IPTVHost(CHostBase):
 
