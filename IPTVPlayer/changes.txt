@@ -1,3 +1,6 @@
+#2021.08.30.01
+-Kisebb javítások
+-Ikonok frissítve (Köszönet Harciküsznek)
 #2021.08.25.01
 -FilmVilág frissítve - Kereső hozzáadva
 #2021.08.24.01

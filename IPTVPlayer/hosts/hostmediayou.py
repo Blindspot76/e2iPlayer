@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 ###################################################
-# Version 1.2 - Modified by Blindspot - 2021.02.18.
+# Version 1.4 - Modified by Blindspot - 2021.08.30.
 ###################################################
 # LOCAL import
 ###################################################
@@ -81,7 +81,8 @@ class MediayouNet(CBaseHostClass):
         
         option = cItem.get('option')
         sts, data = self.getPage(cItem['url'], post_data = cItem.get('post_data'))
-        if not sts: return
+        if not sts: 
+            return
 #        printDBG("MediayouNet.listCategories data[%s]" % data)
         try:
             data = json_loads(data)['contents']
@@ -101,9 +102,10 @@ class MediayouNet(CBaseHostClass):
         
     def listItems(self, cItem):
         printDBG("MediayouNet.listItems [%s]" % cItem)
-
+        
         sts, data = self.getPage(cItem['url'], post_data = cItem.get('post_data'))
-        if not sts: return
+        if not sts: 
+            return
 #        printDBG("MediayouNet.listItems data[%s]" % data)
         try:
             data = json_loads(data)['contents']
