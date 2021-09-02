@@ -91,6 +91,7 @@ class TvpVod(CBaseHostClass, CaptchaHelper):
                     {'category': 'vods_list_cats', 'title': 'Katalog', 'url': MAIN_VOD_URL},
                     {'category': 'vods_explore_item', 'title': 'Perły Archiwów', 'url': MAIN_VOD_URL + 'sub-category/archiwalne,1649991'},
                     {'category': 'digi_menu', 'title': 'Rekonstrukcja cyfrowa TVP', 'url': 'https://cyfrowa.tvp.pl/'},
+
                     #{'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
                     #{'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
                     #{'category':'vods_sub_categories', 'title':'VOD',                       'marker':'VOD'},
@@ -714,12 +715,12 @@ class TvpVod(CBaseHostClass, CaptchaHelper):
         asset_id = str(cItem.get('object_id', ''))
         url = self._getFullUrl(cItem.get('url', ''))
 
-        if 'tvpstream.tvp.pl' in url:
+        if 'tvpstream.tvp.pl' in url or '/sess/' in url:
             sts, data = self.cm.getPage(url)
             if not sts:
                 return []
 
-            hlsUrl = self.cm.ph.getSearchGroups(data, '''['"](http[^'^"]*?\.m3u8[^'^"]*?)['"]''')[0]
+            hlsUrl = self.cm.ph.getSearchGroups(data, '''['"](http[^'^"]*?\.m3u8[^'^"]*?)['"]''')[0].replace('\/', '/')
             if '' != hlsUrl:
                 videoTab = getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=False)
                 if 1 < len(videoTab):
