@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# Blindspot - 2021.08.16.
+# Blindspot - 2021.09.14.
 ###################################################
 # LOCAL import
 ###################################################
@@ -214,12 +214,14 @@ class YouTubeParser():
         for idx in range(len(retList)):
             if retList[idx].get('m3u8', False):
                 retList[idx]['url'] = strwithmeta(retList[idx]['url'], {'iptv_m3u8_live_start_index': -30})
-
         if dashSepareteList:
             return retList, dashList
+            printDBG(retList)
+            printDBG(dashList)
         else:
             retList.extend(dashList)
             return retList
+            printDBG(retList)
 
     def updateQueryUrl(self, url, queryDict):
         urlParts = urlparse(url)
