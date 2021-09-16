@@ -59,7 +59,7 @@
 "hostfilmativa": "https://filmativa.xyz/",
 "hostfilmehdnet": "https://filmehd.se/",
 "hostfilmeonlineto": "https://filme-online.to/",
-"hostfilmezz": "https://filmezz.co/",
+"hostfilmezz": "Filmezz",
 "hostfilmixco": "https://filmix.co/",
 "hostfilmoviplex": "https://www.filmoviplex.com/",
 "hostfilmpalast": "http://filmpalast.to/",

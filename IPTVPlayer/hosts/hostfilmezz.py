@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-02-09 by Blindspot - modified Filmezz
+# 2021-09-16 by Blindspot - modified Filmezz
 ###################################################
-HOST_VERSION = "2.3"
+HOST_VERSION = "2.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -60,18 +60,18 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://filmezz.co/'
+    return 'https://filmezz.club/'
 
 class FilmezzEU(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'filmezz.eu', 'cookie':'filmezzeu.cookie'})
+        CBaseHostClass.__init__(self, {'history':'filmezz.club', 'cookie':'filmezzeu.cookie'})
         self.DEFAULT_ICON_URL = 'http://plugins.movian.tv/data/3c3f8bf962820103af9e474604a0c83ca3b470f3'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://filmezz.co/'
+        self.MAIN_URL = 'https://filmezz.club/'
         self.vivn = GetIPTVPlayerVerstion()
         self.porv = self.gits()
         self.pbtp = '-'
@@ -467,8 +467,8 @@ class FilmezzEU(CBaseHostClass):
                         break
                         
         url = videoUrl
-        if url.startswith('https://filmezz.co'):
-            x = url.replace("https://filmezz.co", "https://vidddoza.me")
+        if url.startswith('https://filmezz.club'):
+            x = url.replace("https://filmezz.club", "https://vidddoza.me")
             printDBG(x)
             url = x
             printDBG(x)
