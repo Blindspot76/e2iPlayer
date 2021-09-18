@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-
+# Modified by Blindspot - 18.09.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -600,8 +600,8 @@ class urlparser:
                        'vidcloud.net':          self.pp.parserVIDCLOUD      ,
                        'vidcloud9.com':         self.pp.parserVIDCLOUD9     ,
                        'videa.hu':              self.pp.parserVIDEAHU       ,
-                       'vidembed.cc':           self.pp.parserVIDCLOUD9     ,
-                       'vidembed.net':          self.pp.parserVIDCLOUD9     , 
+                       'vidembed.cc':           self.pp.parserVIDEMBED     ,
+                       'vidembed.net':          self.pp.parserVIDEMBED     , 
                        'video.filmoviplex.com': self.pp.parserNETUTV        ,
                        'video.meta.ua':         self.pp.parserMETAUA        ,
                        'video.rutube.ru':       self.pp.parserRUTUBE        ,
@@ -11333,7 +11333,28 @@ class pageParser(CaptchaHelper):
                         urlsTab.append({'name':video_name, 'url': video_url})
         
         return urlsTab
-                    
+    
+    def parserVIDEMBED(self, baseUrl):
+        printDBG("parserVIDEMBED baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        cUrl = baseUrl
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: 
+            return False
+        
+        urlsTab = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'location = "', '"', False)
+        data = str(data)
+        data = data.replace("(True, '", "")
+        data = data.replace("')", "")
+        printDBG(data)
+        data = strwithmeta(data)
+        urlsTab = self.parserDOOD(data)        
+        return urlsTab
             
     def parserUPLOADUJNET(self, baseUrl):
         printDBG("parserUPLOADUJNET baseUrl[%r]" % baseUrl)
@@ -14251,7 +14272,6 @@ class pageParser(CaptchaHelper):
         
         if '/d/' in baseUrl:
             baseUrl = baseUrl.replace('/d/','/e/')
-        
         sts, data = self.cm.getPage(baseUrl, httpParams)
         url = self.cm.meta.get('location', '')
         if url != '':
