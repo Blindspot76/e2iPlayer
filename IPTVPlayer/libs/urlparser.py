@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 18.09.2021
+# Modified by Blindspot # 19.21.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -457,7 +457,7 @@ class urlparser:
                        'realvid.net':           self.pp.parserFASTVIDEOIN   ,
                        'rutube.ru':             self.pp.parserRUTUBE        ,
                        'sawlive.tv':            self.pp.parserSAWLIVETV     ,
-                       'sbplay.one':            self.pp.parserONLYSTREAM    ,
+                       'sbplay.one':            self.pp.parserSTREAMSB    ,
                        'scs.pl':                self.pp.parserSCS           ,
                        'sendvid.com':           self.pp.parserSENDVIDCOM    ,
                        'seositer.com':          self.pp.parserYANDEX        ,
@@ -508,7 +508,7 @@ class urlparser:
                        'streamplay.cc':         self.pp.parserSTREAMPLAY    ,
                        'streamplay.me':         self.pp.parserSTREAMPLAY    ,
                        'streamplay.to':         self.pp.parserSTREAMPLAY    ,
-                       'streamsb.net':          self.pp.parserONLYSTREAM   ,
+                       'streamsb.net':          self.pp.parserSTREAMSB      ,
                        'streamtape.com':        self.pp.parserSTREAMTAPE    ,
                        'streamtape.net':        self.pp.parserSTREAMTAPE    ,
                        'streamtape.to':         self.pp.parserSTREAMTAPE    ,
@@ -12721,6 +12721,29 @@ class pageParser(CaptchaHelper):
                 hlsUrl = strwithmeta(hlsUrl, {'Origin':"https://" + urlparser.getDomain(baseUrl), 'Referer':baseUrl})
                 urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
 
+        return urlTab
+    
+    def parserSTREAMSB(self, baseUrl):
+        printDBG("parserSTREAMSB baseUrl[%s]" % baseUrl)
+        urlTab = []
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        urlParams = {'header': HTTP_HEADER}
+        baseUrl = baseUrl.replace("embed-", "play/")
+        baseUrl = baseUrl.replace(".html", "?auto=0&referer=&")
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: 
+            return False
+        m3u8_url = self.cm.ph.getDataBeetwenMarkers(data, 'sources: [{file:"', '?', False) [1]
+        sts, data = self.cm.getPage(m3u8_url, urlParams)
+        if not sts: 
+            return False
+        printDBG(data)
+        data = data.split()
+        printDBG(data)
+        m3u8 = data[4]        
+        printDBG(m3u8)
+        params = {'name': "direct_link", 'url': m3u8}
+        urlTab.append(params)
         return urlTab
     
     def parserMIXDROP(self, baseUrl):

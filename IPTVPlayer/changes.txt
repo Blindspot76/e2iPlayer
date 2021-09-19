@@ -1,3 +1,5 @@
+#2021.09.19.01
+-StreamSB tárhelytámogatás javítva
 #2021.09.18.01
 -Vidnode tárhelytámogatás javítva
 #2021.09.16.01
