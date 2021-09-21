@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.07.19. 
+# Blindspot - 2021.09.21. 
 ###################################################
-HOST_VERSION = "1.2"
+HOST_VERSION = "1.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -53,6 +53,8 @@ class Dmdamedia(CBaseHostClass):
                 share = 'https:'+share
         else:
            share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="beagyazas">','" allowfullscreen', False) [1]
+           if '<iframe width="640" height="360" frameborder="0" src="' in share:
+               share = share.replace('<iframe width="640" height="360" frameborder="0" src="', '')
            share = share.replace('<iframe width="640" height="360" src="', '')
            if share != '':
                if 'https:' not in share:
@@ -201,19 +203,18 @@ class Dmdamedia(CBaseHostClass):
                 if approve == True:
                     title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
                     icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
-                    cleanurl = url.strip('film')
-                    icon = cleanurl+icon
-                    params = {'category':'explore_item','title':title, 'icon': icon , 'url': url}
+                    cleanurl = url.strip('/film')
+                    icon = cleanurl + icon 
+                    newurl = cleanurl + self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
+                    params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl}
                     self.addDir(params)
                 approve = False
     
     def listItemsS(self, cItem, name):
         printDBG('Dmdamedia.listItemsSorozatok')
         approve = False
-        url = 'https://dmdamedia.eu/'
-                        
-        sts, data = self.getPage(url)
-                        
+        url = 'https://dmdamedia.eu/'       
+        sts, data = self.getPage(url)                
         if not sts:
             return
         name = name.lower()
@@ -262,9 +263,10 @@ class Dmdamedia(CBaseHostClass):
                 if approve == True:
                     title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
                     icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
-                    cleanurl = url.strip('film')
-                    icon = cleanurl+icon
-                    params = {'category':'explore_item','title':title, 'icon': icon , 'url': url}
+                    cleanurl = url.strip(url[-1])
+                    icon = cleanurl + icon
+                    newurl = cleanurl + self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
+                    params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl}
                     self.addDir(params)
                 approve = False
 	
@@ -300,55 +302,7 @@ class Dmdamedia(CBaseHostClass):
         printDBG('Dmdamedia.exploreItems - Filmek')
         url = 'https://dmdamedia.eu/' 
         self.cim = title
-        sts, data = self.getPage(url)
-        if not sts:
-            return
-        title = title.lower()
-        if "á" in title:
-            title = title.replace("á", "a")
-        if "é" in title:
-            title = title.replace("é", "e")
-        if "ö" in title:
-            title = title.replace("ö", "o")
-        if "ü" in title:
-            title = title.replace("ü", "u")
-        if "ó" in title:
-            title = title.replace("ó", "o")
-        if "ő" in title:
-            title = title.replace("ő", "o")
-        if "ű" in title:
-            title = title.replace("ű", "u")
-        if "ú" in title:
-            title = title.replace("ú", "u")
-        if "í" in title:
-            title = title.replace("í", "i")
-        if "." in title:
-            title = title.replace(".", "")
-        if "," in title:
-            title = title.replace(",", "")
-        if ":" in title:
-            title = title.replace(":", "")
-        if "- " in title:
-            title = title.replace("- ", "")
-        if "-" in title:
-            title = title.replace("-", "_")
-        if " " in title:
-            title = title.replace(" ", "_")
-        if "Állatfarm" in title:
-            title = title.replace("Állatfarm", "allatfarm")
-        if "terminator_a_halaloszto" in title:
-            title = title.replace("terminator_a_halaloszto", "terminator_1")
-        if "terminator_2_az_itelet_napja" in title:
-            title = title.replace("_az_itelet_napja", "")
-        if "terminator_3_a_gepek_lazadasa" in title:
-            title = title.replace("_a_gepek_lazadasa", "")
-        if "terminator_4_megvaltas" in title:
-            title = title.replace("_megvaltas", "")
-        if "terminator_5_genisys" in title:
-            title = title.replace("_genisys", "")
-        title = title + "_film"
-        filmurl = url + title
-        sts, data = self.getPage(filmurl)
+        sts, data = self.getPage(cItem['url'])
         if not sts:
             return
         meg = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="lista">Megosztók</div>	','<div class="info">')
@@ -364,7 +318,7 @@ class Dmdamedia(CBaseHostClass):
                     i = i.replace('" a href="', '')
                     i = i.replace('">', '')
                     title = self.cim + '(' + self.cm.ph.getDataBeetwenMarkers(data, '<div class="infotab-time">','</div>', False) [1] + ')' + " - " + i.replace('?a=', '')
-                    url = filmurl + i
+                    url = cItem['url'] + i
                     desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
                     params = {'title': title,  'icon': icon, 'url': url, 'desc': desc}
                     self.addVideo(params)
@@ -379,7 +333,7 @@ class Dmdamedia(CBaseHostClass):
                     b = b.replace('" a href="', '')
                     b = b.replace('">', '')
                     title = self.cim + '(' + self.cm.ph.getDataBeetwenMarkers(data, '<div class="infotab-time">','</div>', False) [1] + ')' + " - " + b.replace('?a=', '')
-                    url = filmurl + b
+                    url = cItem['url'] + b
                     desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
                     params = {'title': title,  'icon': icon, 'url': url, 'desc': desc}
                     self.addVideo(params)
@@ -387,62 +341,8 @@ class Dmdamedia(CBaseHostClass):
     def exploreItemsS(self, cItem, title, icon):
         printDBG('Dmdamedia.exploreItems - Sorozatok')
         url = 'https://dmdamedia.eu/' 
-        sts, data = self.getPage(url)
-        if not sts:
-            return
         self.realtitle = title
-        realurl = url
-        title = title.lower()
-        if "á" in title:
-            title = title.replace("á", "a")
-        if "é" in title:
-            title = title.replace("é", "e")
-        if "ö" in title:
-            title = title.replace("ö", "o")
-        if "ü" in title:
-            title = title.replace("ü", "u")
-        if "ó" in title:
-            title = title.replace("ó", "o")
-        if "ő" in title:
-            title = title.replace("ő", "o")
-        if "ű" in title:
-            title = title.replace("ű", "u")
-        if "ú" in title:
-            title = title.replace("ú", "u")
-        if "í" in title:
-            title = title.replace("í", "i")
-        if "," in title:
-            title = title.replace(",", "")
-        if "?" in title:
-            title = title.replace("?", "")
-        if "." in title:
-            title = title.replace(".", "_")
-        if ":" in title:
-            title = title.replace(":", "")
-        if "- " in title:
-            title = title.replace("- ", "")
-        if "-" in title:
-            title = title.replace("-", "")
-        if " " in title:
-            title = title.replace(" ", "_")
-        if "a_shield_ugynokei" in title:
-            title = title.replace("a_shield_ugynokei", "a_shieldugynokei")
-        if "a_sotetseg_kora" in title:
-            title = title.replace("a_sotetseg_kora", "a_sotetsegkora")
-        if "embertelenek" in title:
-		    title = title.replace("embertelenek", "embertelenek_marvels")
-        if "a_22es_csapdaja" in title:
-            title = title.replace("a_22es_csapdaja", "22_es_csapdaja")
-        if "ncis_tengereszeti_helyszinelok" in title:
-		    title = title.replace("ncis_tengereszeti_helyszinelok", "ncis_-_tengereszeti_helyszinelok")
-        if "Éber_szemek" in title:
-		    title = title.replace("Éber_szemek", "eber_szemek")
-        if "a_mentalista" in title:
-		    title = title.replace("a_mentalista", "mentalista")
-        if "a_mi_kis_falunk" in title:
-		    title = title.replace("a_mi_kis_falunk", "mi_kis_falunk")
-        sorurl = url + title
-        sts, data = self.getPage(sorurl)
+        sts, data = self.getPage(cItem['url'])
         if not sts:
             return
         meg = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="evadok">','</div>')
@@ -455,9 +355,9 @@ class Dmdamedia(CBaseHostClass):
                     i = i.replace('href="', '')
                     i = i.replace('">', '')
                     title = self.cm.ph.getDataBeetwenMarkers(u,'">','</a>', False) [1] + ".évad"
-                    url = realurl.replace("/", "") + i
+                    newurl = url.replace("/", "") + i
                     desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
-                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': url, 'desc':desc}
+                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': newurl, 'desc':desc}
                     self.addDir(params)
     
     def exploreItemsE(self, cItem, title, icon):
@@ -479,9 +379,9 @@ class Dmdamedia(CBaseHostClass):
                     title = self.cm.ph.getDataBeetwenMarkers(e,'">','</a>', False) [1] + ".rész" + " - " + self.cm.ph.getDataBeetwenMarkers(e,'title="','" href=', False) [1]
                     if "- feliratos rész" not in title:
                         title = title.replace("-", "")
-                    url = "https://dmdamedia.eu" + f 
+                    newurl = "https://dmdamedia.eu" + f 
                     desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
-                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': url, 'desc': desc}
+                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': newurl, 'desc': desc}
                     self.addDir(params)
     
     def exploreItemsEL(self, cItem, title, icon):
@@ -589,9 +489,10 @@ class Dmdamedia(CBaseHostClass):
                     t = t.lower()
                     if p in t:
                          icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
-                         cleanurl = url.strip('film')
-                         icon = cleanurl+icon
-                         params = {'category':'explore_item','title':title, 'icon': icon , 'url': url}
+                         cleanurl = url.strip("/film")
+                         icon = cleanurl + icon
+                         newurl = cleanurl + self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
+                         params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl}
                          self.addDir(params)
 	    printDBG("Dmdamedia.listSearchResult - Sorozatok cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         printDBG(cItem)
@@ -611,7 +512,10 @@ class Dmdamedia(CBaseHostClass):
                     t = t.lower()
                     if p in t:
                          icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
-                         params = {'category':'explore_item','title':title, 'icon': icon , 'url': url}
+                         cleanurl = url.strip(url[-1])
+                         icon = cleanurl + icon
+                         newurl = cleanurl + self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
+                         params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl}
                          self.addDir(params)
 
 class IPTVHost(CHostBase):

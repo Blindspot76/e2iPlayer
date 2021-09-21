@@ -19,21 +19,21 @@ except Exception:
 
 
 def gettytul():
-    return 'https://cb01.tattoo/'
+    return 'https://cb01.contractors/'
 
 
 class Cb01(CBaseHostClass):
 
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history': 'cb01.tattoo', 'cookie': 'cb01.tattoo.cookie'})
+        CBaseHostClass.__init__(self, {'history': 'cb01.contractors', 'cookie': 'cb01.contractors.cookie'})
 
         self.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
-        self.MAIN_URL = 'https://cb01.tattoo/'
-        self.DEFAULT_ICON_URL = 'https://i0.wp.com/cb01.directory/wp-content/uploads/2021/01/logo-cb01-uno-film-streaming.jpg'
+        self.MAIN_URL = 'https://cb01.contractors/'
+        self.DEFAULT_ICON_URL = 'https://i0.wp.com/cb01.uno/wp-content/uploads/2021/01/logo-cb01-uno-film-streaming.jpg'
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 

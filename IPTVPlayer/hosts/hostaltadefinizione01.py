@@ -20,21 +20,21 @@ except Exception:
 
 
 def gettytul():
-    return 'https://altadefinizione01.plus/'
+    return 'https://altadefinizione01.quest/'
 
 
 class AltadefinizioneZeroUno(CBaseHostClass):
 
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history': 'altadefinizione01.zone', 'cookie': 'altadefinizione01.cookie'})
+        CBaseHostClass.__init__(self, {'history': 'altadefinizione01.quest', 'cookie': 'altadefinizione01.cookie'})
 
         self.USER_AGENT = 'Mozilla/5.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
-        self.MAIN_URL = 'https://www.altadefinizione01.plus/'
-        self.DEFAULT_ICON_URL = self.MAIN_URL + 'templates/Darktemplate/images/logo.png'
+        self.MAIN_URL = 'https://www.altadefinizione01.quest/'
+        self.DEFAULT_ICON_URL = self.MAIN_URL + 'templates/Darktemplate_pagespeed/images/logo.png'
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
