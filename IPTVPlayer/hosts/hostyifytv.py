@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# Modified by Blindspot  26.09.2021
+###################################################
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -41,7 +44,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://ymovies.se/'
+    return 'https://ymovies.to/'
 
 
 class YifyTV(CBaseHostClass):
@@ -58,14 +61,14 @@ class YifyTV(CBaseHostClass):
             "vsh": "http://vshare.eu/embed-{0}.html",
             "vza": "https://vidoza.net/embed-{0}.html"
         }
-        self.DEFAULT_ICON_URL = "https://ymovies.se/wp-content/themes/yifybootstrap3/img/logo.svg"
+        self.DEFAULT_ICON_URL = "https://ymovies.to/wp-content/themes/yifybootstrap3/img/logo.svg"
         self.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT': '1', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding': 'gzip, deflate'}
 
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest'})
 
-        self.MAIN_URL = 'https://ymovies.se/'
+        self.MAIN_URL = 'https://ymovies.to/'
         self.AJAX_URL = self.MAIN_URL + "wp-admin/admin-ajax.php?"
 
         self.SRCH_URL = self.getFullUrl('?s=')
@@ -363,9 +366,8 @@ class YifyTV(CBaseHostClass):
                 ret = js_execute(jscode)
 
                 if ret['sts'] and 0 == ret['code']:
-                    action_params = self.cm.ph.getSearchGroups(ret['data'], "ajaxActionGet\(([^\)]+?)\)")[0]
-                    sec = "play"
-                    ajax_url = self.AJAX_URL + eval(action_params)
+                    action_params = self.cm.ph.getDataBeetwenMarkers(ret['data'], "ajaxActionGet(\'", "\'", False) [1] + "play"
+                    ajax_url = self.AJAX_URL + action_params
 
                     printDBG("ajax url: %s" % ajax_url)
 
@@ -451,7 +453,7 @@ class YifyTV(CBaseHostClass):
 
             for sou in souTab:
                 post_data = {'fv': '27', 'url': baseUrl, 'sou': sou}
-                url = 'https://ymovies.se/playerlite/pk/pk/plugins/player_p2.php'
+                url = 'https://ymovies.to/playerlite/pk/pk/plugins/player_p2.php'
                 sts, data = self.getPage(url, {'header': header}, post_data)
                 if not sts:
                     return []

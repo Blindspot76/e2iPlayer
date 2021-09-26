@@ -1,3 +1,5 @@
+#2021.09.26.01
+-Kisebb javítások
 #2021.09.21.01
 -DMDAMedia javítva
 #2021.09.19.02
