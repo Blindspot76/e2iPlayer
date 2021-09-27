@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 19.21.2021
+# Modified by Blindspot # 27.09.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -508,6 +508,7 @@ class urlparser:
                        'streamplay.cc':         self.pp.parserSTREAMPLAY    ,
                        'streamplay.me':         self.pp.parserSTREAMPLAY    ,
                        'streamplay.to':         self.pp.parserSTREAMPLAY    ,
+                       'sbplay.org':            self.pp.parserSTREAMSB      ,
                        'streamsb.net':          self.pp.parserSTREAMSB      ,
                        'streamtape.com':        self.pp.parserSTREAMTAPE    ,
                        'streamtape.net':        self.pp.parserSTREAMTAPE    ,
