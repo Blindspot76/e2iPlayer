@@ -1,3 +1,5 @@
+#2021.10.04.01
+-Kisebb javítások
 #2021.09.27.01
 -SBPlay.org tárhelytámogatás hozzáadva
 -MyWatchSeries javítva

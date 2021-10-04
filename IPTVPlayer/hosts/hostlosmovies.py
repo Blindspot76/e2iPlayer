@@ -37,7 +37,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://losmovies.app'
+    return 'http://losmovies.top'
 
 class LosMovies(CBaseHostClass):
  
@@ -45,11 +45,11 @@ class LosMovies(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'LosMovies.tv', 'cookie':'LosMovies.cookie'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'http://losmovies.app/images/losmovies_logo.png'
+        self.DEFAULT_ICON_URL = 'http://losmovies.top/images/losmovies_logo.png'
         self.HEADER = self.cm.getDefaultHeader(browser='chrome')
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'http://losmovies.app'
+        self.MAIN_URL = 'http://losmovies.top'
         self.cacheEpisodes = {}
         self.cacheLinks = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}

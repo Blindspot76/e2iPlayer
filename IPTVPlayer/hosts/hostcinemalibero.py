@@ -32,21 +32,21 @@ import urllib
 ###################################################
 
 def gettytul():
-    return 'https://cinemalibero.quest/' # main url of host
+    return 'https://cinemalibero.digital/' 
 
 class Cinemalibero(CBaseHostClass):
  
     def __init__(self):
         # init global variables for this class
         
-        CBaseHostClass.__init__(self, {'history':'cinemalibero', 'cookie':'cinemalibero.cookie'}) # names for history and cookie files in cache
+        CBaseHostClass.__init__(self, {'history':'cinemalibero.digital', 'cookie':'cinemalibero.cookie'}) # names for history and cookie files in cache
         
         # vars default values
         # various urls
-        self.MAIN_URL = 'https://cinemalibero.quest/'
+        self.MAIN_URL = 'https://cinemalibero.digital/'
 
         # url for default icon
-        self.DEFAULT_ICON_URL = "https://cinemalibero.quest/wp-content/themes/Cinemalibero%202.0/images/logo02.png"
+        self.DEFAULT_ICON_URL = "https://cinemalibero.digital/wp-content/themes/Cinemalibero%202.0/images/logo02.png"
 
         # default header and http params
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')        
@@ -87,8 +87,11 @@ class Cinemalibero(CBaseHostClass):
     
     def listMainMenu(self, cItem):   
         printDBG('Cinemalibero.listMainMenu')
-        MAIN_CAT_TAB = [{'category':'list_items',      'title': _('Movies') , 'url' : self.getFullUrl('/category/film') },
-                        {'category':'list_items',      'title': _('Series') , 'url': self.getFullUrl('/category/serie-tv') }    ,
+        MAIN_CAT_TAB = [{'category':'list_items',      'title': _('Film') , 'url' : self.getFullUrl('/category/film') },
+                        {'category':'list_items',      'title': _('Serie Tv') , 'url': self.getFullUrl('/category/serie-tv') }    , 
+                        {'category':'list_items',      'title': _('Anime')  , 'url' : self.getFullUrl('/category/anime-giapponesi') } ,
+                        {'category':'list_items',      'title': _('Sport')  , 'url' : self.getFullUrl('/category/sport') }  ,
+                        {'category':'list_items',      'title': _('Ultimi episodi') , 'url' : self.getFullUrl('/aggiornamenti-serie-tv') }  ,
                         {'category':'search',          'title': _('Search'),    'search_item':True, },
                         {'category':'search_history',  'title': _('Search history'),     }]
         self.listsTab(MAIN_CAT_TAB, cItem)  
@@ -154,7 +157,7 @@ class Cinemalibero(CBaseHostClass):
             return
         
         # check if is a series
-        is_serie = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<a href="https://cinemalibero.website/category/serie-tv/" rel="category tag">', '</a>')[1])
+        is_serie = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<a href="https://cinemalibero.digital/category/serie-tv/" rel="category tag">', '</a>')[1])
         #printDBG(is_serie)
         if 'Serie' in is_serie:
             # it is a series
