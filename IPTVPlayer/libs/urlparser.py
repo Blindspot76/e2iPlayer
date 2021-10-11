@@ -641,6 +641,7 @@ class urlparser:
                        'vidstream.top':         self.pp.parserVIDSTREAM     ,
                        'vidstreamup.com':       self.pp.parserVIUCLIPS    ,
                        'vidhdthe.club':         self.pp.parserHDVIDTV       ,
+                       'vidhdthe.online':       self.pp.parserHDVIDTV       ,
                        'vidthehd.club':         self.pp.parserHDVIDTV       ,
                        'vidto.me':              self.pp.parserVIDTO         ,
                        'vidtodo.com':           self.pp.parserVIDSTODOME     ,
