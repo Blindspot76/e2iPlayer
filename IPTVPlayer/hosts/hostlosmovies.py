@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# 2021.10.17. by Blindspot
 ###################################################
 # LOCAL import
 ###################################################
@@ -37,7 +38,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://losmovies.top'
+    return 'http://losmovies.app'
 
 class LosMovies(CBaseHostClass):
  
@@ -45,11 +46,11 @@ class LosMovies(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'LosMovies.tv', 'cookie':'LosMovies.cookie'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'http://losmovies.top/images/losmovies_logo.png'
+        self.DEFAULT_ICON_URL = 'http://losmovies.app/images/losmovies_logo.png'
         self.HEADER = self.cm.getDefaultHeader(browser='chrome')
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'http://losmovies.top'
+        self.MAIN_URL = 'http://losmovies.app'
         self.cacheEpisodes = {}
         self.cacheLinks = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -110,7 +111,7 @@ class LosMovies(CBaseHostClass):
         
     def listABC(self, cItem, nextCategory):
         printDBG("LosMovies.listABC")
-        for letter in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZAll":
+        for letter in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             params = dict(cItem)
             params.update({'category':nextCategory, 'title':letter, 'letter':letter})
             self.addDir(params)
@@ -195,55 +196,57 @@ class LosMovies(CBaseHostClass):
             
     def listSeasons(self, cItem, nextCategory='list_episodes'):
         printDBG("LosMovies.listSeasons")
-        
-        self.cacheEpisodes = {}
-        
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         self.setMainUrl(self.cm.meta['url'])
-        
-        seasonsTitlesTab = {}
         seasonsData = self.cm.ph.getDataBeetwenMarkers(data, '<div id="seasons">', '</ul>')[1]
-        seasonsData = self.cm.ph.getAllItemsBeetwenMarkers(seasonsData, '<a ', '</a>', withMarkers=True)
+        seasonsData = self.cm.ph.getAllItemsBeetwenMarkers(seasonsData, '<a', '</a>', withMarkers=True)
         for item in seasonsData:
             seasonTitle = self.cleanHtmlStr(item)
-            seasonKey   = self.cm.ph.getSearchGroups(item, '''href=['"]#tabs-([^'^"]+?)['"]''')[0]
-            seasonsTitlesTab[seasonKey] = seasonTitle
-        
-        marker = '<div id="movie-'
-        data = self.cm.ph.getDataBeetwenMarkers(data, marker, '<div class="aPlaceHolder aPlaceHolder Top', False)[1]
-        data = data.split(marker)
-        for sItem in data:
-            seasonKey = self.cm.ph.getSearchGroups(sItem, '''([0-9]+?)['"]''')[0]
-            episodesTab = []
-            episodesData = self.cm.ph.getAllItemsBeetwenMarkers(sItem, '<h3', '</tbody>', True)
-            for eItem in episodesData:
-                eTitle   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(eItem, '<h3', '</h3>', True)[1])
-                eFakeUrl = '#season%s_%s' % (seasonKey, urllib.quote(eTitle))
-                linksTab = self.getLinksForVideo(cItem, eItem)
-                if len(linksTab):
-                    self.cacheLinks[eFakeUrl] = linksTab
-                    episodesTab.append({'title':eTitle, 'url':eFakeUrl})
-            if len(episodesTab):
-                self.cacheEpisodes[seasonKey] = episodesTab
-                sTitle = seasonsTitlesTab.get(seasonKey, 'Season ' + seasonKey)
-                params = dict(cItem)
-                params.update({'good_for_fav': False, 'category':nextCategory, 'title':sTitle, 's_key':seasonKey})
-                self.addDir(params)
-    
+            seasonKey   = seasonTitle.replace("Season ", "")
+            params = dict(cItem)           
+            params.update({'url': cItem['url'], 'good_for_fav': False, 'category':nextCategory, 'title':seasonTitle, 's_key':seasonKey})
+            self.addDir(params)
+      
     def listEpisodes(self, cItem):
         printDBG("LosMovies.listEpisodes")
-        
-        sKey = cItem.get('s_key', '')
-        tab  = self.cacheEpisodes.get(sKey, [])
-        
-        params = dict(cItem)
-        self.listsTab(tab, params, 'video')
-
+        sts, data = self.getPage(cItem['url'])
+        if not sts: 
+            return
+        episodesTab = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="season" id="season' + cItem['s_key'], '</div></div></div><', True) [1]
+        episodesData = self.cm.ph.getAllItemsBeetwenMarkers(data, '3>', '</div><h', True)
+        for eItem in episodesData:
+            eTitle   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(eItem, '3>', '</h3>', True)[1])
+            eTitle = eTitle.replace("3>", "")
+            if episodesData[episodesData.index(eItem)] == episodesData[-1]:
+                lastep = eTitle[-2] + eTitle[-1]
+                lastep = lastep.strip()
+                lastep = int(lastep)
+                lastep = lastep + 1
+                lastep = str(lastep)
+                lastone = eTitle
+                this = lastone[-2] + lastone[-1]
+                this = this.strip()
+                lastone = lastone.replace(this, str(lastep))
+                epdata = self.cm.ph.getDataBeetwenMarkers(data, lastone, '</div></div></div><', True)[1]
+            eFakeUrl = '#season%s_%s' % (cItem['s_key'], urllib.quote(eTitle))
+            linksTab = self.getLinksForVideo(cItem, eItem)
+            self.cacheLinks[eFakeUrl] = linksTab
+            episodesTab.append({'title':eTitle, 'url':eFakeUrl})
+        for i in episodesTab:
+            params = {"title": i['title'], "url": i['url'], "icon": cItem['icon']}
+            self.addVideo(params)
+        eFakeUrl = '#season%s_%s' % (cItem['s_key'], urllib.quote(lastone))
+        linksTab = self.getLinksForVideo(cItem, epdata)
+        self.cacheLinks[eFakeUrl] = linksTab
+        params = {"title": lastone, "url": eFakeUrl, "icon": cItem['icon']}
+        self.addVideo(params)
+    
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("LosMovies.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = self.getFullUrl('search?type=movies&q=') + urllib.quote_plus(searchPattern)
+        cItem['url'] = "http://losmovies.top/display-results?type=movies&q=" + urllib.quote_plus(searchPattern)
         self.listItems(cItem, 'list_seasons')
         
     def getLinksForVideo(self, cItem, eItem=None):
@@ -271,16 +274,13 @@ class LosMovies(CBaseHostClass):
         # <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         #   function dec_Embed2_1_2(str) { ....
         # </script>
-
-        scripts = self.cm.ph.getAllItemsBeetwenMarkers(data, ('<script','>'), '</script>', False)
+        scripts = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script>', '</script>', False)
         swap_script = ""
         
         for scr in scripts:
             if ('Vidsrc' in scr) or ('Movietv1' in scr) or ('Files123' in scr):
                 # code found
                 swap_script = scr
-                printDBG("--------- swap functions -----------")
-                printDBG(swap_script)
                 #m = re.findall("(?P<Files123>[a-z0-9_]+123[a-z0-9_]+)\(|(?P<Movietv>[a-z0-9_]+movietv[a-z0-9_]+)\(|(?P<VidSrc>[a-z0-9_]+vidsrc[a-z0-9_]+)\(", scr, re.I)
                 
                 # part to populate with all needed functions
@@ -552,6 +552,7 @@ class LosMovies(CBaseHostClass):
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
+        title = self.currItem.get("title", '')
         
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
