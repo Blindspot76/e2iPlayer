@@ -38,3 +38,6 @@ def download_url(url, save_path):
         with closing(urllib2.urlopen(url)) as dl_file:
             with open(save_path, 'wb') as out_file:
                 out_file.write(dl_file.read())
+
+def string_escape(s, encoding='utf-8'):
+    return str(s.encode().decode('unicode-escape'))

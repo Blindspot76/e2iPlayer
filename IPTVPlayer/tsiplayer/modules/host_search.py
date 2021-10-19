@@ -5,6 +5,12 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClas
 from Plugins.Extensions.IPTVPlayer.components.e2ivkselector import GetVirtualKeyboard
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import GetIPTVSleep
 from Components.config import config
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import IsPython3
+try:
+    import _thread
+except:
+    pass
+    
 import re,os
 
 def getinfo():
@@ -22,6 +28,10 @@ class TSIPHost(TSCBaseHostClass):
         TSCBaseHostClass.__init__(self,{'cookie':'tsiplayer.cookie'})
         
     def showmenu0(self,cItem):
+        try:
+            basestring
+        except NameError:
+            basestring = str
         type_  = cItem.get('gnr','')
         cat_id_filtre=[]
         if type_=='ar': cat_id_filtre=['21']
@@ -45,25 +55,31 @@ class TSIPHost(TSCBaseHostClass):
         threads = []
         for (file_) in lst:
             if (file_.endswith('.py'))and(file_.startswith('host_')):
-                try:
-                    path_       = folder+'/'+file_
-                    file_ = file_.replace('.py','')
-                    import_str  = import_+file_
-                    _temp       = __import__(import_str, globals(), locals(), ['getinfo'], -1)
-                    info        = _temp.getinfo()
-                    search      = info.get('recherche_all', '0')	
-                    cat_id      = info.get('cat_id', '0')
-                    name        = info['name']
-                    if 	(cat_id in cat_id_filtre)and(search!='0'):	
-                        printDBG('--------------> Recherche '+name+'<----------------')
+                #try:
+                path_       = folder+'/'+file_
+                file_ = file_.replace('.py','')
+                import_str  = import_+file_
+                _temp       = __import__(import_str, globals(), locals(), ['getinfo'], 0)
+                info        = _temp.getinfo()
+                search      = info.get('recherche_all', '0')	
+                cat_id      = info.get('cat_id', '0')
+                name        = info['name']
+                if 	(cat_id in cat_id_filtre)and(search!='0'):	
+                    printDBG('--------------> Recherche '+name+'<----------------')
+                    if IsPython3():
+                        _thread.start_new_thread( self.get_results, (import_str,str_ch,page,name,file_,) )
+                    else:
                         threads.append(TsThread(self.get_results,import_str,str_ch,page,name,file_))
-                except:
-                    printDBG('--------------> Error '+file_+'<----------------')
-        for i in threads:
-            i.start()
-            i.join(timeout=2)
-            #GetIPTVSleep().Sleep(0.2)
-            
+                    
+                #except:
+                #printDBG('--------------> Error '+file_+'<----------------')
+        if IsPython3():
+            GetIPTVSleep().Sleep(11)
+        else:
+            for i in threads:
+                i.start()
+                i.join(timeout=2)
+      
         #GetIPTVSleep().Sleep(3)    
         #[i.start() for i in threads]
         #[i.join(timeout=2)  for i in threads]	
@@ -78,7 +94,7 @@ class TSIPHost(TSCBaseHostClass):
         
     def get_results(self,import_str,str_ch,page,name,file_):
         printDBG('--------------> startstart '+name+'<----------------')
-        _temp = __import__(import_str, globals(), locals(), ['TSIPHost'], -1)
+        _temp = __import__(import_str, globals(), locals(), ['TSIPHost'], 0)
         host_ = _temp.TSIPHost()
         host_.currList=[]
         host_.SearchResult(str_ch,page,extra='')

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # vStream https://github.com/Kodi-vStream/venom-xbmc-addons
-# source 45b  15022021 'https://01seriestreaming.com/' redirect source 45 https://hds-streamingvf.org/ 07022021
-# changements mineurs dans le code mais changemement nom et logo
 import re
 
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.gui.hoster import cHosterGui
@@ -10,13 +8,13 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.inputP
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.outputParameterHandler import cOutputParameterHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.parser import cParser
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress, VSlog
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress
 
-SITE_IDENTIFIER = 'o1seriestreaming'
-SITE_NAME = '01 Série Streaming'
+SITE_IDENTIFIER = '_33seriestreaming'
+SITE_NAME = '33 Séries'
 SITE_DESC = 'Films et Séries en streaming VF et VOSTFR'
 
-URL_MAIN = 'https://wwv.33seriestreaming.com/'
+URL_MAIN = "https://wwv.33seriestreaming.com/"
 
 # Sous menus
 MOVIE_MOVIE = (True, 'showMenuMovies')
@@ -135,7 +133,7 @@ def showGenres():
 
     liste = ['action', 'action-adventure', 'animation', 'aventure', 'comedie', 'crime', 'documentaire', 'drame',
              'familial', 'fantastique', 'guerre', 'histoire', 'horreur', 'kids', 'musique', 'mystere', 'reality',
-             'romance', 'science-fiction', 'science-fiction-fantastique', 'soap', 'telefilm/', 'thriller',
+             'romance', 'science-fiction', 'science-fiction-fantastique', 'soap', 'telefilm', 'thriller',
              'war-politics', 'western']
 
     oOutputParameterHandler = cOutputParameterHandler()
@@ -212,11 +210,6 @@ def showMovies(sSearch=''):
                     continue
 
             sDisplayTitle = sTitle
-            # Quel intérêt ??
-            # if '/series' in sUrl2:
-                # sDisplayTitle = sDisplayTitle + ' [Série]'
-            # else:
-                # sDisplayTitle = sDisplayTitle + ' [Film]'
 
             oOutputParameterHandler.addParameter('siteUrl', sUrl2)
             oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
@@ -254,6 +247,7 @@ def __checkForNextPage(sHtmlContent):
         return sNextPage, sPaging
     return False, 'none'
 
+
 def showSaisons():
     oGui = cGui()
     oParser = cParser()
@@ -276,7 +270,7 @@ def showSaisons():
             sThumb = aEntry[1]
             sSais = aEntry[2]
 
-            sTitle = sSais
+            sTitle = sMovieTitle + ' ' + sSais
 
             oOutputParameterHandler.addParameter('siteUrl', sUrl2)
             oOutputParameterHandler.addParameter('sThumb', sThumb)
@@ -299,7 +293,7 @@ def showSaisonsEP():
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
-    
+
     sPattern = 'property="og:description".+?content="([^"]+)'
     aResult = oParser.parse(sHtmlContent, sPattern)
     if (aResult[0] == True):
@@ -319,7 +313,7 @@ def showSaisonsEP():
         for aEntry in aResult[1]:
             sUrl2 = aEntry[2]
             sThumb = aEntry[0]
-            sEp = aEntry[1]
+            sEp = re.sub(' - ', ' ', aEntry[1])
 
             sTitle = sMovieTitle + ' ' + sEp
 
@@ -331,6 +325,7 @@ def showSaisonsEP():
             oGui.addEpisode(SITE_IDENTIFIER, 'showHosters', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
 
     oGui.setEndOfDirectory()
+
 
 def showHosters():
     oGui = cGui()

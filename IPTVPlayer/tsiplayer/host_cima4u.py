@@ -16,7 +16,7 @@ def getinfo():
     info_={}
     name = 'Cima4u.Tv'
     hst = tshost(name)	
-    if hst=='': hst = 'https://cima4u.ws'
+    if hst=='': hst = 'https://w.cima4u.ws'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.1.01 05/07/2020' 

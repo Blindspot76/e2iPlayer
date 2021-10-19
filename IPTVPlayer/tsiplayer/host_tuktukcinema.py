@@ -20,7 +20,7 @@ class TSIPHost(TSCBaseHostClass):
               
     def showmenu(self,cItem):
         printDBG('Start menu0')
-        self.addDir({'import':cItem['import'],'category' : 'host2','title':'Film'   ,'icon':cItem['icon'],'mode':'10','url':self.MAIN_URL+'/category/movies/'})
+        self.addDir({'import':cItem['import'],'category' : 'host2','title':'Film'   ,'icon':cItem['icon'],'mode':'10','url':self.MAIN_URL+'/category/movies-10/'})
         self.addDir({'import':cItem['import'],'category' : 'host2','title':'Anime'  ,'icon':cItem['icon'],'mode':'10','url':self.MAIN_URL+'/category/انمي/'})
         self.addDir({'import':cItem['import'],'category' : 'host2','title':'TV'     ,'icon':cItem['icon'],'mode':'10','url':self.MAIN_URL+'/category/series/?sercat=all'})	
         self.addDir({'import':cItem['import'],'category' : 'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost','icon':cItem['icon']})	

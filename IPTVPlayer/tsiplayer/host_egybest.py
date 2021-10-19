@@ -11,6 +11,7 @@ import urllib
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper            import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import string_escape
 
 def getinfo():
     info_={}
@@ -162,7 +163,7 @@ class TSIPHost(TSCBaseHostClass):
                 else: rate = ''
                 desc=tscolor('\c00????00')+'Rating: '+tscolor('\c00??????')+self.cleanHtmlStr(rate)+'/10 | '+tscolor('\c00????00')+'Qual: '+tscolor('\c00??????')+qual
                 #x1,titre=self.uniform_titre(str(name_eng.decode('unicode_escape')))
-                x1,titre=self.uniform_titre(str(name_eng))
+                x1,titre=self.uniform_titre(string_escape(str(name_eng)))
                 titre=titre.replace('()','')
                 self.addDir({'import':cItem['import'],'good_for_fav':True, 'name':'categories', 'category':hst, 'url':base+url1, 'title':titre, 'desc':desc,'EPG':True,'hst':'tshost', 'icon':image, 'mode':'31'} )							
             self.addDir({'import':cItem['import'],'name':'categories', 'category':hst, 'url':url0, 'title':tscolor('\c0090??20')+_('Next page'), 'page':page+1, 'desc':'', 'icon':img, 'mode':'30'})	
@@ -320,11 +321,11 @@ class TSIPHost(TSCBaseHostClass):
         if '%%%' in videoUrl: videoUrl,referer,code = videoUrl.split('%%%',2)
         if not videoUrl.startswith('http'): videoUrl=self.MAIN_URL+videoUrl
         if 'watch/?v' in videoUrl:
-            try:
-                printDBG('try resolve url0: '+videoUrl)
-                urlTab = self.parserVIDSTREAM(videoUrl,'egy')
-            except Exception as e:
-                printDBG('ERREUR:'+str(e))
+            #try:
+            printDBG('try resolve url0: '+videoUrl)
+            urlTab = self.parserVIDSTREAM(videoUrl,'egy')
+            #except Exception as e:
+            #printDBG('ERREUR:'+str(e))
         else:
             addParams0 = dict(self.defaultParams)
             addParams0['header']['Referer']=referer
@@ -440,8 +441,9 @@ class TSIPHost(TSCBaseHostClass):
                     break
             if script:
                 printDBG(script)
-                printDBG("------------")
+                printDBG("------------ Gettttttt")
                 OUT = VidStream(script)		
+                printDBG("------------ OUT"+str(OUT))
                 if 'ERR' in str(OUT): printDBG('Error: %s' % OUT.replace('ERR:',''))
                 else:
                     AJAX_HEADER = {

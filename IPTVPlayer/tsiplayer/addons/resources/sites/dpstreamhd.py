@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # vStream https://github.com/Kodi-vStream/venom-xbmc-addons
-# source 22
 
 import re
 
@@ -24,12 +23,12 @@ URL_SEARCH_SERIES = (URL_SEARCH[0], 'showMovies')
 FUNCTION_SEARCH = 'showMovies'
 
 MOVIE_MOVIE = (True, 'showMenuMovies')
-MOVIE_NEWS = (URL_MAIN + 'films-en-streaming', 'showMovies')
+MOVIE_NEWS = (URL_MAIN + 'film-streaming', 'showMovies')
 MOVIE_GENRES = (True, 'showGenres')
-MOVIE_VIEWS = (URL_MAIN + 'box-office', 'showMovies')
+MOVIE_VIEWS = (URL_MAIN + 'film-box-office', 'showMovies')
 
 SERIE_SERIES = (True, 'showMenuSeries')
-SERIE_NEWS = (URL_MAIN + 'series-en-streaming', 'showMovies')
+SERIE_NEWS = (URL_MAIN + 'serie-streaming', 'showMovies')
 
 
 def load():

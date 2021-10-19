@@ -180,16 +180,17 @@ class cRequestHandler:
             self.__sResponseHeader = oResponse.headers
             self.__sRealUrl = oResponse.url
 
-            if jsonDecode==False:
+            if jsonDecode == False:
                 sContent = oResponse.content
 
                 #Necessaire pour Python 3
                 if isMatrix() and not 'youtube' in oResponse.url:
                     try:
-                       sContent = sContent.decode('unicode-escape')
+                       sContent = sContent.decode()
                     except:
+                        #Decodage minimum obligatoire.
                         try:
-                            sContent = sContent.decode()
+                            sContent = sContent.decode('unicode-escape')
                         except:
                             pass
             else:
@@ -197,12 +198,19 @@ class cRequestHandler:
 
         except ConnectionError as e:
             # Retry with DNS only if addon is present
-            from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
-            if xbmcvfs.exists('special://home/addons/script.module.dnspython/') and self.__enableDNS == False:
-                self.__enableDNS = True
-                return self.__callRequest()
+            if 'getaddrinfo failed' in str(e) or 'Failed to establish a new connection' in str(e) and self.__enableDNS == False:
+                # Retry with DNS only if addon is present
+                from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
+                if xbmcvfs.exists('special://home/addons/script.module.dnspython/'):
+                    self.__enableDNS = True
+                    return self.__callRequest()
+                else:
+                    error_msg = addon().VSlang(30470)
+                    dialog().VSerror(error_msg)
+                    sContent = ''
             else:
-                error_msg = addon().VSlang(30470)
+                sContent = ''
+                return False
 
         except RequestException  as e:
             if 'CERTIFICATE_VERIFY_FAILED' in str(e) and self.BUG_SSL == False:
@@ -222,50 +230,55 @@ class cRequestHandler:
             dialog().VSerror(error_msg)
             sContent = ''
 
-        if oResponse.status_code in [503,403]:
-            if not "Forbidden" in sContent:
-                #Default
-                CLOUDPROXY_ENDPOINT = 'http://localhost:8191/v1'
-                try:
-                    json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
-                        'cmd': 'sessions.list'
-                    }))
-                except:
-                    dialog().VSerror("%s" % ("Page protege par Cloudflare, veuillez executer  FlareSolverr."))
+        if oResponse != None:
+            if oResponse.status_code in [503,403]:
+                if not "Forbidden" in str(sContent):
+                    #Default
+                    CLOUDPROXY_ENDPOINT = 'http://localhost:8191/v1'
 
-                #On regarde si une session existe deja.
-                if json_session.json()['sessions']:
-                    cloudproxy_session = json_session.json()['sessions'][0]
-                else:
-                    json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
-                        'cmd': 'sessions.create'
-                    }))
-                    response_session = loads(json_session.text)
-                    cloudproxy_session = response_session['session']
+                    json_session = False
 
-                self.__aHeaderEntries['Content-Type'] = 'application/x-www-form-urlencoded' if (method == 'post') else 'application/json'
+                    try:
+                        json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                            'cmd': 'sessions.list'
+                        }))
+                    except:
+                        dialog().VSerror("%s" % ("Page protege par Cloudflare, veuillez executer  FlareSolverr."))
 
-                #Ont fait une requete.
-                json_response = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
-                    'cmd': 'request.%s' % method.lower(),
-                    'url': self.__sUrl,
-                    'session': cloudproxy_session,
-                    'postData': '%s' % urlEncode(sParameters) if (method.lower() == 'post') else ''
-                }))
+                    if json_session:
+                        #On regarde si une session existe deja.
+                        if json_session.json()['sessions']:
+                            cloudproxy_session = json_session.json()['sessions'][0]
+                        else:
+                            json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                                'cmd': 'sessions.create'
+                            }))
+                            response_session = loads(json_session.text)
+                            cloudproxy_session = response_session['session']
 
-                http_code = json_response.status_code
-                response = loads(json_response.text)
-                if 'solution' in response:
-                    if self.__sUrl != response['solution']['url']:
-                        self.__sRealUrl = response['solution']['url']
+                        self.__aHeaderEntries['Content-Type'] = 'application/x-www-form-urlencoded' if (method == 'post') else 'application/json'
 
-                    sContent = response['solution']['response']
+                        #Ont fait une requete.
+                        json_response = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                            'cmd': 'request.%s' % method.lower(),
+                            'url': self.__sUrl,
+                            'session': cloudproxy_session,
+                            'postData': '%s' % urlEncode(sParameters) if (method.lower() == 'post') else ''
+                        }))
 
-        if oResponse and not sContent:
-            #Ignorer ces deux codes erreurs.
-            ignoreStatus = [200,302]
-            if oResponse.status_code not in ignoreStatus:
-                dialog().VSerror("%s (%d),%s" % (addon().VSlang(30205), oResponse.status_code, self.__sUrl))
+                        http_code = json_response.status_code
+                        response = loads(json_response.text)
+                        if 'solution' in response:
+                            if self.__sUrl != response['solution']['url']:
+                                self.__sRealUrl = response['solution']['url']
+
+                            sContent = response['solution']['response']
+
+            if oResponse and not sContent:
+                #Ignorer ces deux codes erreurs.
+                ignoreStatus = [200,302]
+                if oResponse.status_code not in ignoreStatus:
+                    dialog().VSerror("%s (%d),%s" % (addon().VSlang(30205), oResponse.status_code, self.__sUrl))
 
         if sContent:
             if (self.__bRemoveNewLines == True):

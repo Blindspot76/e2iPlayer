@@ -24,6 +24,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import GetIPTVSleep
 from os import listdir
 from os.path import isfile, join
 import glob
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils            import IsPython3
 MAIN_URL0   = '/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/resources/sites'
 fncs_search = ['showsearch','myshowsearchmovie','myshowsearchserie','showmoviessearch','showsearchtext']
 
@@ -247,6 +248,10 @@ class TSIPHost(TSCBaseHostClass):
                 EPG = False 
             sThumbnail   = sThumbnail.replace('special://home/addons/plugin.video.vstream/resources/','file:///usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/resources/')
             image        = sThumbnail
+
+            printDBG(sTitle)
+            
+            printDBG(sTitle)
             sTitle       = replaceColors(str(sTitle))
             
             if desc_tmdb!= '': 
@@ -259,7 +264,7 @@ class TSIPHost(TSCBaseHostClass):
                         sDescription = tscolor('\c00????00')+'Year: '+tscolor('\c00??????')+str(Year)
                     else:
                         sDescription = sDescription + '\n' + tscolor('\c00????00')+'Year: '+tscolor('\c00??????')+str(Year)
-
+            printDBG(sTitle)
             if ('Outils' != sTitle.strip()) and ('Mes comptes' != sTitle.strip()) and ('Marque-pages' != sTitle.strip()):
                 if sFunction=='DoNothing':
                     if (nb_list==1) and (sTitle.strip()==''):
@@ -318,9 +323,14 @@ class TSIPHost(TSCBaseHostClass):
         printDBG('listing='+str(listing))
         for (oGuiElement, oOutputParameterHandler,time_now) in listing:
             elm                      = {}
+            titre_ = oGuiElement.getTitle()
+            try:
+                titre_ = str(titre_, "utf-8")
+            except:
+                pass
             elm['sSiteName']         = oGuiElement.getSiteName()            
             elm['sFunction']         = oGuiElement.getFunction()
-            elm['sTitle']            = oGuiElement.getTitle()
+            elm['sTitle']            = titre_
             elm['sMeta']             = oGuiElement.getMeta()
             #elm['sIcon']             = oGuiElement.getIcon()
             elm['sThumbnail']        = oGuiElement.getThumbnail()
@@ -474,8 +484,11 @@ class TSIPHost(TSCBaseHostClass):
             ret = self.sessionEx.waitForFinishOpen(GetVirtualKeyboard(), title=_('Set file name'), text=txt_def)
             input_txt = ret[0]
         else: input_txt = txt 
+        try:
+            basestring
+        except NameError:
+            basestring = str
         if isinstance(input_txt, basestring):
             file = open(self.MyPath + 'searchSTR', 'w')
             file.write(input_txt)
             file.close() 
-            

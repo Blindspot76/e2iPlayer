@@ -4,7 +4,8 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClas
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Components.config import config
 import re
-import base64,urllib
+import base64
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import Quote
 
 def getinfo():
     info_={}
@@ -21,10 +22,10 @@ def getinfo():
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'cimanow.cookie'})
-        self.MAIN_URL = 'https://w.cimanow.cc'		
+        self.MAIN_URL = 'https://cimanow.cc'		
 
     def showmenu(self,cItem):
-        del_ = ['قريبا','قائمتي']        
+        del_ = ['قريبا','قائمتي','الاحدث']        
         self.add_menu(cItem,'<ul>(.*?)</ul>','<a href="(.*?)".*?>(.*?)</a>','','10',ord=[0,1],del_=del_,search=True)		
 
     def showmenu1(self,cItem):
@@ -52,7 +53,7 @@ class TSIPHost(TSCBaseHostClass):
                 if 'redirect=' in Link:
                     try:
                         printDBG('redirect= in link !!!!!!!!!!')
-                        Link = base64.b64decode(Link.split('redirect=',1)[1])
+                        Link = base64.b64decode(Link.split('redirect=',1)[1]).decode()
                         referer = Link.split('redirect=',1)[0]
                     except:
                         printDBG('erreur in link !!!!!!!!!!')
@@ -103,28 +104,30 @@ class TSIPHost(TSCBaseHostClass):
                 else:
                     urlTab.append((url_,'1'))
         else:	
-            url = self.MAIN_URL+'/wp-content/themes/CimaNow/Interface/server.php'
-            post_data = {'id':id_, 'server':code}
-            sts, data = self.getPage(url,post_data=post_data)
+            #url = self.MAIN_URL+'/wp-content/themes/CimaNow/Interface/server.php'
+            url = self.MAIN_URL+'/wp-content/themes/Cima%20Now%20New/core.php?action=switch&index='+code+'&id='+id_
+            #post_data = {'id':id_, 'server':code}
+            
+            sts, data = self.getPage(url)
             if sts:
                 Liste_els_3 = re.findall('src="(.+?)"', data, re.S|re.IGNORECASE)	
                 if Liste_els_3:
                     URL = Liste_els_3[0]
                     if URL.startswith('//'): URL='http:'+URL
-                    if 'cimanow.net/' in URL:
-                        host = URL.split('.net/',1)[0]+'.net'
-                        printDBG('host='+host)
+                    if 'cimanow.net' not in URL:
+                        urlTab.append((URL,'1'))
+                    else:
+                        host = 'https://' + URL.split('/')[2]
+                        printDBG('host='+host)                        
                         sts, data = self.getPage(URL,self.defaultParams)
                         if sts:
                             printDBG('data='+data)
                             Liste_els = re.findall('source.*?src="(.*?)".*?size="(.*?)"', data, re.S|re.IGNORECASE)
                             for elm in Liste_els:
                                 url_ = elm[0]
-                                if not(url_.startswith('http')): url_ = host + urllib.quote(url_)
+                                if not(url_.startswith('http')): url_ = host + Quote(url_)
                                 URL_= strwithmeta(elm[1]+'|'+url_, {'Referer':host})
-                                urlTab.append((URL_,'4'))
-                    else:
-                        urlTab.append((URL,'1'))
+                                urlTab.append((URL_,'4'))       
         return urlTab	
 
     def SearchResult(self,str_ch,page,extra):

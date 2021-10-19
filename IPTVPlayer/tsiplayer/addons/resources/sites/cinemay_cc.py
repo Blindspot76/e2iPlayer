@@ -8,13 +8,13 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.inputP
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.outputParameterHandler import cOutputParameterHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.handler.requestHandler import cRequestHandler
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.parser import cParser
-from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress, isMatrix
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import progress
 
 SITE_IDENTIFIER = 'cinemay_cc'
 SITE_NAME = 'Cinemay_cc'
 SITE_DESC = 'Films VF & VOSTFR en streaming.'
 
-URL_MAIN = 'https://cinemay.cc/'
+URL_MAIN = "https://cinemay.cc/"
 URL_SEARCH = ('', 'showMovies')
 URL_SEARCH_MOVIES = (URL_SEARCH[0], 'showMovies')
 URL_SEARCH_SERIES = (URL_SEARCH[0], 'showMovies')
@@ -155,18 +155,14 @@ def showAlpha(sTypeSerie=''):
     oInputParameterHandler = cInputParameterHandler()
     sType = oInputParameterHandler.getValue('siteUrl')
 
-    sUrl = URL_MAIN + 'letter/'
-
-    liste = [['A', sUrl + 'a'], ['B', sUrl + 'b'], ['C', sUrl + 'c'], ['D', sUrl + 'd'], ['E', sUrl + 'e'],
-             ['F', sUrl + 'f'], ['G', sUrl + 'g'], ['H', sUrl + 'h'], ['I', sUrl + 'i'], ['J', sUrl + 'j'],
-             ['K', sUrl + 'k'], ['L', sUrl + 'l'], ['M', sUrl + 'm'], ['N', sUrl + 'n'], ['O', sUrl + 'o'],
-             ['P', sUrl + 'p'], ['Q', sUrl + 'q'], ['R', sUrl + 'r'], ['S', sUrl + 's'], ['T', sUrl + 't'],
-             ['U', sUrl + 'u'], ['V', sUrl + 'v'], ['W', sUrl + 'w'], ['X', sUrl + 'x'], ['Y', sUrl + 'y'],
-             ['Z', sUrl + 'z']]
+    liste = [['A', 'a'], ['B', 'b'], ['C', 'c'], ['D', 'd'], ['E', 'e'], ['F', 'f'], ['G', 'g'], ['H', 'h'],
+             ['J', 'j'], ['K', 'k'], ['L', 'l'], ['M', 'm'], ['N', 'n'], ['O', 'o'], ['P', 'p'], ['Q', 'q'],
+             ['R', 'r'], ['S', 's'], ['T', 't'], ['U', 'u'], ['V', 'v'], ['W', 'w'], ['X', 'x'], ['Y', 'y'],
+             ['Z', 'z']]
 
     oOutputParameterHandler = cOutputParameterHandler()
     for sTitle, sUrl in liste:
-        oOutputParameterHandler.addParameter('siteUrl', sUrl + str(sType) + sTypeSerie)
+        oOutputParameterHandler.addParameter('siteUrl', URL_MAIN + 'letter/' + sUrl + str(sType) + sTypeSerie)
         oGui.addDir(SITE_IDENTIFIER, 'showMovies', 'Lettre [COLOR coral]' + sTitle + '[/COLOR]', 'listes.png', oOutputParameterHandler)
 
     oGui.setEndOfDirectory()
@@ -193,7 +189,7 @@ def showMovies(sSearch=''):
 
     if sSearch:
         sSearch = sSearch.replace(' ', '+').replace('&20', '+')
-        bvalid, stoken, scookie = GetTokens()
+        bvalid, stoken, scookie = getTokens()
         if bvalid:
             pdata = '_token=' + stoken + '&search=' + sSearch
             sUrl = URL_MAIN + 'search'
@@ -206,7 +202,7 @@ def showMovies(sSearch=''):
             oRequestHandler.addHeaderEntry('Content-Type', 'application/x-www-form-urlencoded')
             oRequestHandler.addHeaderEntry('Cookie', scookie)
             oRequestHandler.addParametersLine(pdata)
-            oRequestHandler.request()
+            # oRequestHandler.request()
             sHtmlContent = oRequestHandler.request()
 
         else:
@@ -239,10 +235,7 @@ def showMovies(sSearch=''):
             sDesc = ''
             sThumb = re.sub('/w\d+/', '/w342/', aEntry[0])
 
-            if isMatrix():
-                sTitle = aEntry[1].encode('latin-1').decode()
-            else:
-                sTitle = aEntry[1]
+            sTitle = aEntry[1]
 
             sTitle = sTitle.replace('film en streaming', '').replace('série en streaming', '')
             sYear = aEntry[2]
@@ -257,7 +250,7 @@ def showMovies(sSearch=''):
 
             if sSearch:
                 oGui.addLink(SITE_IDENTIFIER, 'showSelectType', sDisplayTitle, sThumb, sDesc, oOutputParameterHandler)
-            elif SERIE_NEWS[0] in sUrl or 'série en streaming' in aEntry[1]:
+            elif '/serie' in sUrl or 'série en streaming' in aEntry[1]:
                 sDisplayTitle = sTitle
                 oGui.addTV(SITE_IDENTIFIER, 'showSXE', sDisplayTitle, '', sThumb, sDesc, oOutputParameterHandler)
             else:
@@ -456,7 +449,7 @@ def showHosters():
     oGui.setEndOfDirectory()
 
 
-def GetTokens():
+def getTokens():
     oParser = cParser()
     oRequestHandler = cRequestHandler(URL_MAIN)
     sHtmlContent = oRequestHandler.request()
@@ -466,7 +459,7 @@ def GetTokens():
     site_session = ''
 
     sHeader = oRequestHandler.getResponseHeader()
-    sPattern = '<nav id="menu.+?name=_token.+?value="([^"]+).+?<div class="typeahead'
+    sPattern = 'id="menu.+?name=_token value="([^"]+)'
     aResult = oParser.parse(sHtmlContent, sPattern)
 
     if (aResult[0] == False):

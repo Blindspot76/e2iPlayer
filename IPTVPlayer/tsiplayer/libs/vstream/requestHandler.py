@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-# https://github.com/Kodi-vStream/venom-xbmc-addons
+# vStream https://github.com/Kodi-vStream/venom-xbmc-addons
 #
-import urllib
-import urllib2
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools             import printDBG
-from urllib2 import HTTPError, URLError
-
+from requests import post, Session, Request, RequestException, ConnectionError
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.comaddon import addon, dialog, VSlog, VSPath, isMatrix
+from json import loads, dumps
+from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib.util import urlEncode
 
 class cRequestHandler:
     REQUEST_TYPE_GET = 0
@@ -17,7 +16,8 @@ class cRequestHandler:
         self.__cType = 0
         self.__aParamaters = {}
         self.__aParamatersLine = ''
-        self.__aHeaderEntries = []
+        self.__aHeaderEntries = {}
+        self.__Cookie = {}
         self.removeBreakLines(True)
         self.removeNewLines(True)
         self.__setDefaultHeader()
@@ -26,6 +26,19 @@ class cRequestHandler:
         self.__bRemoveBreakLines = False
         self.__sResponseHeader = ''
         self.BUG_SSL = False
+        self.__enableDNS = False
+        self.s = Session()
+        self.redirects = True
+        self.verify = True
+        self.json = {}
+
+    #Desactive le ssl
+    def disableSSL(self):
+        self.verify = False
+
+    #Empeche les redirections 
+    def disableRedirect(self):
+        self.redirects = False
 
     def removeNewLines(self, bRemoveNewLines):
         self.__bRemoveNewLines = bRemoveNewLines
@@ -33,26 +46,47 @@ class cRequestHandler:
     def removeBreakLines(self, bRemoveBreakLines):
         self.__bRemoveBreakLines = bRemoveBreakLines
 
+    #Defini le type de requete
+    #0 : pour un requete GET
+    #1 : pour une requete POST
     def setRequestType(self, cType):
         self.__cType = cType
 
+    #Permets de definir un timeout
     def setTimeout(self, valeur):
         self.__timeout = valeur
 
-    def addHeaderEntry(self, sHeaderKey, sHeaderValue):
-        for sublist in self.__aHeaderEntries:
-            if sHeaderKey in sublist:
-                self.__aHeaderEntries.remove(sublist)
+    #Ajouter un cookie dans le headers de la requete
+    def addCookieEntry(self, sHeaderKey, sHeaderValue):
         aHeader = {sHeaderKey: sHeaderValue}
-        self.__aHeaderEntries.append(aHeader)
+        self.__Cookie.update(aHeader)
 
+    #Ajouter des parametre JSON
+    def addJSONEntry(self, sHeaderKey, sHeaderValue):
+        aHeader = {sHeaderKey: sHeaderValue}
+        self.json.update(aHeader)
+
+    #Ajouter un elements dans le headers de la requete
+    def addHeaderEntry(self, sHeaderKey, sHeaderValue):
+        for sublist in list(self.__aHeaderEntries):
+            if sHeaderKey in sublist:
+                self.__aHeaderEntries.pop(sublist)
+
+            if sHeaderKey == "Content-Length":
+                sHeaderValue = str(sHeaderValue)
+
+        aHeader = {sHeaderKey: sHeaderValue}
+        self.__aHeaderEntries.update(aHeader)
+
+    #Ajout un parametre dans la requete
     def addParameters(self, sParameterKey, mParameterValue):
         self.__aParamaters[sParameterKey] = mParameterValue
 
+    #Ajoute une ligne de parametre
     def addParametersLine(self, mParameterValue):
         self.__aParamatersLine = mParameterValue
 
-    #egg addMultipartFiled({'sess_id': sId, 'upload_type': 'url', 'srv_tmp_url': sTmp})
+    # egg addMultipartFiled({'sess_id': sId, 'upload_type': 'url', 'srv_tmp_url': sTmp})
     def addMultipartFiled(self, fields):
         mpartdata = MPencode(fields)
         self.__aParamatersLine = mpartdata[1]
@@ -67,19 +101,22 @@ class cRequestHandler:
     def getRealUrl(self):
         return self.__sRealUrl
 
+    def request(self,jsonDecode=False):
+        # Supprimee car deconne si url contient ' ' et '+' en meme temps
+        # self.__sUrl = self.__sUrl.replace(' ', '+')
+        return self.__callRequest(jsonDecode)
+
+    #Recupere les cookies de la requete
     def GetCookies(self):
         if not self.__sResponseHeader:
             return ''
+
         if 'Set-Cookie' in self.__sResponseHeader:
             import re
 
-            #cookie_string = self.__sResponseHeader.getheaders('set-cookie')
-            #c = ''
-            #for i in cookie_string:
-            #    c = c + i + ', '
             c = self.__sResponseHeader.get('set-cookie')
 
-            c2 = re.findall('(?:^|,) *([^;,]+?)=([^;,\/]+?);', c)
+            c2 = re.findall('(?:^|,) *([^;,]+?)=([^;,]+?);', c)
             if c2:
                 cookies = ''
                 for cook in c2:
@@ -88,24 +125,21 @@ class cRequestHandler:
                 return cookies
         return ''
 
-    def request(self):
-        # Supprimee car deconne si url contient ' ' et '+' en meme temps
-        #self.__sUrl = self.__sUrl.replace(' ', '+')
-        return self.__callRequest()
-
-    def getRequestUri(self):
-        return self.__sUrl + '?' + urllib.urlencode(self.__aParamaters)
-
     def __setDefaultHeader(self):
         self.addHeaderEntry('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0')
         self.addHeaderEntry('Accept-Language', 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3')
         self.addHeaderEntry('Accept-Charset', 'ISO-8859-1,utf-8;q=0.7,*;q=0.7')
 
-    def __callRequest(self):
+    def __callRequest(self, jsonDecode=False):
+        if self.__enableDNS:
+            import socket
+            self.save_getaddrinfo = socket.getaddrinfo
+            socket.getaddrinfo = self.new_getaddrinfo
+
         if self.__aParamatersLine:
-            sParameters = self.__aParamatersLine
+            sParameters = self.__aParamatersLine            
         else:
-            sParameters = urllib.urlencode(self.__aParamaters)
+            sParameters = self.__aParamaters
 
         if (self.__cType == cRequestHandler.REQUEST_TYPE_GET):
             if (len(sParameters) > 0):
@@ -116,92 +150,179 @@ class cRequestHandler:
                     self.__sUrl = self.__sUrl + '&' + str(sParameters)
                     sParameters = ''
 
-        if (len(sParameters) > 0):
-            oRequest = urllib2.Request(self.__sUrl, sParameters)
-        else:
-            oRequest = urllib2.Request(self.__sUrl)
-
-        for aHeader in self.__aHeaderEntries:
-            for sHeaderKey, sHeaderValue in aHeader.items():
-                oRequest.add_header(sHeaderKey, sHeaderValue)
-                printDBG('sHeaderKey:'+str(sHeaderKey)+'::sHeaderValue:'+str(sHeaderValue))
         sContent = ''
+
+        if self.BUG_SSL == True:
+            self.verify = False
+
+        if self.__cType == cRequestHandler.REQUEST_TYPE_GET:
+            method = "GET"
+        else:
+            method = "POST"
+
+
+        oResponse = None
         try:
+            _request = Request(method, self.__sUrl, headers=self.__aHeaderEntries)
+            if method in ['POST']:
+                _request.data = sParameters
 
-            if self.BUG_SSL:
-                import ssl
-                gcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                oResponse = urllib2.urlopen(oRequest, timeout = self.__timeout, context=gcontext)
+            if self.__Cookie:
+                _request.cookies = self.__Cookie
+
+            if self.json:
+                _request.json = self.json
+
+            prepped = _request.prepare()
+            self.s.headers.update(self.__aHeaderEntries)
+
+            oResponse = self.s.send(prepped, timeout=self.__timeout, allow_redirects=self.redirects, verify=self.verify)
+            self.__sResponseHeader = oResponse.headers
+            self.__sRealUrl = oResponse.url
+
+            if jsonDecode == False:
+                sContent = oResponse.content
+
+                #Necessaire pour Python 3
+                if isMatrix() and not 'youtube' in oResponse.url:
+                    try:
+                       sContent = sContent.decode('unicode-escape')
+                    except:
+                        try:
+                            sContent = sContent.decode()
+                        except:
+                            pass
             else:
-                oResponse = urllib2.urlopen(oRequest, timeout = self.__timeout)
+                sContent = oResponse.json()
 
-            sContent = oResponse.read()
-            #printDBG('sContent:'+sContent)
-            self.__sResponseHeader = oResponse.info()
-
-            # compressed page ?
-            if self.__sResponseHeader.get('Content-Encoding') == 'gzip':
-                import zlib
-                sContent = zlib.decompress(sContent, zlib.MAX_WBITS|16)
-
-            # https://bugs.python.org/issue4773
-            self.__sRealUrl = oResponse.geturl()
-            self.__sResponseHeader = oResponse.info()
-
-            oResponse.close()
-
-        except urllib2.HTTPError, e:
-            if e.code == 503:
-
-                # Protected by cloudFlare ?
-                from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream import cloudflare
-                if cloudflare.CheckIfActive(e.read()):
-                    self.__sResponseHeader = e.hdrs
-                    cookies = self.GetCookies()
-                    CF = cloudflare.CloudflareBypass()
-                    sContent = CF.GetHtml(self.__sUrl, e.read(), cookies, sParameters, oRequest.headers)
-                    self.__sRealUrl, self.__sResponseHeader = CF.GetReponseInfo()
-                else:
-                    sContent = e.read()
-                    self.__sRealUrl = e.geturl()
-                    self.__sResponseHeader = e.headers()
-
+        except ConnectionError as e:
+            # Retry with DNS only if addon is present
+            from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
+            if xbmcvfs.exists('special://home/addons/script.module.dnspython/') and self.__enableDNS == False:
+                self.__enableDNS = True
+                return self.__callRequest()
             else:
-                try:
-                    self.__sRealUrl = e.geturl()
-                    self.__sResponseHeader = e.headers
-                    sContent = e.read()
-                except:
-                    sContent = ''
+                error_msg = addon().VSlang(30470)
 
-            if not sContent:
-                return ''
+            dialog().VSerror(error_msg)
+            sContent = ''
 
-        except urllib2.URLError, e:
-            if 'CERTIFICATE_VERIFY_FAILED' in str(e.reason) and self.BUG_SSL == False:
+        except RequestException  as e:
+            if 'CERTIFICATE_VERIFY_FAILED' in str(e) and self.BUG_SSL == False:
                 self.BUG_SSL = True
                 return self.__callRequest()
+            elif 'getaddrinfo failed' in str(e) and self.__enableDNS == False:
+                # Retry with DNS only if addon is present
+                from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcvfs
+                if xbmcvfs.exists('special://home/addons/script.module.dnspython/'):
+                    self.__enableDNS = True
+                    return self.__callRequest()
+                else:
+                    error_msg = addon().VSlang(30470)
+            else:
+                error_msg = "%s (%s),%s" % (addon().VSlang(30205), e, self.__sUrl)
 
-            return ''
+            dialog().VSerror(error_msg)
+            sContent = ''
 
-        if (self.__bRemoveNewLines == True):
-            sContent = sContent.replace("\n", "")
-            sContent = sContent.replace("\r\t", "")
+        if oResponse != None:
+            if oResponse.status_code in [503,403]:
+                if not "Forbidden" in str(sContent):
+                    #Default
+                    CLOUDPROXY_ENDPOINT = 'http://localhost:8191/v1'
 
-        if (self.__bRemoveBreakLines == True):
-            sContent = sContent.replace("&nbsp;", "")
+                    json_session = False
+
+                    try:
+                        json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                            'cmd': 'sessions.list'
+                        }))
+                    except:
+                        dialog().VSerror("%s" % ("Page protege par Cloudflare, veuillez executer  FlareSolverr."))
+
+                    if json_session:
+                        #On regarde si une session existe deja.
+                        if json_session.json()['sessions']:
+                            cloudproxy_session = json_session.json()['sessions'][0]
+                        else:
+                            json_session = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                                'cmd': 'sessions.create'
+                            }))
+                            response_session = loads(json_session.text)
+                            cloudproxy_session = response_session['session']
+
+                        self.__aHeaderEntries['Content-Type'] = 'application/x-www-form-urlencoded' if (method == 'post') else 'application/json'
+
+                        #Ont fait une requete.
+                        json_response = post(CLOUDPROXY_ENDPOINT, headers=self.__aHeaderEntries, data=dumps({
+                            'cmd': 'request.%s' % method.lower(),
+                            'url': self.__sUrl,
+                            'session': cloudproxy_session,
+                            'postData': '%s' % urlEncode(sParameters) if (method.lower() == 'post') else ''
+                        }))
+
+                        http_code = json_response.status_code
+                        response = loads(json_response.text)
+                        if 'solution' in response:
+                            if self.__sUrl != response['solution']['url']:
+                                self.__sRealUrl = response['solution']['url']
+
+                            sContent = response['solution']['response']
+
+            if oResponse and not sContent:
+                #Ignorer ces deux codes erreurs.
+                ignoreStatus = [200,302]
+                if oResponse.status_code not in ignoreStatus:
+                    dialog().VSerror("%s (%d),%s" % (addon().VSlang(30205), oResponse.status_code, self.__sUrl))
+
+        if sContent:
+            if (self.__bRemoveNewLines == True):
+                sContent = sContent.replace("\n", "")
+                sContent = sContent.replace("\r\t", "")
+
+            if (self.__bRemoveBreakLines == True):
+                sContent = sContent.replace("&nbsp;", "")
+
+        if self.__enableDNS:
+            socket.getaddrinfo = self.save_getaddrinfo
+            self.__enableDNS = False
 
         return sContent
 
-    def getHeaderLocationUrl(self):
-        opened = urllib.urlopen(self.__sUrl)
-        return opened.geturl()
+    def new_getaddrinfo(self, *args):
+        try:
+            import sys
+            import dns.resolver
+
+            if isMatrix():
+                path = VSPath('special://home/addons/script.module.dnspython/lib/')
+            else:
+                path = VSPath('special://home/addons/script.module.dnspython/lib/').decode('utf-8')
+                             
+            if path not in sys.path:
+                sys.path.append(path)
+            host = args[0]
+            port = args[1]
+            # Keep the domain only: http://example.com/foo/bar => example.com
+            if "//" in host:
+                host = host[host.find("//"):]
+            if "/" in host:
+                host = host[:host.find("/")]
+            resolver = dns.resolver.Resolver(configure=False)
+            # Résolveurs DNS ouverts: https://www.fdn.fr/actions/dns/
+            resolver.nameservers = ['80.67.169.12', '2001:910:800::12', '80.67.169.40', '2001:910:800::40']
+            answer = resolver.query(host, 'a')
+            host_found = str(answer[0])
+            VSlog("new_getaddrinfo found host %s" % host_found)
+            # Keep same return schema as socket.getaddrinfo (family, type, proto, canonname, sockaddr)
+            return [(2, 1, 0, '', (host_found, port)), (2, 1, 0, '', (host_found, port))]
+        except Exception as e:
+            VSlog("new_getaddrinfo ERROR: {0}".format(e))
+            return self.save_getaddrinfo(*args)
 
 # ******************************************************************************
 # from https://github.com/eliellis/mpart.py
 # ******************************************************************************
-
-
 def MPencode(fields):
     import mimetypes
     random_boundary = __randy_boundary()
@@ -210,7 +331,12 @@ def MPencode(fields):
     form_data = []
 
     if fields:
-        for (key, value) in fields.iteritems():
+        try:
+            data = fields.iteritems()
+        except:
+            data = fields.items()
+
+        for (key, value) in data:
             if not hasattr(value, 'read'):
                 itemstr = '--%s\r\nContent-Disposition: form-data; name="%s"\r\n\r\n%s\r\n' % (random_boundary, key, value)
                 form_data.append(itemstr)
@@ -233,7 +359,11 @@ def __randy_boundary(length=10, reshuffle=False):
     import string
     import random
 
-    character_string = string.letters + string.digits
+    if isMatrix():
+        character_string = string.ascii_letters + string.digits
+    else:
+        character_string = string.letters + string.digits
+
     boundary_string = []
     for i in range(0, length):
         rand_index = random.randint(0, len(character_string) - 1)

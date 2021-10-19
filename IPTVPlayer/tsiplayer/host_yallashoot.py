@@ -35,7 +35,7 @@ class TSIPHost(TSCBaseHostClass):
         Liste_els = re.findall('<div class="col-md-3 col-sm-6 goals-item">.*?href="(.*?)".*?src="(.*?)".*?title="(.*?)">(.*?)<.*?</i>(.*?)<.*?</i>(.*?)<', data, re.S)
         for (URL,pic,desc,titre,date_,desc2) in Liste_els:
             self.addVideo({'import':cItem['import'],'url':URL,'title': titre,'desc':desc,'icon':pic,'hst':'tshost','good_for_fav':True} )
-        self.addDir({'import':cItem['import'],'title':'Page '+str(page+1),'page':page+1,'category' : 'yallashoot','icon':cItem['icon'],'mode':'20'}) 
+        self.addDir({'import':cItem['import'],'title':'Page '+str(page+1),'page':page+1,'category' : 'host2','icon':cItem['icon'],'mode':'20'}) 
         
 
     def get_links(self,cItem):	

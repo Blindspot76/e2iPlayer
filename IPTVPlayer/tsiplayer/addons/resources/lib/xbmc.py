@@ -4,6 +4,11 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools             import GetCacheSu
 def getInfoLabel(txt):
     if txt == 'system.buildversion': return '18'
     else: return '0'
+
+def getCondVisibility(txt):
+    return True    
+    
+   
 def sleep(int_):
     time.sleep(int_/float(1000))
     

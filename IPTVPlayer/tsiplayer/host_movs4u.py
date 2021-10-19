@@ -47,7 +47,7 @@ def cryptoJS_AES_decrypt(encrypted, password, salt):
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'movs4u.cookie'})
-        self.MAIN_URL = 'https://www.movs4u.in'
+        self.MAIN_URL = 'https://movs4u.vip'
 
     def showmenu(self,cItem):
         TAB = [('الافلام','','10',0),('المسلسلات','','10',1),('سلاسل الافلام','/collection/','20',''),('انواع افلام','','10',2)]
@@ -171,7 +171,7 @@ class TSIPHost(TSCBaseHostClass):
             videoUrl = url_ref
         printDBG("1")
         params = dict(self.defaultParams)
-        params['header']['Referer'] = refer
+        params['header']['Referer'] = self.std_url(refer)
         sts, data = self.getPage(videoUrl,params)
         if sts:
             result = re.findall('<iframe.*?src="(.*?)"',data, re.S)	

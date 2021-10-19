@@ -15,7 +15,7 @@ SITE_IDENTIFIER = 'filmstreamingy'
 SITE_NAME = 'FilmStreamingY'
 SITE_DESC = 'stream HD, streaming Sans pub, streaming vf'
 
-URL_MAIN = 'https://www.film-streamingi.com/'
+URL_MAIN = "https://ww5.film-streamings.com/"
 
 URL_SEARCH_MOVIES = (URL_MAIN + '?s=', 'showMovies')
 FUNCTION_SEARCH = 'showMovies'
@@ -33,7 +33,7 @@ def load():
 
     oOutputParameterHandler = cOutputParameterHandler()
     oOutputParameterHandler.addParameter('siteUrl', 'http://venom/')
-    oGui.addDir(SITE_IDENTIFIER, 'showSearch', 'Recherche Film', 'search.png', oOutputParameterHandler)
+    oGui.addDir(SITE_IDENTIFIER, 'showSearch', 'Recherche', 'search.png', oOutputParameterHandler)
 
     oOutputParameterHandler.addParameter('siteUrl', MOVIE_NEWS[0])
     oGui.addDir(SITE_IDENTIFIER, MOVIE_NEWS[1], 'Films (Derniers ajouts)', 'news.png', oOutputParameterHandler)
@@ -79,7 +79,7 @@ def showGenres():
     if (aResult[0] == True):
         oOutputParameterHandler = cOutputParameterHandler()
         for aEntry in aResult[1]:
-            if ('liste-de-films-de-noel'  in aEntry[0]) or ('top-films-streaming-12'  in aEntry[0]):
+            if ('liste-de-films-de-noel'  in aEntry[0]) or ('top-films-streaming-'  in aEntry[0]):
                 continue
 
             sUrl = aEntry[0]
@@ -106,7 +106,7 @@ def showMovies(sSearch=''):
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
 
-    sPattern = 'ml-item">.+?href="([^"]+).+?(?:|quality">([^<]*).+?)-src="([^"]+).+?alt="([^"]+).+?(?:|tag">([^<]*).+?)desc">(.*?)</'
+    sPattern = 'item">.+?href="([^"]+).+?(?:|quality">([^<]*).+?)src="(http[^"]+).+?alt="([^"]+).+?(?:|tag">([^<]*).+?)desc">(.*?)</'
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
 
@@ -130,7 +130,7 @@ def showMovies(sSearch=''):
             sTitle = aEntry[3].replace(' en streaming', '').replace(' en Streaming', '').replace(' Streaming', '')\
                               .replace(' streaming', '').replace(' Straming', '').replace('Version Francais', 'VF')
             sYear = aEntry[4]
-            sDesc = aEntry[5].replace('<p>', '').replace('&#8220;', '"').replace('&#8221;', '"')
+            sDesc = aEntry[5].replace('<p>', '')
 
             sDisplayTitle = ('%s [%s] (%s)') % (sTitle, sQual, sYear)
 

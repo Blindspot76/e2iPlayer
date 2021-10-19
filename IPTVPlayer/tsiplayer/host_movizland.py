@@ -11,7 +11,7 @@ def getinfo():
     info_={}
     name = 'Movizland.Com'
     hst = tshost(name)	
-    if hst=='': hst = 'https://movizland.top'
+    if hst=='': hst = 'https://movizland.fun'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2.01 05/07/2020'
@@ -171,7 +171,11 @@ class TSIPHost(TSCBaseHostClass):
         if sts:
             Liste_films_data = re.findall('id="EmbedScmain"', data, re.S)
             if Liste_films_data:
-                self.addVideo({'import':cItem['import'],'category' : 'host2','title':title_,'url':url,'desc':'','icon':cItem['icon'],'hst':'tshost','good_for_fav':True})	
+                desc=cItem.get('desc')
+                Liste_inf = re.findall('story">(.*?)</p', data, re.S)
+                if Liste_inf:
+                    desc=tscolor('\c00????00')+'Story: '+tscolor('\c00??????')+Liste_inf[0].strip()+ '\n' + desc
+                self.addVideo({'import':cItem['import'],'category' : 'host2','title':title_,'url':url,'desc':desc,'icon':cItem['icon'],'hst':'tshost','good_for_fav':True})	
             else:
                 Liste_films_data = re.findall('BlockItem">.*?href="(.*?)".*?<img.*?src="(.*?)"(.*?)RestInformation">(.*?)</ul.*?InfoEndBlock">(.*?)</ul.*?Title">(.*?)<', data, re.S)
                 for (url1,image,desc0,desc1,desc2,name_eng) in Liste_films_data:
@@ -270,7 +274,7 @@ class TSIPHost(TSCBaseHostClass):
         return urlTab
 
 
-    def getArticle(self,cItem):
+    def getArticle1(self,cItem):
             printDBG("movizland.getVideoLinks [%s]" % cItem) 
             otherInfo1 = {}
             desc = cItem.get('desc','')
@@ -282,6 +286,12 @@ class TSIPHost(TSCBaseHostClass):
             title = cItem['title']		
             return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo1}]
 
+
+    def getArticle(self,cItem):
+        Desc = [('Story','story">(.*?)</p','\n','')]
+        desc = self.add_menu(cItem,'','SingleDetails">(.*?)<ul','','desc',Desc=Desc)	
+        if desc =='': desc = cItem.get('desc','')
+        return [{'title':cItem['title'], 'text': desc, 'images':[{'title':'', 'url':cItem.get('icon','')}], 'other_info':{}}]
 
     def get_desc(self,desc0,desc1,desc2):
         desc = ''

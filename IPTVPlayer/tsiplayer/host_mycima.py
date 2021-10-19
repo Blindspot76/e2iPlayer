@@ -15,7 +15,7 @@ def getinfo():
 class TSIPHost(TSCBaseHostClass):
     def __init__(self):
         TSCBaseHostClass.__init__(self,{'cookie':'mycima.cookie'})
-        self.MAIN_URL   = 'https://mycima.nl'
+        self.MAIN_URL   = 'https://mycima.actor:2096'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.011'
         self.HEADER     = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -42,7 +42,7 @@ class TSIPHost(TSCBaseHostClass):
     
     def showelms(self,cItem):
         self.add_menu(cItem,'class="List--Seasons--Episodes">(.*?)</div>','href="(.*?)".*?>(.*?)<','','21', Titre='Seasons',EPG=True)
-        self.add_menu(cItem,'Episodes--Seasons--Episodes(.*?)</singlesection','href="(.*?)".*?>(.*?)</episodeTitle>','','video', Titre='Episodes',EPG=True)
+        self.add_menu(cItem,'class="Episodes--Seasons--Episodes">(.*?)</singlesection','href="(.*?)".*?>(.*?)</episodeTitle>','','video', Titre='Episodes',EPG=True)
 
     def SearchResult(self,str_ch,page,extra):
         url = self.MAIN_URL+'/search/'+str_ch+'/page/'+str(page)

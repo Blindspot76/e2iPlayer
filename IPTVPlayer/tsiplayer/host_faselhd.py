@@ -31,7 +31,9 @@ class TSIPHost(TSCBaseHostClass):
         self.MAIN_URL = getinfo()['host']
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.defaultParams = {'header':self.HEADER,'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        self.getPage = self.cm.getPage
+        self.defaultParams0 = {'header':self.HEADER,'no_redirection':True,'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        
+        #self.getPage = self.cm.getPage
          
     def showmenu0(self,cItem):		
         Fasel_TAB=[ {'category':'host2' ,'mode':'30' ,'url':self.MAIN_URL+'/most_recent','title': 'الأحدث'},			
@@ -46,12 +48,26 @@ class TSIPHost(TSCBaseHostClass):
                     ]
         self.listsTab(Fasel_TAB, {'import':cItem['import'],'name':'host2','icon':cItem['icon']})			
 
-
+    def getPage0(self, baseUrl, addParams = {}, post_data = None):
+        baseUrl=self.std_url(baseUrl)
+        if addParams == {}: addParams = dict(self.defaultParams0)
+        sts,data = self.cm.getPage(baseUrl, addParams, post_data)
+        printDBG(str(data.meta))
+        code = data.meta.get('status_code','')  
+        while ((code == 302) or (code == 301)):
+            new_url = data.meta.get('location','')
+            if not new_url.startswith('http'):
+                new_url = self.MAIN_URL + new_url
+            new_url=self.std_url(new_url)
+            sts,data = self.cm.getPage(new_url, addParams, post_data)
+            code = data.meta.get('status_code','')
+            printDBG(str(data.meta))
+        return sts, data
 
 
     def showmenu1(self,cItem):
         gnr=cItem.get('sub_mode',0)
-        sts, data = self.getPage(self.MAIN_URL)
+        sts, data = self.getPage0(self.MAIN_URL)
         if sts:
             lst_data = re.findall('role="menu">(.*?)</div',data, re.S)
             if lst_data:
@@ -218,7 +234,7 @@ class TSIPHost(TSCBaseHostClass):
                     page = ''
                     for elm in sc:
                         #printDBG('decode'+elm)
-                        c_elm = base64.b64decode(elm+'==')
+                        c_elm = base64.b64decode(elm+'==').decode("utf-8")
                         t_ch = re.findall('\d+', c_elm, re.S)
                         if t_ch:
                             nb = int(t_ch[0])+int(t_int[0])

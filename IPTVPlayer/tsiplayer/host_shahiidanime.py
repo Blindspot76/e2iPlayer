@@ -128,11 +128,11 @@ class TSIPHost(TSCBaseHostClass):
                 urlTab.append({'name':'TRAILER', 'url':Tab_els[0], 'need_resolve':1})
             Tab_els = re.findall('class="movies-servers(.*?)</ul', data, re.S)
             if Tab_els:
-                Tab_els = re.findall('<li.*?data-serv="(.*?)".*?data-frameserver=\'(.*?)\'.*?data-post="(.*?)".*?>(.*?)</li>', Tab_els[0], re.S)
+                Tab_els = re.findall('<li.*?data-serv="(.*?)".*?data-frameserver="(.*?)".*?data-post="(.*?)".*?>(.*?)</li>', Tab_els[0], re.S)
                 for (serv,frame,post,titre) in Tab_els:
                     url=''
                     titre=ph.clean_html(titre)
-                    Tab_els = re.findall('src="(.*?)"', frame, re.IGNORECASE)
+                    Tab_els = re.findall('src="(.*?)"', frame.replace('&#34;','"'), re.IGNORECASE)
                     if Tab_els:
                         url = Tab_els[0]
                         if url.startswith('//'): url='https:'+url

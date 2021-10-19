@@ -68,7 +68,7 @@ class TSIPHost(TSCBaseHostClass):
                     if '?url=' in url1:
                         url_tmp = url1.split('?url=')[-1].replace('%3D','=')
                         #try:
-                        url1 = base64.b64decode(url_tmp)
+                        url1 = base64.b64decode(url_tmp).decode("utf-8")
                         #except:
                         #    printDBG('error base64:url1='+url_tmp)
                     if '/series/' in url1:
@@ -131,6 +131,9 @@ class TSIPHost(TSCBaseHostClass):
                             #if '?' in url: url = url.split('?',1)[0]
                             #url = url.replace('www.dailymotion.com/video/','www.dailymotion.com/embed/video/')
                         host = 'DAILYMOTION'
+                    elif '<em>plus</em>' in url:
+                        url = 'https://tuneplus.co/js/open/embed.js?vid='+host+'&userid=958509&_=1627365111402'
+                        host = 'Tuneplus'  
                     urlTab.append({'url':url, 'name':host, 'need_resolve':1,type:''})
             else:
                 lst_data = re.findall('iframe.*?src="(.*?)"',data, re.S)

@@ -4,10 +4,7 @@
 # LOCAL import
 ###################################################
 #from Plugins.Extensions.IPTVPlayer.libs.pCommon                    import common
-try:
-    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon3       import common, CParsingHelper
-except:
-    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon2       import common, CParsingHelper
+
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit       import SetIPTVPlayerLastHostError, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper   import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes                 import strwithmeta
@@ -21,7 +18,13 @@ from Plugins.Extensions.IPTVPlayer.libs.e2ijson                    import loads 
 from Plugins.Extensions.IPTVPlayer.libs                            import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.packer           import cPacker
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util     import AADecoder,decodeAA,JJDecoder,cParser,JSUnfuck
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils            import IsPython3
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils            import IsPython3,Unquote,Quote,QuotePlus
+if IsPython3():
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon3       import common, CParsingHelper
+    from urllib.parse import urlparse, parse_qs
+else:
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon2       import common, CParsingHelper
+    from urlparse import urlparse, parse_qs
 
 
 ###################################################
@@ -33,11 +36,6 @@ import json
 import random
 import string
 import time
-import urllib
-try:
-    from urlparse import urlparse, parse_qs
-except:
-    from urllib.parse import urlparse, parse_qs
 
 
 from Components.config import config
@@ -276,7 +274,7 @@ class urlparser:
     def setHostsMap(self):
         self.hostMap = {'youdbox.com'     : self.pp.parserYOUDBOX,
                         'youdbox.net'     : self.pp.parserYOUDBOX,
-                        'userload.co'     : self.pp.parserVSTREAM,
+                        'userload.co'     : self.pp.parserUSERLOAD,
                         'embed.mystream.to':self.pp.parserVSTREAM,
                         'uptostream.com'  : self.pp.parserVSTREAM,
                         'uptobox.com'     : self.pp.parserVSTREAM,                        
@@ -344,7 +342,8 @@ class urlparser:
                         'streamsb.net'    : self.pp.parserUNI01,
                         'sbembed1.com'    : self.pp.parserUNI01,
                         'kobatube.xyz'    : self.pp.parserUNI01, 
-                        'oktube.co'       : self.pp.parserUNI01, 
+                        'oktube.co'       : self.pp.parserUNI01,
+                        'rumble.com'      : self.pp.parserRUMBLE,                
                         'movcloud.net'    : self.pp.parserMOVCLOUD,                        
                         'ninjastream.to'  : self.pp.parserNINJASTREAMTO,                        
                         'movs4u.club'     : self.pp.parserMOVS4U,
@@ -369,7 +368,8 @@ class urlparser:
                         'mixdrop.co'      : self.pp.parserMIXDROP,								
                         'jawcloud.co'     : self.pp.parserJAWCLOUDCO,						
                         'vidtodo.com'     : self.pp.parserVIDTODOCOM,						
-                        'tune.pk'         : self.pp.parseTUNEPK,
+                        'tune.pk'         : self.pp.parseTUNEPLUS,
+                        'tuneplus.co'     : self.pp.parseTUNEPLUS,                        
                         #'dailymotion.com' : self.pp.parserDAILYMOTION,
                         'youtube.com'     : self.pp.parserYOUTUBE1, 
                         #'youtu.be'        : self.pp.parserYOUTUBE,
@@ -638,7 +638,8 @@ class pageParser(CaptchaHelper):
             baseUrl = baseUrl.replace('uptobox.com/', 'uptostream.com/')
         hst_name = self.getHostName(baseUrl, True)
         printDBG("Host Name="+hst_name)
-        exec ("from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters." + hst_name + " import cHoster")
+        #exec ("from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.hosters." + hst_name + " import cHoster")
+        exec ("from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.hosters." + hst_name + " import cHoster",globals())
         oHoster = cHoster()
         referer = strwithmeta(baseUrl).meta.get('Referer','')
         if 'userload' in baseUrl:
@@ -928,7 +929,7 @@ class pageParser(CaptchaHelper):
                     metadataUrl = ''
                     break
                 else:
-                    metadataUrl = urllib.unquote(tmp['metadataUrl'])
+                    metadataUrl = Unquote(tmp['metadataUrl'])
         else:
             metadataUrl = baseUrl
         
@@ -1342,7 +1343,7 @@ class pageParser(CaptchaHelper):
                 else: idx = 0
                 printDBG("IDX[%s]" % idx)
                 for decFun in [SAWLIVETV_decryptPlayerParams, KINGFILESNET_decryptPlayerParams]:
-                    decItem = urllib.unquote(unpackJSPlayerParams(item, decFun, idx))
+                    decItem = Unquote(unpackJSPlayerParams(item, decFun, idx))
                     printDBG('[%s]' % decItem)
                     data += decItem + ' '
                     if decItem != '': break
@@ -1468,7 +1469,7 @@ class pageParser(CaptchaHelper):
         HTTP_HEADER= {'User-Agent': "Mozilla/5.0"}
         
         url = 'http://www.dailymotion.com/embed/video/' + video_id
-        familyUrl = 'http://www.dailymotion.com/family_filter?enable=false&urlback=' + urllib.quote_plus('/embed/video/' + video_id)
+        familyUrl = 'http://www.dailymotion.com/family_filter?enable=false&urlback=' + QuotePlus('/embed/video/' + video_id)
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIE_FILE})
         if not sts or "player" not in data: 
             sts, data = self.cm.getPage(familyUrl, {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIE_FILE})
@@ -1539,7 +1540,8 @@ class pageParser(CaptchaHelper):
             
         return vidTab[::-1]
 
-    def parseTUNEPK(self, baseUrl):
+    def parseTUNEPLUS(self, baseUrl):
+        baseUrl = baseUrl.replace('tune.pk','tuneplus.co')
         import hashlib
         vidTab=[]
         printDBG("parseTUNEPK0 url[%s]\n" % baseUrl)
@@ -1554,12 +1556,12 @@ class pageParser(CaptchaHelper):
         if '' == vid: return []
         media_id = vid
         #referer = url
-        apiurl = 'https://api.tune.pk/v3/videos/{}'.format(media_id)
-        referer = 'https://tune.pk/video/%s' % media_id
+        apiurl  = 'https://tuneplus.co/api/v3/videos/{}'.format(media_id)
+        referer = 'https://tuneplus.co/video/%s' % media_id
         printDBG("apiurl="+apiurl)
         currentTime = time.time()
         x_req_time = time.strftime('%a, %d %b %Y %H:%M:%S GMT',time.gmtime(currentTime))
-        tunestring = 'videos/{} . {} . KH42JVbO'.format(media_id, int(currentTime))
+        tunestring = 'videos/{} . {} . KH42JVbO'.format(media_id, int(currentTime)).encode()
         token = hashlib.sha1(tunestring).hexdigest()
         headers = {'Content-Type': 'application/json; charset=utf-8',
                    'User-Agent': ua,
@@ -1582,8 +1584,8 @@ class pageParser(CaptchaHelper):
             
             sources.reverse() 
             
-            serverTime = long(jdata['timestamp']) + (int(time.time()) - int(currentTime))
-            hashLifeDuration = long(jdata['data']['duration']) * 5
+            serverTime = int(jdata['timestamp']) + (int(time.time()) - int(currentTime))
+            hashLifeDuration = int(jdata['data']['duration']) * 5
             if hashLifeDuration < 3600:
                 hashLifeDuration = 3600
             expiryTime = serverTime + hashLifeDuration
@@ -1600,8 +1602,8 @@ class pageParser(CaptchaHelper):
                     except ValueError:
                             raise ResolverError('This video cannot be played.')
 
-                htoken = hashlib.md5(str(expiryTime) + pathUrl + ' ' + 'c@ntr@lw3biutun3cb').digest()
-                htoken = base64.urlsafe_b64encode(htoken).replace('=', '').replace('\n', '')
+                htoken = hashlib.md5((str(expiryTime) + pathUrl + ' ' + 'c@ntr@lw3biutun3cb').encode()).digest()
+                htoken = base64.urlsafe_b64encode(htoken).decode("utf-8").replace('=', '').replace('\n', '')
                 headers = {'Referer': referer, 'User-Agent': ua}
 
                 urll=video_url + '?h=' + htoken + '&ttl=' + str(expiryTime)
@@ -1611,6 +1613,7 @@ class pageParser(CaptchaHelper):
                 else:
                     vidTab.append({'name':titre, 'url':urll})
         return vidTab
+
 
     def getYTParser(self):
         if self.ytParser == None:
@@ -2485,7 +2488,7 @@ class pageParser(CaptchaHelper):
             if contain != '' and contain not in item: continue
             link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
             if '%3A%2F%2F' in link and '://' not in link:
-                link = urllib.unquote(link)
+                link = Unquote(link)
             link = strwithmeta(link, meta)
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
             if _isSmil(link):
@@ -2675,7 +2678,11 @@ class pageParser(CaptchaHelper):
         url = baseUrl
         HTTP_HEADER= {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'}
         if 'Referer' in strwithmeta(baseUrl).meta:
-            HTTP_HEADER['Referer'] = strwithmeta(baseUrl).meta['Referer']
+            referer = strwithmeta(baseUrl).meta['Referer']
+            if IsPython3():
+                referer = referer.encode("utf-8").decode("latin1")
+            printDBG('---------referer = '+referer)
+            HTTP_HEADER['Referer'] = referer
         if 'arabveturk'  in baseUrl: HTTP_HEADER['Referer'] = ''
         if 'gounlimited' in baseUrl: HTTP_HEADER['Referer'] = ''
         if 'movs4u'      in baseUrl: HTTP_HEADER['Referer'] = ''
@@ -3066,7 +3073,7 @@ class pageParser(CaptchaHelper):
         if sts:
             lst_data = re.findall('data-en=.*?[\'"](.*?)[\'"].*?data-p=.*?[\'"](.*?)[\'"]', data, re.S)	
             if lst_data:
-                code = urllib.unquote(lst_data[0][0])
+                code = Unquote(lst_data[0][0])
                 code = json_loads(code.strip())
                 b = lst_data[0][1]
                 printDBG('code= '+str(code)+' | pass= '+b)
@@ -3103,3 +3110,47 @@ class pageParser(CaptchaHelper):
                 return videoTab
             else:
                 return []		
+      
+    def parserUSERLOAD(self, baseUrl):
+        videoTab = []
+        UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/66.0'
+        HTTP_HEADER = {'User-Agent':UA,'referer':baseUrl}
+        urlParams   = {'header': HTTP_HEADER}
+        urlapi      = "https://userload.co/api/assets/userload/js/videojs.js"
+        sts, data = self.cm.getPage(urlapi,urlParams)
+        if sts:
+            #data = data.decode('utf-8')
+            printDBG('data='+data)
+            printDBG('data='+data.encode().decode('utf-8')) 
+        return []	
+        
+    def parserRUMBLE(self, baseUrl):
+        videoTab = []
+        UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/66.0'
+        HTTP_HEADER = {'User-Agent':UA,'referer':baseUrl}
+        urlParams   = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl,urlParams)
+        if sts:
+            #data = data.decode('utf-8')
+            #printDBG('data='+data)
+            lst_data = re.findall('"720":{.*?"url":"(.*?)"', data, re.S)
+            if lst_data:
+                videoTab.append({'name':'[720p]', 'url':lst_data[0].replace('\\','')})	            
+            
+            lst_data = re.findall('"480":{.*?"url":"(.*?)"', data, re.S)
+            if lst_data:
+                videoTab.append({'name':'[480p]', 'url':lst_data[0].replace('\\','')})	            
+            
+            lst_data = re.findall('"360":{.*?"url":"(.*?)"', data, re.S)
+            if lst_data:
+                videoTab.append({'name':'[360p]', 'url':lst_data[0].replace('\\','')})	
+            
+            lst_data = re.findall('"240":{.*?"url":"(.*?)"', data, re.S)
+            if lst_data:
+                videoTab.append({'name':'[240p]', 'url':lst_data[0].replace('\\','')})	           
+             
+        return videoTab      
+        
+        
+        
+        

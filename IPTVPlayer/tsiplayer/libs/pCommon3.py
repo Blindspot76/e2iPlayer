@@ -3,6 +3,9 @@
 ###################################################
 # LOCAL import
 ###################################################
+import urllib.request
+import urllib.parse
+import urllib.error
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, rm, UsePyCurl, GetJSScriptFile, IsExecutable, iptv_system
@@ -13,9 +16,6 @@ from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dump
 ###################################################
 # FOREIGN import
 ###################################################
-import urllib.request
-import urllib.parse
-import urllib.error
 import base64
 try:
     import ssl

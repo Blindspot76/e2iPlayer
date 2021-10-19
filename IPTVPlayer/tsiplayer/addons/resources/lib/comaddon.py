@@ -4,7 +4,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetCacheSubDir
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmc
 from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.resources.lib import xbmcgui
-import re,os.path
+import re,os.path,sys
 
 # class addon(xbmcaddon.Addon):
 class none_(object):
@@ -126,9 +126,9 @@ class dialog():
         return
 
 class progress():
-    def VScreate(self, title='vStream', desc=''):
+    def VScreate(self, title='vStream', desc='', large=False):
         return self
-    def VSupdate(self, dialog, total, text=''):
+    def VSupdate(self, dialog, total, text='', search = False):
         count=0
     def VSupdatesearch(self, dialog, total, text=''):
         count=0
@@ -160,8 +160,22 @@ def VSlog(e, level=''):
 def isKrypton():
     return True
 
+def IsPython3():
+    if sys.version_info[0] < 3:
+        return False
+    else:
+        return True
+
+
 def isMatrix():
+    if IsPython3():
+        return True
+    else:
+        return False
+
+def isNexus():
     return False
+
 
 def VSPath(path):
     path = path.replace('special://temp/',GetCacheSubDir('Tsiplayer'))

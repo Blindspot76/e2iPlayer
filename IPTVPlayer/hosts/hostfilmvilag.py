@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.08.25. Blindspot
+# 2021.10.19. Blindspot
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -118,7 +118,7 @@ class FilmVilag(CBaseHostClass):
             if desc:
                 desc = "Tartalom: " +  desc
             if not desc:
-                desc  = "A film tartalma jelenleg érhető el."
+                desc  = "A film tartalma jelenleg nem érhető el."
             params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
             self.addVideo(params)
         if "Következő &raquo" in data:

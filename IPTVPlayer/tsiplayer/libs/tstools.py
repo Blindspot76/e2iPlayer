@@ -2,29 +2,31 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit    import TranslateTXT as _, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes              import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.asynccall         import MainSessionWrapper
-try:
-    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon3       import common, CParsingHelper
-except:
-    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon2       import common, CParsingHelper
+
 #from Plugins.Extensions.IPTVPlayer.libs.pCommon                import common, CParsingHelper 
 from Plugins.Extensions.IPTVPlayer.libs.urlparser               import urlparser
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser     import urlparser as ts_urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools              import CSearchHistoryHelper, GetCookieDir, printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson                 import loads as json_loads, dumps as json_dumps
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc   import AES_CBC
-
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils         import string_escape
 from Components.config import config
 import os
 import re
 import base64
 import hashlib
 import time
-try:
+
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import IsPython3    
+
+if IsPython3():
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon3       import common, CParsingHelper
+    import urllib.parse as urllib
+else:
+    from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon2       import common, CParsingHelper
     import urllib2
     import urllib
-except ImportError:
-    import urllib.parse as urllib
-    
+
 import threading
 import sys
 
@@ -99,7 +101,7 @@ def atob(elm):
                 ret = base64.b64decode(elm+'==')
             except:
                 ret = 'ERR:base64 decode error'
-    return ret
+    return ret.decode()
     
 def a0d(main_tab,step2,a):
     a = a - step2
@@ -113,7 +115,7 @@ def x(main_tab,step2,a):
     return(a0d(main_tab,step2,a))
 
 def decal(tab,step,step2,decal_fnc):
-    decal_fnc = decal_fnc.replace('var ','')    
+    decal_fnc = decal_fnc.replace('var ','global c; ') 
     decal_fnc = decal_fnc.replace('x(','x(tab,step2,') 
     exec(decal_fnc)
     aa=0
@@ -206,6 +208,7 @@ def VidStream(script):
     print('PostUrl      = %s' % PostUrl)
     PostUrl = re.sub("(window\[.*?\])", "atob", PostUrl)        
     PostUrl = re.sub("([A-Z]{1,2}\()", "a0d(main_tab,step2,", PostUrl)    
+    PostUrl = 'global f; '+PostUrl
     exec(PostUrl)
     return(['/'+GetVal,f+bigString,{ PostKey : 'ok'}])
 
@@ -398,19 +401,22 @@ class TSCBaseHostClass:
         return self.cm.getPage(baseUrl, addParams, post_data)
 
     def getPage_(self, baseUrl, addParams = {}, post_data = None):
-        baseUrl=self.std_url(baseUrl)
-        if addParams == {}: addParams = dict(self.defaultParams)
-        sts,data = self.cm.getPage(baseUrl, addParams, post_data)
-        printDBG(str(data.meta))
-        code = data.meta.get('status_code','')  
-        while ((code == 302) or (code == 301)):
-            new_url = data.meta.get('location','')
-            if not new_url.startswith('http'):
-                new_url = self.MAIN_URL + new_url
-            new_url=self.std_url(new_url)
-            sts,data = self.cm.getPage(new_url, addParams, post_data)
-            code = data.meta.get('status_code','')
+        if not IsPython3():
+            baseUrl=self.std_url(baseUrl)
+            if addParams == {}: addParams = dict(self.defaultParams)
+            sts,data = self.cm.getPage(baseUrl, addParams, post_data)
             printDBG(str(data.meta))
+            code = data.meta.get('status_code','')  
+            while ((code == 302) or (code == 301)):
+                new_url = data.meta.get('location','')
+                if not new_url.startswith('http'):
+                    new_url = self.MAIN_URL + new_url
+                new_url=self.std_url(new_url)
+                sts,data = self.cm.getPage(new_url, addParams, post_data)
+                code = data.meta.get('status_code','')
+                printDBG(str(data.meta))
+        else:
+            return self.getPage(baseUrl, addParams, post_data)
         return sts, data
 
     def get_url_page(self,url,page,type_=1):
@@ -436,7 +442,7 @@ class TSCBaseHostClass:
             self.showelms(cItem)		
         return True
         
-    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}],year_op=0,del_titre='',addParams={}):
+    def add_menu(self, cItem, pat1, pat2, data, mode_,s_mode=[], del_=[], TAB=[], search=False, Titre='',ord=[0,1],Desc=[],Next=[0,0],u_titre=False,ind_0=0,local=[],resolve='0',EPG=False,corr_=True,pref_='',post_data='',pat3='',ord3=[0,1],LINK='',hst='tshost',add_vid=True,image_cook=[False,{}],year_op=0,del_titre='',addParams={},bypass=False):
         if isinstance(mode_, str):
             mode = mode_
         else:
@@ -459,7 +465,9 @@ class TSCBaseHostClass:
                 if LINK == '': LINK = self.MAIN_URL
                 if LINK.startswith('//'): LINK = 'https:'+LINK
                 if LINK.startswith('/'): LINK = self.MAIN_URL+LINK				
-                if ((Next[0]==1) and (page>1)): LINK=cItem['url']+'/page/'+str(page)
+                if ((Next[0]==1) and (page>1)):
+                    LINK=cItem['url']+'/page/'+str(page)+'/'
+                    LINK=LINK.replace('//page','/page')
                 printDBG('link4:'+LINK)
                 
                 if post_data !='':
@@ -471,6 +479,8 @@ class TSCBaseHostClass:
             if pat1 !='':
                 data0=re.findall(pat1, data, re.S)
             else:
+                data0 = [data,]
+            if ((not data0) and bypass):
                 data0 = [data,]
             if data0:
                 if (len(data0)>ind_0) or (ind_0 == -1):
@@ -601,11 +611,16 @@ class TSCBaseHostClass:
                             elif mode=='link1':
                                 TAB0.append((url,'1'))
                         else:
-                            
                             if image.startswith('/'): image = self.MAIN_URL+image
                             if image_cook[0]: image = strwithmeta(image,image_cook[1])
+                            #printDBG('------------------->'+titre)
+                            if ('u06' in titre) and ('\\u0' not in titre) :
+                                titre = titre.replace('u0','\\u0')
+                            #printDBG('------------------->'+titre)
                             if '\\u0' in titre:
-                                titre = titre.decode('unicode_escape',errors='ignore')
+                            #    titre = titre.decode('unicode_escape',errors='ignore')
+                                titre = string_escape(titre)
+                            #printDBG('------------------->'+titre)                           
                             titre = self.cleanHtmlStr(str(titre))
                             cntrl = titre
                             if del_ != []:
@@ -640,7 +655,8 @@ class TSCBaseHostClass:
                                         self.addDir(eelm)
                                         elms_.append(eelm)
                     if ((Next[0]==1) or (Next[0]==2)) and (Next[1]!='none'):
-                        self.addDir({'import':cItem['import'],'name':'categories', 'category':'host2', 'url':cItem['url'], 'title':'Page Suivante', 'page':page+1, 'desc':'Page Suivante', 'icon':cItem['icon'], 'mode':Next[1]})	
+                        if (len(elms_)>5):
+                            self.addDir({'import':cItem['import'],'name':'categories', 'category':'host2', 'url':cItem['url'], 'title':'Page Suivante', 'page':page+1, 'desc':'Page Suivante', 'icon':cItem['icon'], 'mode':Next[1]})	
                     elif (Next[0]!=0) and (Next[1]!='none'):
                         next_=re.findall(Next[0], data, re.S)	
                         if next_:
@@ -653,7 +669,17 @@ class TSCBaseHostClass:
                                     else: URL_ = self.MAIN_URL+'/'+URL_
                             self.addDir({'import':cItem['import'],'name':'categories', 'category':'host2', 'url':URL_, 'title':'Page Suivante', 'page':1, 'desc':'Page Suivante', 'icon':cItem['icon'], 'mode':Next[1]})	
             if (mode=='video') and (not found) and (add_vid):
-                self.addVideo({'category':'host2','good_for_fav':True, 'title': cItem['title'],'url':cItem['url'], 'desc':cItem.get('desc',''),'import':cItem['import'],'icon':cItem['icon'],'hst':'tshost','EPG':EPG})						
+                desc=''
+                for (tag,pat,frst,Del_0) in Desc:
+                    if desc == '': frst = ''
+                    elif frst == '': frst = ' | '
+                    desc_=re.findall(pat, data, re.S)	
+                    if desc_:
+                        if ((Del_0=='') or ((Del_0!='') and (Del_0.lower() not in desc_[0].lower()))):
+                            if self.cleanHtmlStr(desc_[0]).strip()!='':
+                                desc = desc + frst + tscolor('\c00????00') + tag + ': ' + tscolor('\c00??????') + self.cleanHtmlStr(desc_[0])
+                desc = cItem.get('desc','') + '\n'+ desc            
+                self.addVideo({'category':'host2','good_for_fav':True, 'title': cItem['title'],'url':cItem['url'], 'desc':desc,'import':cItem['import'],'icon':cItem['icon'],'hst':'tshost','EPG':EPG})						
         if search:
             self.addDir({'category':'search'  ,'title':tscolor('\c00????30') + _('Search'),'search_item':True,'page':1,'hst':'tshost','import':cItem['import'],'icon':cItem['icon']})
         printDBG('elms_='+str(elms_))
@@ -686,19 +712,23 @@ class TSCBaseHostClass:
     def std_url(self,url):
         url1=url
         printDBG('url0='+url1)
-        if r'\u0' in url1: url1 = str(url1.decode('unicode_escape',errors='ignore'))
-        url1=url1.replace('\\/','/')     
-        url1=url1.replace('://','rgy11soft')
-        url1=url1.replace('?','rgy22soft')        
-        url1=url1.replace('&','rgy33soft') 
-        url1=url1.replace('=','rgy44soft') 
-        url1=urllib.unquote(url1)
-        url1=urllib.quote(url1)
-        url1=url1.replace('rgy11soft','://')
-        url1=url1.replace('rgy22soft','?')        
-        url1=url1.replace('rgy33soft','&') 	
-        url1=url1.replace('rgy44soft','=') 		
-        printDBG('url1='+url1)
+        if r'\u0' in url1:
+            url1 = url1.encode()
+            url1 = str(url1.decode('unicode_escape',errors='ignore'))
+        if '%' not in url1: 
+            url1=url1.replace('\\/','/')     
+            url1=url1.replace('://','rgy11soft')
+            url1=url1.replace('?','rgy22soft')        
+            url1=url1.replace('&','rgy33soft') 
+            url1=url1.replace('=','rgy44soft') 
+            #url1=urllib.unquote(url1)
+            #printDBG(url1)
+            url1=urllib.quote(url1)
+            url1=url1.replace('rgy11soft','://')
+            url1=url1.replace('rgy22soft','?')        
+            url1=url1.replace('rgy33soft','&') 	
+            url1=url1.replace('rgy44soft','=') 		
+            printDBG('url1='+url1)
         return url1
         
     def std_url1(self,url):
@@ -758,6 +788,7 @@ class TSCBaseHostClass:
                 desc = desc+qual[:-3]+'\n'
 
         pat = 'موسم.*?([0-9]{1,2}).*?حلقة.*?([0-9]{1,2})'
+         
         data = re.findall(pat, titre, re.S)
         if data:
             sa = data[0][0]
@@ -766,6 +797,7 @@ class TSCBaseHostClass:
             if len(ep)==1: ep='0'+ep			
             ep_out = tscolor('\c0000????')+'S'+sa+tscolor('\c0000????')+'E'+ep+tscolor('\c00??????')
             titre = ep_out+' '+re.sub(pat,'',titre)
+            titre = titre.replace('ال ','')
             
             
         return desc,self.cleanHtmlStr(titre).replace('()','').strip()
