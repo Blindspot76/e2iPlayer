@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2021-08-19
+# Blindspot - 2021-10-20
 ###################################################
 # LOCAL import
 ###################################################
@@ -82,9 +82,9 @@ class Youtube(CBaseHostClass):
                               #("traylist",           "traylist"),
         self.ytp = YouTubeParser()
         self.HTTP_HEADER = {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36',
                             'X-YouTube-Client-Name': '1',
-                            'X-YouTube-Client-Version': '2.20201112.04.01',
+                            'X-YouTube-Client-Version': '2.20211019.01.00',
                             'X-Requested-With': 'XMLHttpRequest'
                             }
         self.http_params = {'header': self.HTTP_HEADER, 'return_data': True}

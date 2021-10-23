@@ -1,3 +1,6 @@
+#2021.10.23.01
+-Fixed parser for Dood
+-Some User Agents Updated
 #2021.10.19.01
 -Kisebb javítások
 -TSiPlayer frissítve

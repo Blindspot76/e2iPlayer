@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 27.09.2021
+# Modified by Blindspot # 2021-10-23
 ###################################################
 # LOCAL import
 ###################################################
@@ -221,6 +221,7 @@ class urlparser:
                        'dood.so':               self.pp.parserDOOD          ,
                        'dood.to':               self.pp.parserDOOD          ,
                        'dood.watch':            self.pp.parserDOOD          ,
+                       'dood.ws':               self.pp.parserDOOD          ,
                        'doodstream.com':        self.pp.parserDOOD          ,
                        'dotstream.tv':          self.pp.parserDOTSTREAMTV   ,
                        'droonws.xyz':           self.pp.parserTXNEWSNETWORK , 
@@ -234,6 +235,7 @@ class urlparser:
                        'emb.aliez.tv':          self.pp.parserALIEZ         ,
                        'embed.trilulilu.ro':    self.pp.parserTRILULILU     ,
                        'embed.mystream.to':     self.pp.parserMSTREAMICU,
+                       'embedsb.com':           self.pp.parserSTREAMSB    ,
                        'embedsito.com':         self.pp.parserFEMBED,
                        'embeducaster.com':      self.pp.parserUCASTERCOM     ,
                        'estream.to':            self.pp.parserESTREAMTO     ,
@@ -262,6 +264,7 @@ class urlparser:
                        'flashx.co':             self.pp.parserFLASHXTV      ,
                        'flashx.pw':             self.pp.parserFLASHXTV      ,
                        'flashx.tv':             self.pp.parserFLASHXTV      ,
+                       'fplayer.info':          self.pp.parserFEMBED,
                        'freedisc.pl':           self.pp.parserFREEDISC      ,
                        'fxstream.biz':          self.pp.parserFXSTREAMBIZ   ,
                        'gametrailers.com':      self.pp.parserGAMETRAILERS  , 
@@ -458,6 +461,7 @@ class urlparser:
                        'rutube.ru':             self.pp.parserRUTUBE        ,
                        'sawlive.tv':            self.pp.parserSAWLIVETV     ,
                        'sbplay.one':            self.pp.parserSTREAMSB    ,
+                       'sbplay1.com':           self.pp.parserSTREAMSB    ,
                        'scs.pl':                self.pp.parserSCS           ,
                        'sendvid.com':           self.pp.parserSENDVIDCOM    ,
                        'seositer.com':          self.pp.parserYANDEX        ,
@@ -14280,7 +14284,7 @@ class pageParser(CaptchaHelper):
         
         httpParams = {
             'header' : {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36 Edg/95.0.1020.30',
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip',
                 'Referer' : baseUrl.meta.get('Referer', baseUrl)
