@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2021-10-23
+# Modified by Blindspot # 27.09.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -12728,29 +12728,42 @@ class pageParser(CaptchaHelper):
                 urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
 
         return urlTab
-    
+
+
+
     def parserSTREAMSB(self, baseUrl):
         printDBG("parserSTREAMSB baseUrl[%s]" % baseUrl)
         urlTab = []
         HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         urlParams = {'header': HTTP_HEADER}
-        baseUrl = baseUrl.replace("embed-", "play/")
-        baseUrl = baseUrl.replace(".html", "?auto=0&referer=&")
+        baseUrl = baseUrl.replace("embed-", "d/").replace("/e/", "/d/").replace("/play/", "/d/")
+        if '/d/' not in baseUrl:
+            baseUrl = baseUrl.replace(urlparser.getDomain(baseUrl), urlparser.getDomain(baseUrl) + '/d')
         sts, data = self.cm.getPage(baseUrl, urlParams)
-        if not sts: 
+        if not sts:
             return False
-        m3u8_url = self.cm.ph.getDataBeetwenMarkers(data, 'sources: [{file:"', '?', False) [1]
-        sts, data = self.cm.getPage(m3u8_url, urlParams)
-        if not sts: 
-            return False
-        printDBG(data)
-        data = data.split()
-        printDBG(data)
-        m3u8 = data[4]        
-        printDBG(m3u8)
-        params = {'name': "direct_link", 'url': m3u8}
-        urlTab.append(params)
+
+        sources = re.findall(r'download_video([^"]+)[^\d]+(\d+x\d+)', data)
+#        printDBG("parserSTREAMSB sources[%s]" % str(sources))
+        if sources:
+            for item in sources:
+                code, mode, hash = eval(item[0])
+                dl_url = '{0}dl?op=download_orig&id={1}&mode={2}&hash={3}'.format(urlparser.getDomain(baseUrl, False), code, mode, hash)
+                sts, data = self.cm.getPage(dl_url, urlParams)
+                error = self.cm.ph.getDataBeetwenNodes(data, ('<b', '>', 'err'), ('<br', '>'), False)[1]
+                sleep_time = self.cm.ph.getSearchGroups(error, '([0-9]+?) seconds')[0]
+                if '' != sleep_time:
+                    GetIPTVSleep().Sleep(int(sleep_time))
+                    sts, data = self.cm.getPage(dl_url, urlParams)
+                    error = self.cm.ph.getDataBeetwenNodes(data, ('<b', '>', 'err'), ('<br', '>'), False)[1]
+                videoUrl = re.search('href="([^"]+)">Direct', data)
+                SetIPTVPlayerLastHostError(error)
+                if videoUrl:
+                    params = {'name': item[1], 'url': videoUrl.group(1)}
+                    urlTab.append(params)
+
         return urlTab
+    
     
     def parserMIXDROP(self, baseUrl):
         printDBG("parserMIXDROP baseUrl[%s]" % baseUrl)
@@ -14284,7 +14297,7 @@ class pageParser(CaptchaHelper):
         
         httpParams = {
             'header' : {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36 Edg/95.0.1020.30',
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip',
                 'Referer' : baseUrl.meta.get('Referer', baseUrl)

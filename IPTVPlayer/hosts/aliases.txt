@@ -77,7 +77,7 @@
 "hostgamatotvme": "http://gamatotv4.com/",
 "hostgovodtv": "https://govod.tv/",
 "hostgreekdocumentaries3": "https://greekdocumentaries2.blogspot.com/",
-"hostguardaserie": "http://guardaserie.bar/",
+"hostguardaserie": "http://guardaserie.builders/",
 "hosthd1080online": "https://hd1080.online/",
 "hosthdfilmetv": "http://hdfilme.cx/",
 "hosthdfull": "https://hdfull.io/",
