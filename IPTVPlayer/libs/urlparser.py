@@ -13527,13 +13527,24 @@ class pageParser(CaptchaHelper):
         return urlTabs
 
 
-
-
-
     def parserSTREAMTAPE(self, baseUrl):
         printDBG("parserSTREAMTAPE baseUrl[%s]" % baseUrl)
 
-        sts, data = self.cm.getPage(baseUrl)
+        COOKIE_FILE = GetCookieDir("streamtape.cookie")
+        httpParams = {
+            'header': {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip',
+                'Referer': baseUrl.meta.get('Referer', baseUrl)
+            },
+            'use_cookie': True,
+            'load_cookie': True,
+            'save_cookie': True,
+            'cookiefile': COOKIE_FILE
+        }
+
+        sts, data = self.cm.getPage(baseUrl, httpParams)
 
         urlTabs = []
 
@@ -13545,16 +13556,20 @@ class pageParser(CaptchaHelper):
             #search url in tag like <div id="videolink" style="display:none;">//streamtape.com/get_video?id=27Lbk7KlQBCZg02&expires=1589450415&ip=DxWsE0qnDS9X&token=Og-Vxdpku4x8</div>
             t = self.cm.ph.getSearchGroups(data, '''innerHTML = ([^;]+?);''')[0] + ';'
             printDBG("parserSTREAMTAPE t[%s]" % t)
-            t = eval(t.replace('.substring(', '[').replace(');', ':]'))
-            if t.startswith('//'):
-                t = "https:" + t
+            t = t.replace('.substring(', '[', 1).replace(').substring(', ':][').replace(');', ':]') + '[1:]'
+            t = eval(t)
+            if t.startswith('/'):
+                t = "https:/" + t
             if self.cm.isValidUrl(t):
-                t = urlparser.decorateUrl(t, {'Referer': baseUrl})
+                cookieHeader = self.cm.getCookieHeader(COOKIE_FILE, unquote=False)
+                t = urlparser.decorateUrl(t, {'Cookie': cookieHeader, 'Referer': httpParams['header']['Referer'], 'User-Agent': httpParams['header']['User-Agent']})
                 params = {'name': 'link', 'url': t}
                 printDBG(params)
                 urlTabs.append(params)
 
         return urlTabs
+
+
 
     def parserBUCKLER(self, baseUrl):
         printDBG("parserBUCKLER baseUrl[%s]" % baseUrl)
