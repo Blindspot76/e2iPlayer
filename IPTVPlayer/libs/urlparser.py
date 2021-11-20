@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 27.09.2021
+# Modified by Blindspot # 20.11.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -14315,7 +14315,7 @@ class pageParser(CaptchaHelper):
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip',
-                'Referer' : baseUrl.meta.get('Referer', baseUrl)
+                'Referer' : baseUrl
             }, 
             'use_cookie':True,
             'load_cookie':True,
