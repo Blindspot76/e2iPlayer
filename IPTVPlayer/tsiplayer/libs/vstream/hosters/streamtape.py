@@ -7,15 +7,15 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.util import VSlog
 
 UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0'
 
-class cHoster(iHoster):
 
+class cHoster(iHoster):
     def __init__(self):
         self.__sDisplayName = 'Streamtape'
         self.__sFileName = self.__sDisplayName
         self.__sHD = ''
 
     def getDisplayName(self):
-        return  self.__sDisplayName
+        return self.__sDisplayName
 
     def setDisplayName(self, sDisplayName):
         self.__sDisplayName = sDisplayName + ' [COLOR skyblue]' + self.__sDisplayName + '[/COLOR]'
@@ -51,17 +51,15 @@ class cHoster(iHoster):
         oRequest = cRequestHandler(self.__sUrl)
         sHtmlContent = oRequest.request()
         
-        sPattern1 = "innerHTML = ([^;]+)"
+        sPattern1 = 'ById\(\'ideoo.+?=\s*["\']([^"\']+)[\'"].+?["\']([^"\']+)\'\)'
         
         aResult = oParser.parse(sHtmlContent, sPattern1)
 
         if (aResult[0] == True):
-            url = aResult[1][0]
-            url = url.replace(' ','').replace('"','').replace("'","").replace("+","")
-            VSlog(url)
-            api_call = 'https:' + url + "&stream=1"
+            url = aResult[1][0][1]
+            api_call = 'https://streamtape.com/get_video' + url[url.find('?'):] + "&stream=1"
 
-        if (api_call):
+        if api_call:
             return True, api_call + '|User-Agent=' + UA + '&Referer=' + self.__sUrl
 
         return False, False

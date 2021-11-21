@@ -10,7 +10,7 @@ def getinfo():
     info_={}
     name = 'Arabseed'
     hst = tshost(name)	
-    if hst=='': hst = 'https://arabseed.onl:2053'
+    if hst=='': hst = 'https://arabseed.ws'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.5.2 11/07/2020'

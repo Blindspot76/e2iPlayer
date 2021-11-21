@@ -11,7 +11,7 @@ def getinfo():
     info_={}
     name = 'Arblionz'
     hst = tshost(name)	
-    if hst=='': hst = 'https://arlionz.com'
+    if hst=='': hst = 'https://arlionz.net'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.2 13/03/2021'
@@ -90,7 +90,8 @@ class TSIPHost(TSCBaseHostClass):
                     printDBG('DDAATTAA='+data)
                     Liste_els = re.findall('data-selectserver=.*?"(.*?)".*?<em>(.*?)<', data, re.S)	        
                     for (url_,titre_) in Liste_els:   
-                        urlTab.append({'name':titre_, 'url':base64.b64decode(url_.replace('\\','')).decode("utf-8"), 'need_resolve':1})	        					
+                        URL = base64.b64decode(url_.replace('\\','')).decode("utf-8")+'|Referer='+self.MAIN_URL
+                        urlTab.append({'name':titre_, 'url':URL, 'need_resolve':1})	        					
         return urlTab	
         
     def getArticle(self,cItem):

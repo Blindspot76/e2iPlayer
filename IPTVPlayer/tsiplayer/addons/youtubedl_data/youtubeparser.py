@@ -184,7 +184,7 @@ class YouTubeParser():
         new_url = urlunparse((urlParts[0], urlParts[1], urlParts[2], urlParts[3], new_query, urlParts[5]))
         return new_url
         
-    def getSearchResult(self, pattern, searchType, page, nextPageCategory, sortBy='', url=''):
+    def getSearchResult1(self, pattern, searchType, page, nextPageCategory, sortBy='', url=''):
         printDBG('YouTubeParser.getSearchResult pattern[%s], searchType[%s], page[%s]' % (pattern, searchType, page))
         currList = []
 
@@ -309,6 +309,155 @@ class YouTubeParser():
                 label = _("Next Page")
 
                 urlNextPage = self.updateQueryUrl(url, {'pbj': '1', 'ctoken': ctoken, 'continuation': ctoken, 'itct': itct})
+                params = {'type': 'more', 'category': "search_next_page", 'title': label, 'page': str(int(page) + 1), 'url': urlNextPage}
+                printDBG(str(params))
+                currList.append(params)
+
+        except Exception:
+            printExc()
+
+        return currList
+
+    def getSearchResult(self, pattern, searchType, page, nextPageCategory, sortBy='A', url=''):
+        printDBG('YouTubeParser.getSearchResult pattern[%s], searchType[%s], page[%s]' % (pattern, searchType, page))
+        currList = []
+
+        try:
+            #url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s&page=%s' % (pattern, searchType, sortBy, page)
+
+            nextPage = {}
+            nP = {}
+            nP_new = {}
+            r2 = []
+
+            if url:
+                # next page search
+                url = strwithmeta(url)
+                if 'post_data' in url.meta:
+                    http_params = dict(self.http_params)
+                    http_params['header']['Content-Type'] = 'application/json'
+                    http_params['raw_post_data'] = True
+                    sts, data = self.cm.getPage(url, http_params, url.meta['post_data'])
+                else:
+                    sts, data = self.cm.getPage(url, self.http_params, self.postdata)
+
+                if sts:
+                    response = json_loads(data)
+
+            else:
+                # new search
+                # url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s' % (pattern, searchType, sortBy)
+                url = 'https://www.youtube.com/results?search_query=' + pattern + '&sp='
+                if searchType == 'video':
+#                    url += 'EgIQAQ%253D%253D'
+                    url += 'CA%sSAhAB' % sortBy
+                if searchType == 'channel':
+#                    url += 'EgIQAg%253D%253D'
+                    url += 'CA%sSAhAC' % sortBy
+                if searchType == 'playlist':
+#                    url += 'EgIQAw%253D%253D'
+                    url += 'CA%sSAhAD' % sortBy
+                if searchType == 'live':
+                    url += 'EgJAAQ%253D%253D'
+
+                sts, data = self.cm.getPage(url, self.http_params)
+
+                if sts:
+                    self.checkSessionToken(data)
+                    data2 = self.cm.ph.getDataBeetwenMarkers(data, "window[\"ytInitialData\"] =", "};", False)[1]
+                    if len(data2) == 0:
+                        data2 = self.cm.ph.getDataBeetwenMarkers(data, "var ytInitialData =", "};", False)[1]
+
+                    response = json_loads(data2 + "}")
+
+            if not sts:
+                return []
+
+#            printDBG("-------- response ------------")
+#            printDBG(json_dumps(response))
+#            printDBG("------------------------------")
+
+            # search videos
+            r2 = list(self.findKeys(response, 'videoRenderer'))
+
+            printDBG("---------------------")
+            printDBG(json_dumps(r2))
+            printDBG("---------------------")
+
+            for item in r2:
+                params = self.getVideoData(item)
+
+                if params:
+                    printDBG(str(params))
+                    currList.append(params)
+
+            # search channels
+
+            r2 = list(self.findKeys(response, 'channelRenderer'))
+
+            printDBG("---------------------")
+            printDBG(json_dumps(r2))
+            printDBG("---------------------")
+
+            for item in r2:
+                params = self.getChannelData(item)
+
+                if params:
+                    printDBG(str(params))
+                    currList.append(params)
+
+            #search playlists
+
+            r2 = list(self.findKeys(response, 'playlistRenderer'))
+
+            printDBG("---------------------")
+            printDBG(json_dumps(r2))
+            printDBG("---------------------")
+
+            for item in r2:
+                params = self.getPlaylistData(item)
+
+                if params:
+                    printDBG(str(params))
+                    currList.append(params)
+
+            nP = list(self.findKeys(response, "nextContinuationData"))
+            nP_new = list(self.findKeys(response, "continuationEndpoint"))
+
+            if nP:
+                nextPage = nP[0]
+#                printDBG("-------------- nextPage -------------------------")
+#                printDBG(json_dumps(nextPage))
+#                printDBG("-------------------------------------------------")
+
+                ctoken = nextPage["continuation"]
+                itct = nextPage["clickTrackingParams"]
+                try:
+                    label = nextPage["label"]["runs"][0]["text"]
+                except:
+                    label = _("Next Page")
+
+                urlNextPage = self.updateQueryUrl(url, {'pbj': '1', 'ctoken': ctoken, 'continuation': ctoken, 'itct': itct})
+                params = {'type': 'more', 'category': "search_next_page", 'title': label, 'page': str(int(page) + 1), 'url': urlNextPage}
+                printDBG(str(params))
+                currList.append(params)
+
+            elif nP_new:
+                printDBG("-------------------------------------------------")
+                printDBG(json_dumps(nP_new))
+                printDBG("-------------------------------------------------")
+                nextPage = nP_new[0]
+
+                ctoken = nextPage["continuationCommand"]["token"]
+                itct = nextPage["clickTrackingParams"]
+                label = _("Next Page")
+
+                urlNextPage = "https://www.youtube.com/youtubei/v1/search?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
+                post_data = {'context': {'client': {'clientName': 'WEB', 'clientVersion': '2.20201021.03.00', }}, }
+                post_data['continuation'] = ctoken
+                post_data['context']['clickTracking'] = {'clickTrackingParams': itct}
+                post_data = json_dumps(post_data).encode('utf-8')
+                urlNextPage = strwithmeta(urlNextPage, {'post_data': post_data})
                 params = {'type': 'more', 'category': "search_next_page", 'title': label, 'page': str(int(page) + 1), 'url': urlNextPage}
                 printDBG(str(params))
                 currList.append(params)

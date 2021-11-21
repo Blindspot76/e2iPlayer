@@ -17,7 +17,7 @@ def getinfo():
     info_['name']='9Movies'
     info_['version']='1.2 07/07/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='41'
+    info_['cat_id']='99'
     info_['desc']='Watch Movies & TV shows'
     info_['icon']='https://i.ibb.co/dtmXV8g/9movies.png'
     info_['recherche_all']='1'

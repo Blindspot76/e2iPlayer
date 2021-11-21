@@ -25,7 +25,7 @@ def getinfo():
     info_['name']='Movs4u.Tv'
     info_['version']='1.9.1 23/02/2020'
     info_['dev']='RGYSoft'
-    info_['cat_id']='21'
+    info_['cat_id']='99'
     info_['desc']='أفلام و مسلسلات اجنبية'
     info_['icon']='https://i.ibb.co/8Pgs99g/Sans-titre.png'
     info_['recherche_all']='1'

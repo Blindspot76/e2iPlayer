@@ -19,7 +19,7 @@ def getinfo():
     info_={}
     name = 'Akwam (Old)'
     hst = tshost(name)	
-    if hst=='': hst = 'https://old.akwam.cc:2053'
+    if hst=='': hst = 'https://old.akwam.cc'
     info_['host']= hst
     info_['name']=name
     info_['version']='1.9.3 01/12/2020'
@@ -176,10 +176,10 @@ class TSIPHost(TSCBaseHostClass):
                         else:
                             dat_1=data1
                             dat_2=''
-                        lst_dat=re.findall('href=\'(.*?)\'', dat_1, re.S)					
+                        lst_dat=re.findall('href=[\'"](.*?)[\'"]', dat_1, re.S)					
                         if lst_dat:
                             self.addVideo({'import':cItem['import'],'category' : 'host2','title':tscolor('\c0060??60')+'Akoam','url':lst_dat[0],'desc':desc,'icon':img_,'hst':'tshost','good_for_fav':True,'url0':url0})				
-                        lst_dat=re.findall('/files/(.*?)\..*?href=\'(.*?)\'', dat_2, re.S)					
+                        lst_dat=re.findall('/files/(.*?)\..*?href=[\'"](.*?)[\'"]', dat_2, re.S)					
                         if lst_dat:
                             for (hst1,urll) in lst_dat:
                                 titre='رابط مشاهدة'
@@ -194,12 +194,12 @@ class TSIPHost(TSCBaseHostClass):
                                 dat_1,dat_2=data1.split('sub_direct_links\'>')
                             else:
                                 dat_1,dat_2=data1,''
-                            lst_dat=re.findall('href=\'(.*?)\'', dat_1, re.S)					
+                            lst_dat=re.findall('href=[\'"](.*?)[\'"]', dat_1, re.S)					
                             if lst_dat:
                                 self.addMarker({'title':tscolor('\c0000????')+'تحميل و المشاهدة الخاص ','icon':cItem['icon']})
                                 self.addVideo({'import':cItem['import'],'category' : 'host2','title':tscolor('\c0060??60')+'Akoam','url':lst_dat[0],'desc':desc,'icon':cItem['icon'],'hst':'tshost','good_for_fav':True,'url0':url0})	
                                 
-                            lst_dat=re.findall('/files/(.*?)\..*?href=\'(.*?)\'', dat_2, re.S)					
+                            lst_dat=re.findall('/files/(.*?)\..*?href=[\'"](.*?)[\'"]', dat_2, re.S)					
                             if lst_dat:
                                 self.addMarker({'title':tscolor('\c0000????')+' روابط المشاهدة','icon':cItem['icon']})
                                 for (hst1,urll) in lst_dat:

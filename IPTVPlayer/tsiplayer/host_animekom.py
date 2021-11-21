@@ -16,7 +16,7 @@ def getinfo():
 	info_['name']=name
 	info_['version']='2.0 22/11/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='22'
+	info_['cat_id']='99'
 	info_['desc']='جميع الإنميات مترجمة عربي، والأفلام والأوفات'
 	info_['icon']='https://i.ibb.co/QmjbP6z/logo.png'
 	info_['recherche_all']='0'

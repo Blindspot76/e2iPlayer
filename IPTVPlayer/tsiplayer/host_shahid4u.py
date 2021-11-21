@@ -56,7 +56,7 @@ class TSIPHost(TSCBaseHostClass):
     def showitms(self,cItem):
         desc = [('Genre','class="genres">(.*?)</div>','',''),('IMDB','rate ti-star">(.*?)</span>','',''),('Quality','class="quality".*?>(.*?)</span>','','')]
         next = ['<link rel="next".*?href="(.*?)"','20']
-        self.add_menu(cItem,'','class="content-box">.*?href="(.*?)".*?title="(.*?)".*?src="(.*?)".*?<(.*?)</h3>','','21',ord=[0,1,2,3],Desc=desc,Next=next,u_titre=True,EPG=True)		
+        self.add_menu(cItem,'','class="content-box">.*?href="(.*?)".*?title="(.*?)".*?data-image="(.*?)".*?<(.*?)</h3>','','21',ord=[0,1,2,3],Desc=desc,Next=next,u_titre=True,EPG=True)		
 
     def showelms(self,cItem):
         desc = [('Story','post-story">(.*?)</div>','','')]
@@ -67,7 +67,7 @@ class TSIPHost(TSCBaseHostClass):
     def SearchResult(self,str_ch,page,extra):
         url = self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
         desc = [('Genre','class="genres">(.*?)</div>','',''),('IMDB','rate ti-star">(.*?)</span>','',''),('Quality','class="quality".*?>(.*?)</span>','','')]
-        self.add_menu({'import':extra,'url':url},'','class="content-box">.*?href="(.*?)".*?title="(.*?)".*?src="(.*?)".*?<(.*?)</h3>','','21',ord=[0,1,2,3],Desc=desc,u_titre=True,EPG=True)		
+        self.add_menu({'import':extra,'url':url},'','class="content-box">.*?href="(.*?)".*?title="(.*?)".*?data-image="(.*?)".*?<(.*?)</h3>','','21',ord=[0,1,2,3],Desc=desc,u_titre=True,EPG=True)		
         
 
     def get_links(self,cItem): 	
@@ -129,11 +129,12 @@ class TSIPHost(TSCBaseHostClass):
     def getVideos(self,videoUrl):
         urlTab = []	
         i,id_ = videoUrl.split('|',1)
-        HTTP_HEADER= { 'X-Requested-With':'XMLHttpRequest' }
+        HTTP_HEADER= { 'X-Requested-With':'XMLHttpRequest','Referer':self.MAIN_URL }
         post_data = {'i':i,'id':id_}
         post_url = self.MAIN_URL+"/wp-content/themes/Shahid4u/Ajaxat/Single/Server.php"
         sts, data = self.getPage(post_url,{'header':HTTP_HEADER},post_data=post_data)
         if sts:
+            printDBG('Data='+data)
             _data2 = re.findall('<iframe.*?(src|SRC)=(.*?) ',data, re.S) 
             if _data2:
                 URL_=_data2[0][1]

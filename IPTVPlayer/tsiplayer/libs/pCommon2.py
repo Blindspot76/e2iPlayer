@@ -470,6 +470,67 @@ class common:
             printExc()
         return ret
 
+    def addCookieItem(self, cookiefile, cookieDict, ignoreDiscard=True, ignoreExpires=False):
+        printDBG("pCommon.addCookieItem %s to file '%s'" % (json_dumps(cookieDict), cookiefile))
+
+        cj = None
+        # create a Cookie object from cookieDict
+        cookieName = cookieDict.get('name', '')
+        cookieValue = cookieDict.get('value', '')
+        cookiePort = cookieDict.get('port', None)
+        domainParts = cookieDict.get('domain', '').split('/')
+        while len(domainParts) and ('http' in domainParts[0] or len(domainParts[0]) == 0):
+            del(domainParts[0])
+
+        cookiePath = cookieDict.get('path', '/')
+        cookieExpires = cookieDict.get('expires', None)
+
+        if cookiePort == None:
+            cookiePortSpecified = False
+        else:
+            cookiePortSpecified = True
+        if not domainParts:
+            cookieDomain = ''
+            cookieDomainSpecified = False
+            cookieDomainDot = False
+        else:
+            cookieDomain = domainParts[0]
+            cookieDomainSpecified = True
+            if cookieDomain.startswith("."):
+                cookieDomainDot = True
+            else:
+                cookieDomainDot = False
+
+        if not (cookieName and cookieValue):
+            printDBG("cookie not valid : %s " % json_dumps(cookieDict))
+            return
+
+        try:
+            c = cookielib.Cookie(version=0, name=cookieName, value=cookieValue, port=cookiePort, port_specified=cookiePortSpecified, domain=cookieDomain, domain_specified=cookieDomainSpecified, domain_initial_dot=cookieDomainDot, path=cookiePath, path_specified=True, secure=False, expires=cookieExpires, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+
+        except:
+            printExc()
+            return
+
+        try:
+            # load cookies from cookiefile
+            if self.usePyCurl():
+                cj = self._pyCurlLoadCookie(cookiefile, ignoreDiscard, ignoreExpires)
+            else:
+                cj = cookielib.MozillaCookieJar()
+                cj.load(cookiefile, ignore_discard=ignoreDiscard)
+
+            #add new cookie
+            cj.set_cookie(c)
+
+            # save in cookiefile
+            #if self.usePyCurl():
+            #    cj = self._pyCurlLoadCookie(cookiefile, ignoreDiscard, ignoreExpires)
+            #else:
+            cj.save(cookiefile, ignore_discard=ignoreDiscard)
+        except Exception:
+            printExc()
+            
     def _getPageWithPyCurl(self, url, params = {}, post_data = None):
         if IsMainThread():
             msg1 = _('It is not allowed to call getURLRequestData from main thread.')

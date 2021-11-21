@@ -32,7 +32,7 @@ class TSIPHost(TSCBaseHostClass):
   
          
     def showmenu0(self,cItem):
-        self.set_MAIN_URL()
+        #self.set_MAIN_URL()
         sts, data = self.getPage(self.MAIN_URL)
         if sts:
             lst_data=re.findall('<li id="menu.*?href="(.*?)".*?>(.*?)<', data, re.S)
@@ -89,7 +89,7 @@ class TSIPHost(TSCBaseHostClass):
 
 
     def SearchResult(self,str_ch,page,extra):
-        self.set_MAIN_URL()
+        #self.set_MAIN_URL()
         url = self.MAIN_URL+'/search/'+str_ch
         if page>1:
             url=url+'?order='+str(page*50-50)
@@ -138,7 +138,7 @@ class TSIPHost(TSCBaseHostClass):
         
         
     def get_links(self,cItem): 	
-        self.set_MAIN_URL()
+        #self.set_MAIN_URL()
         urlTab = []
         baseUrl=cItem['url']
         post_data = {'wtchBtn':''}

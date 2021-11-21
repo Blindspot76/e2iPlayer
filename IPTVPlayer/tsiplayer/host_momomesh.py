@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
+import re,base64
 ###################################################
 def getinfo():
     info_={}
@@ -54,9 +55,19 @@ class TSIPHost(TSCBaseHostClass):
 
 
     def get_links(self,cItem):
-        local = [('/player.html?','!!DELETE!!','1'),]
-        result = self.add_menu(cItem,'','<div id="(._server)".*?src="(.*?)"','','serv_url',ord=[1,0],local=local)	                        
-        return result[1]
+        #local = [('/player.html?','!!DELETE!!','1'),]
+        urlTab = []
+        URL = cItem['url']
+        sts, data = self.getPage(URL)
+        if sts:
+            server_data = re.findall('<div id="(._server)".*?src="(.*?)"', data, re.S)
+            for x1,link in server_data:        
+                if 'exturl.php?id=' in link:
+                    link = base64.b64decode(link.split('exturl.php?id=')[1]).decode("utf-8")
+                titre_ = gethostname(link)
+                urlTab.append({'name':titre_, 'url':link, 'need_resolve':1})
+        #result = self.add_menu(cItem,'','<div id="(._server)".*?src="(.*?)"','','serv_url',ord=[1,0],local=local)	                        
+        return urlTab
            
     def start(self,cItem):      
         mode=cItem.get('mode', None)
