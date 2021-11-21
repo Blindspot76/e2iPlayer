@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2021.09.21. 
+# Blindspot - 2021.11.21. 
 ###################################################
-HOST_VERSION = "1.3"
+HOST_VERSION = "1.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -32,7 +32,7 @@ class Dmdamedia(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'dmdamedia', 'cookie':'dmdamedia.cookie'})
         self.MAIN_URL = 'https://dmdamedia.hu'
-        self.DEFAULT_ICON_URL = "https://dmdamedia.eu/kepek/dmdamediahu.png"
+        self.DEFAULT_ICON_URL = "https://dmdamedia.hu/kepek/dmdamediahu.png"
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')        
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
@@ -125,7 +125,7 @@ class Dmdamedia(CBaseHostClass):
     def listItemsF(self, cItem, name):
         printDBG('Dmdamedia.listItemsFilmek')
         approve = False
-        url = 'https://dmdamedia.eu/film'
+        url = 'https://dmdamedia.hu/film'
                         
         sts, data = self.getPage(url)
                         
@@ -180,7 +180,8 @@ class Dmdamedia(CBaseHostClass):
             name = name.replace("W", "w")
         if name == "Sport":
             name = name.replace("S", "s")
-        movies = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="','"/></a>')
+        all = self.cm.ph.getDataBeetwenMarkers(data,'<div class="center">','</body>', False) [1]
+        movies = self.cm.ph.getAllItemsBeetwenMarkers(all,'<div class="','"/></a>')
         for m in movies:
             cat = self.cm.ph.getAllItemsBeetwenMarkers(m,'<div class="sorozatok','" data-cim')
             for c in cat:
@@ -204,16 +205,20 @@ class Dmdamedia(CBaseHostClass):
                     title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
                     icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
                     cleanurl = url.strip('/film')
-                    icon = cleanurl + icon 
-                    newurl = cleanurl + self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
-                    params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl}
+                    icon = cleanurl + icon
+                    newo = self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
+                    if "https://dmdamedia.hu" in newo or "https://dmdamedia.eu" in newo or "http://dmdamedia.eu" in newo or "http://dmdamedia.hu" in newo:                    
+                        newurl = newo
+                    else:
+                       newurl = cleanurl + newo
+                    params = {'category':'explore_itemf','title':title, 'icon': icon , 'url': newurl}
                     self.addDir(params)
                 approve = False
     
     def listItemsS(self, cItem, name):
         printDBG('Dmdamedia.listItemsSorozatok')
         approve = False
-        url = 'https://dmdamedia.eu/'       
+        url = 'https://dmdamedia.hu/'       
         sts, data = self.getPage(url)                
         if not sts:
             return
@@ -240,7 +245,8 @@ class Dmdamedia(CBaseHostClass):
             name = name.replace("-", "")
         if "befejezett" in name:
             name = name.replace("befejezett", "vege")
-        series = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="','"/></a>')
+        all = self.cm.ph.getDataBeetwenMarkers(data,'<div class="center">','</body>', False) [1]
+        series = self.cm.ph.getAllItemsBeetwenMarkers(all,'<div class="','"/></a>')
         for m in series:
             cat = self.cm.ph.getAllItemsBeetwenMarkers(m,'<div class="sorozatok','" data-cim')
             for c in cat:
@@ -266,13 +272,13 @@ class Dmdamedia(CBaseHostClass):
                     cleanurl = url.strip(url[-1])
                     icon = cleanurl + icon
                     newurl = cleanurl + self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
-                    params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl}
+                    params = {'category':'explore_items','title':title, 'icon': icon , 'url': newurl}
                     self.addDir(params)
                 approve = False
 	
     def listFiltersF(self, cItem):
         printDBG('Dmdamedia.listFiltersFilmek')
-        url = 'https://dmdamedia.eu/film'               
+        url = 'https://dmdamedia.hu/film'               
         sts, data = self.getPage(url)
                         
         if not sts:
@@ -286,7 +292,7 @@ class Dmdamedia(CBaseHostClass):
    
     def listFiltersS(self, cItem):
         printDBG('Dmdamedia.listFiltersSorozatok')
-        url = 'https://dmdamedia.eu/'               
+        url = 'https://dmdamedia.hu/'               
         sts, data = self.getPage(url)
                         
         if not sts:
@@ -300,7 +306,7 @@ class Dmdamedia(CBaseHostClass):
                         
     def exploreItemsF(self, cItem, title, icon):
         printDBG('Dmdamedia.exploreItems - Filmek')
-        url = 'https://dmdamedia.eu/' 
+        url = 'https://dmdamedia.hu/' 
         self.cim = title
         sts, data = self.getPage(cItem['url'])
         if not sts:
@@ -340,7 +346,7 @@ class Dmdamedia(CBaseHostClass):
     
     def exploreItemsS(self, cItem, title, icon):
         printDBG('Dmdamedia.exploreItems - Sorozatok')
-        url = 'https://dmdamedia.eu/' 
+        url = 'https://dmdamedia.hu/' 
         self.realtitle = title
         sts, data = self.getPage(cItem['url'])
         if not sts:
@@ -363,7 +369,7 @@ class Dmdamedia(CBaseHostClass):
     def exploreItemsE(self, cItem, title, icon):
         printDBG('Dmdamedia.exploreItems - Epizódok')
         url = cItem['url']
-        if "https:dmdamedia.eu" in url:
+        if "https:dmdamedia.hu" in url:
             url = url.replace("https:", "https://")
         sts, data = self.getPage(url)
         if not sts:
@@ -379,7 +385,10 @@ class Dmdamedia(CBaseHostClass):
                     title = self.cm.ph.getDataBeetwenMarkers(e,'">','</a>', False) [1] + ".rész" + " - " + self.cm.ph.getDataBeetwenMarkers(e,'title="','" href=', False) [1]
                     if "- feliratos rész" not in title:
                         title = title.replace("-", "")
-                    newurl = "https://dmdamedia.eu" + f 
+                    if "https://dmdamedia.hu" in f or "https://dmdamedia.eu" in f or "http://dmdamedia.eu" in f or "http://dmdamedia.hu" in f:
+                         newurl = f
+                    else:
+                       newurl = "https://dmdamedia.hu" + f 
                     desc = "Tartalom:" + self.cm.ph.getDataBeetwenMarkers(data, '<div class="leiras">','</div>', False) [1]
                     params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': newurl, 'desc': desc}
                     self.addDir(params)
@@ -450,13 +459,13 @@ class Dmdamedia(CBaseHostClass):
             self.listItemsF(self.currItem, title)
         elif category == 'list_filters' and "film" not in url:
             self.listItemsS(self.currItem, title)
-        elif category == 'explore_item' and "film" in url:
+        elif category == 'explore_itemf':
             self.exploreItemsF(self.currItem, title, icon)
         elif category == 'explore_item' and "évad" in title:
             self.exploreItemsE(self.currItem, title, icon)
         elif category == 'explore_item' and "rész" in title:
             self.exploreItemsEL(self.currItem, title, icon)			
-        elif category == 'explore_item' and "film" not in url:
+        elif category == 'explore_items':
             self.exploreItemsS(self.currItem, title, icon)
         elif category == 'search':
             cItem = dict(self.currItem)
@@ -473,7 +482,7 @@ class Dmdamedia(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("Dmdamedia.listSearchResult - Filmek cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         printDBG(cItem)
-        url = 'https://dmdamedia.eu/film'
+        url = 'https://dmdamedia.hu/film'
         sts, data = self.getPage(url)           
         if not sts:
             return
@@ -496,7 +505,7 @@ class Dmdamedia(CBaseHostClass):
                          self.addDir(params)
 	    printDBG("Dmdamedia.listSearchResult - Sorozatok cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         printDBG(cItem)
-        url = 'https://dmdamedia.eu/'	
+        url = 'https://dmdamedia.hu/'	
         sts, data = self.getPage(url)           
         if not sts:
             return
