@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 2021.10.17. by Blindspot
+# 2021.12.05. by Blindspot
 ###################################################
 # LOCAL import
 ###################################################
@@ -246,7 +246,7 @@ class LosMovies(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("LosMovies.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = "http://losmovies.top/display-results?type=movies&q=" + urllib.quote_plus(searchPattern)
+        cItem['url'] = "http://losmovies.cam/display-results?type=movies&q=" + urllib.quote_plus(searchPattern)
         self.listItems(cItem, 'list_seasons')
         
     def getLinksForVideo(self, cItem, eItem=None):

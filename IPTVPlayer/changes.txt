@@ -1,3 +1,5 @@
+#2021.12.05.01
+-LosMovies javítva.
 #2021.12.01.01
 -Kisebb javítások
 #2021.11.21.02
