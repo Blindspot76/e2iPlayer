@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 20.11.2021
+# Modified by Blindspot # 06.12.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -357,6 +357,7 @@ class urlparser:
                        'mixdrop.co':            self.pp.parserMIXDROP       ,
                        'mixdrop.club':          self.pp.parserMIXDROP       ,
                        'mixdrop.to':            self.pp.parserMIXDROP       ,
+                       'mixdrop.bz':            self.pp.parserMIXDROP       ,
                        'moevideo.net':          self.pp.parserPLAYEREPLAY   ,
                        'moonwalk.cc':           self.pp.parserMOONWALKCC    ,
                        'moshahda.net':          self.pp.parserMOSHAHDANET   ,
@@ -12774,7 +12775,7 @@ class pageParser(CaptchaHelper):
         #          https://mixdrop.co/e/1f13jq
         #          https://mixdrop.club/f/vn7de6q7t0j868/2/La_Missy_sbagliata_HD_2020_WEBDL_1080p.mp4
         
-        m = re.search("mixdrop\.(co|club)/[ef]/(?P<id>.*?)($|/)", baseUrl)
+        m = re.search("mixdrop\.(co|club|bz)/[ef]/(?P<id>.*?)($|/)", baseUrl)
         
         if m:
             video_id = m.group('id')
