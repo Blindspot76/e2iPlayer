@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 06.12.2021
+# Modified by Blindspot # 10.12.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -354,10 +354,10 @@ class urlparser:
                        'mightyupload.com':      self.pp.parserMIGHTYUPLOAD  ,
                        'miplayer.net':          self.pp.parserMIPLAYERNET   ,
                        'mirrorace.com':         self.pp.parserMIRRORACE     ,
+                       'mixdrop.bz':            self.pp.parserMIXDROP       ,
                        'mixdrop.co':            self.pp.parserMIXDROP       ,
                        'mixdrop.club':          self.pp.parserMIXDROP       ,
                        'mixdrop.to':            self.pp.parserMIXDROP       ,
-                       'mixdrop.bz':            self.pp.parserMIXDROP       ,
                        'moevideo.net':          self.pp.parserPLAYEREPLAY   ,
                        'moonwalk.cc':           self.pp.parserMOONWALKCC    ,
                        'moshahda.net':          self.pp.parserMOSHAHDANET   ,
@@ -668,6 +668,7 @@ class urlparser:
                        'vsports.pt':            self.pp.parserSAPOPT     ,
                        'vudeo.net':             self.pp.parserONLYSTREAM    ,
                        'vup.to':                self.pp.parserONLYSTREAM    ,
+                       'vupload.com':           self.pp.parserONLYSTREAM    ,
                        'waaw.tv':               self.pp.parserNETUTV         ,
                        'waaw.to':               self.pp.parserNETUTV         ,
                        'wat.tv':                self.pp.parserWATTV          ,
@@ -700,10 +701,12 @@ class urlparser:
                        'zalaa.com':             self.pp.parserZALAACOM      ,
                        'zerocast.tv':           self.pp.parserZEROCASTTV    ,
                        'zstream.to':            self.pp.parserZSTREAMTO     ,
+                       'nba-streams.online':    self.pp.parserSHOWSPORTXYZ,
                        'showsport.xyz':         self.pp.parserSHOWSPORTXYZ,
                        'assia.org':             self.pp.parserASSIAORG,
                        'assia2.com':            self.pp.parserASSIAORG,
                        'freefeds.click':        self.pp.parserASSIAORG,
+                       'givemenbastreams.com':  self.pp.parserASSIAORG,
                        'embedstream.me':        self.pp.parserEMBEDSTREAMME,
                        'daddylive.me':          self.pp.parserDADDYLIVE,
                        'daddylive.club':        self.pp.parserDADDYLIVE,
@@ -711,7 +714,10 @@ class urlparser:
                        'f1livegp.me':           self.pp.parserF1LIVEGPME,
                        'bestnhl.com':           self.pp.parserF1LIVEGPME,
                        'highload.to':           self.pp.parserHIGHLOADTO,
-                       'liveonscore.to':        self.pp.parserLIVEONSCORETV
+                       'liveonscore.to':        self.pp.parserLIVEONSCORETV,
+                       'weakstreams.com':       self.pp.parserLIVEONSCORETV,
+                       'sportsonline.to':       self.pp.parserSPORTSONLINETO
+                       
         } 
         return                 
         
@@ -15377,5 +15383,51 @@ class pageParser(CaptchaHelper):
         urlTab = []
         if url != '':
             urlTab.append({'name': 'mp4', 'url': strwithmeta(url, {'Referer': baseUrl})})
+
+        return urlTab
+
+
+
+
+    def parserSPORTSONLINETO(self, baseUrl):
+        printDBG("parserSPORTSONLINETO baseUrl[%r]" % baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer:
+            HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts:
+            return False
+        cUrl = self.cm.meta['url']
+
+        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
+        HTTP_HEADER['Referer'] = cUrl
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts:
+            return False
+
+        urlTab = []
+        if "eval(function(p,a,c,k,e,d)" in data:
+            printDBG('Host resolveUrl packed')
+            scripts = re.findall(r"(eval\s?\(function\(p,a,c,k,e,d.*?)</script>", data, re.S)
+            for packed in scripts:
+                data2 = packed
+                printDBG('Host pack: [%s]' % data2)
+                try:
+                    data = unpackJSPlayerParams(data2, TEAMCASTPL_decryptPlayerParams, 0, True, True)
+                    printDBG('OK unpack: [%s]' % data)
+                except Exception:
+                    pass
+
+                url = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.mp4(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+                if url != '':
+                    url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
+                    urlTab.append({'name': 'mp4', 'url': url})
+                hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+                if hlsUrl != '':
+                    hlsUrl = strwithmeta(hlsUrl, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
+                    urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
 
         return urlTab

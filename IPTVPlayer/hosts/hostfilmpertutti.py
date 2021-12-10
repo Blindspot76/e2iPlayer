@@ -17,15 +17,15 @@ import urllib
 
 
 def gettytul():
-    return 'https://www.filmpertutti.beer/'
+    return 'https://www.filmpertutti.center/'
 
 
 class FilmPertutti(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history': 'FilmPertutti', 'cookie': 'FilmPertutti.cookie'})
-        self.MAIN_URL = 'https://www.filmpertutti.beer/'
-        self.DEFAULT_ICON_URL = 'https://www.filmpertutti.beer/wp-content/themes/blunge/assets/logo_original_plus.png'
+        self.MAIN_URL = 'https://www.filmpertutti.center/'
+        self.DEFAULT_ICON_URL = 'https://www.filmpertutti.center/wp-content/uploads/2021/01/favicon.ico'
         self.cacheLinks = {}
 
     def getPage(self, baseUrl, addParams={}, post_data=None):
