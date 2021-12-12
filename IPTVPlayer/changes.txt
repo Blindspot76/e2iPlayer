@@ -1,3 +1,5 @@
+#2021.12.12.01
+-FilmPerTutti javítva (ITA)
 #2021.12.10.01
 -Kisebb javítások
 #2021.12.06.01

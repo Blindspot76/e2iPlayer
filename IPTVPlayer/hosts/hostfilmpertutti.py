@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# 2021.12.12. Blindspot
+###################################################
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -6,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 
 ###################################################
@@ -234,20 +238,15 @@ class FilmPertutti(CBaseHostClass):
 
     def getLinksForVideo(self, cItem):
         printDBG("FilmPertutti.getLinksForVideo [%s]" % cItem)
-        if cItem.get('main_link', False):
-            return self.up.getVideoLinkExt(cItem['url'])
         return self.cacheLinks.get(cItem['cache_key'], [])
 
     def getVideoLinks(self, videoUrl):
         printDBG("FilmPertutti.getVideoLinks [%s]" % videoUrl)
         # mark requested link as used one
-        if len(self.cacheLinks.keys()):
-            for key in self.cacheLinks:
-                for idx in range(len(self.cacheLinks[key])):
-                    if videoUrl in self.cacheLinks[key][idx]['url']:
-                        if not self.cacheLinks[key][idx]['name'].startswith('*'):
-                            self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
-
+        sts, data = self.getPage(videoUrl)
+        if not sts:
+            return
+        videoUrl = self.cm.ph.getDataBeetwenMarkers(data,'<iframe src="','" frameborder',False) [1]
         if 0 == self.up.checkHostSupport(videoUrl):
             from Plugins.Extensions.IPTVPlayer.libs.unshortenit import unshorten
             uri, sts = unshorten(videoUrl)
