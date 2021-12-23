@@ -195,7 +195,6 @@
 "hostworldfree4u": "https://www.worldfree4u.ws/",
 "hostwpolscepl": "http://wpolsce.pl/",
 "hostwptv": "https://wideo.wp.pl/",
-"hostwrealu24tv": "https://wrealu24.tv/",
 "hostxrysoise": "https://xrysoi.live/",
 "hostyesmoviesto": "https://yesmovies.ag/",
 "hostyifytv": "https://ymovies.se/",

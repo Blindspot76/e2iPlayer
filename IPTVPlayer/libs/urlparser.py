@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 10.12.2021
+# Modified by Blindspot # 23.12.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -501,7 +501,7 @@ class urlparser:
                        'streamango.com':        self.pp.parserSTREAMANGOCOM  ,
                        'streamcherry.com':      self.pp.parserSTREAMANGOCOM  ,
                        'streamcloud.eu':        self.pp.parserSTREAMCLOUD   ,
-                       'streamcrypt.net':       self.pp.parserVCRYPT        ,
+                       'streamcrypt.net':       self.pp.parserSTREAMCRYPTNET,
                        'streame.net':           self.pp.parserSTREAMENET    ,
                        'streamin.to':           self.pp.parserSTREAMINTO    ,
                        'streamix.cloud':        self.pp.parserSTREAMIXCLOUD  ,
@@ -716,7 +716,8 @@ class urlparser:
                        'highload.to':           self.pp.parserHIGHLOADTO,
                        'liveonscore.to':        self.pp.parserLIVEONSCORETV,
                        'weakstreams.com':       self.pp.parserLIVEONSCORETV,
-                       'sportsonline.to':       self.pp.parserSPORTSONLINETO
+                       'sportsonline.to':       self.pp.parserSPORTSONLINETO,
+                       
                        
         } 
         return                 
@@ -15431,3 +15432,18 @@ class pageParser(CaptchaHelper):
                     urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
 
         return urlTab
+    
+    def parserSTREAMCRYPTNET(self, baseUrl):
+        printDBG("parserSTREAMCRYPTNET baseUrl[%s]" % baseUrl)
+
+        sts, data = self.cm.getPage(baseUrl, {'header':{'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36'}, 'use_cookie':1, 'save_cookie':1,'load_cookie':1, 'cookiefile': GetCookieDir("streamcrypt.cookie"), 'with_metadata':1})
+        #if not sts:
+        #    return []
+
+        red_url = self.cm.meta['url']
+        printDBG('redirect to url: %s' % red_url)
+
+        if red_url == baseUrl:
+            red_url = re.findall("URL=([^\"]+)",data)[0]
+
+        return urlparser().getVideoLinkExt(red_url)

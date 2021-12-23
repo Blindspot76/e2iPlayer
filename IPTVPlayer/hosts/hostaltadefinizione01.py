@@ -20,21 +20,21 @@ except Exception:
 
 
 def gettytul():
-    return 'https://altadefinizione01.quest/'
+    return 'https://altadefinizione01.builders/'
 
 
-class AltadefinizioneZeroUno(CBaseHostClass):
+class Altadefinizione(CBaseHostClass):
 
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history': 'altadefinizione01.quest', 'cookie': 'altadefinizione01.cookie'})
+        CBaseHostClass.__init__(self, {'history': 'altadefinizione01.zone', 'cookie': 'altadefinizione01.zone.cookie'})
 
         self.USER_AGENT = 'Mozilla/5.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
-        self.MAIN_URL = 'https://www.altadefinizione01.quest/'
-        self.DEFAULT_ICON_URL = self.MAIN_URL + 'templates/Darktemplate_pagespeed/images/logo.png'
+        self.MAIN_URL = 'https://www.altadefinizione01.builders/'
+        self.DEFAULT_ICON_URL = 'http://www.sabinacornovac.ro/wp-content/uploads/2017/04/42557652-Cinema-Camera-icon-Movie-Lover-Series-Icon-Stock-Vector-585x355.jpg'
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
@@ -164,13 +164,13 @@ class AltadefinizioneZeroUno(CBaseHostClass):
             params.update({'title': _("Next page"), 'page': page + 1})
             if nextPage != '#':
                 params['url'] = self.getFullUrl(nextPage)
-                self.addMore(params)
+                self.addDir(params)
             elif postData != {}:
                 postData = dict(postData)
                 postData.pop('titleonly', None)
                 postData.update({'search_start': page + 1, 'full_search': '0', 'result_from': 10 * page + 1})
                 params['post_data'] = postData
-                self.addMore(params)
+                self.addDir(params)
             else:
                 printDBG("NextPage [%s] not handled!!!" % nextPage)
 
@@ -227,7 +227,7 @@ class AltadefinizioneZeroUno(CBaseHostClass):
         if nextPage != '':
             params = dict(cItem)
             params.update({'title': _("Next page"), 'url': self.getFullUrl(nextPage), 'page': page + 1})
-            self.addMore(params)
+            self.addDir(params)
 
     def exploreItem(self, cItem):
         printDBG("Altadefinizione.exploreItem")
@@ -249,15 +249,26 @@ class AltadefinizioneZeroUno(CBaseHostClass):
             self.addVideo(params)
 
         urlTab = []
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<ul', '>', 'host'), ('</ul', '>'), False)
-        for idx in range(len(data)):
-            data[idx] = self.cm.ph.getAllItemsBeetwenMarkers(data[idx], '<a', '</a>')
-            for item in data[idx]:
-                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''data\-link=['"]([^"^']+?)['"]''', 1, True)[0])
-                if 1 == self.up.checkHostSupport(url):
-                    name = self.cleanHtmlStr(item)
-                    url = strwithmeta(url, {'Referer': cItem['url']})
-                    urlTab.append({'name': name, 'url': url, 'need_resolve': 1})
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'data-link'), ('</a', '>'))
+        for item in tmp:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0])
+            if 'http' not in url:
+                continue
+            sts, data = self.getPage(url)
+            if not sts:
+                return
+            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<li', '>', 'data-link'), ('</li', '>'))
+
+        for item in data:
+            printDBG("Altadefinizione.exploreItem item [%s]" % item)
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''data\-link=['"]([^"^']+?)['"]''', 1, True)[0])
+            if url.startswith('//'):
+                url = 'https:' + url
+            if 1 == self.up.checkHostSupport(url):
+                name = self.cleanHtmlStr(item)
+                url = strwithmeta(url, {'Referer': cItem['url']})
+                urlTab.append({'name': name, 'url': url, 'need_resolve': 1})
 
         if len(urlTab):
             params = dict(cItem)
@@ -381,7 +392,7 @@ class AltadefinizioneZeroUno(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, AltadefinizioneZeroUno(), True, favouriteTypes=[])
+        CHostBase.__init__(self, Altadefinizione(), True, favouriteTypes=[])
 
     def withArticleContent(self, cItem):
         if 'prev_url' in cItem or cItem.get('category', '') == 'explore_item':
