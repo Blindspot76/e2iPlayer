@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-09-16 by Blindspot - modified Filmezz
+# 2021-12-30 by Blindspot - modified Filmezz
 ###################################################
-HOST_VERSION = "2.4"
+HOST_VERSION = "2.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -467,11 +467,6 @@ class FilmezzEU(CBaseHostClass):
                         break
                         
         url = videoUrl
-        if url.startswith('https://filmezz.club'):
-            x = url.replace("https://filmezz.club", "https://vidddoza.me")
-            printDBG(x)
-            url = x
-            printDBG(x)
         printDBG(url)		
         post_data = None
         while True:

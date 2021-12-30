@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 23.12.2021
+# Modified by Blindspot # 30.12.2021
 ###################################################
 # LOCAL import
 ###################################################
@@ -222,6 +222,7 @@ class urlparser:
                        'dood.to':               self.pp.parserDOOD          ,
                        'dood.watch':            self.pp.parserDOOD          ,
                        'dood.ws':               self.pp.parserDOOD          ,
+                       'dood.sh':               self.pp.parserDOOD          ,
                        'doodstream.com':        self.pp.parserDOOD          ,
                        'dotstream.tv':          self.pp.parserDOTSTREAMTV   ,
                        'droonws.xyz':           self.pp.parserTXNEWSNETWORK , 
@@ -521,6 +522,7 @@ class urlparser:
                        'streamz.cc':            self.pp.parserSTREAMZ       ,
                        'streamz.vg':            self.pp.parserSTREAMZ       ,
                        'streamz.ws':            self.pp.parserSTREAMZ       ,
+                       'streamzz.to':            self.pp.parserSTREAMZ       ,
                        'streamwire.net':        self.pp.parserONLYSTREAM   ,
                        'superfastvideos.xyz':   self.pp.parserTXNEWSNETWORK ,
                        'superfilm.pl':          self.pp.parserSUPERFILMPL   ,
