@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
- 
+﻿# -*- coding: utf-8 -*-
+# Modified by Blindspot - 2022.01.01
 ###################################################
 # LOCAL import
 ###################################################
@@ -2613,7 +2613,7 @@ class Host:
               url1 = 'females'
            url = 'https://en.bongacams.com/tools/listing_v3.php?livetab=%s&online_only=true&offset=%s&tag=%s' % (url1, str((self.page*24)-24), url)
            host = 'Mozilla/5.0 (iPad; CPU OS 8_1_3 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B466 Safari/600.1.4'
-           header = {'User-Agent': host, 'Accept':'application/json','Accept-Language':'en,en-US;q=0.7,en;q=0.3','X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded', 'Referer':'https://en.bongacams.com/', 'Origin':'https://en.bongacams.com'} 
+           header = {'User-Agent': host, 'Accept':'application/json','Accept-Language':'en,en-US;q=0.7,en;q=0.3','X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded', 'Referer':'https://en.bongacams.com/', 'Origin':'https://en.bongacams.com'}
            self.defaultParams = { 'header': header, 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': COOKIEFILE, 'use_post': False, 'return_data': True }
            sts, data = self.cm.getPage(url, self.defaultParams)
            if not sts: return valTab
@@ -2639,6 +2639,7 @@ class Host:
                     try:
                        phImage = str(item["thumb_image"]) 
                        if phImage.startswith('//'): phImage = 'http:' + phImage
+                       phImage = phImage.replace ('.{ext}','.jpg')
                     except Exception:
                        printExc()
                     bitrate = '' 
@@ -9116,7 +9117,7 @@ class Host:
               if not sts: return ''
               printDBG( 'Host getResolvedURL posturl data1: '+data )
               videoUrl = re.findall('token":"(.*?)"', data, re.S)
-              if videoUrl: return videoUrl[-1]     
+              if videoUrl: return videoUrl[-2]     
            except Exception:
               printExc()
            if videoID:
@@ -9130,7 +9131,7 @@ class Host:
               if not sts: return ''
               printDBG( 'Host getResolvedURL posturl data2: '+data )
               videoUrl = re.findall('token":"(.*?)"', data, re.S)
-              if videoUrl: return videoUrl[-1]                 
+              if videoUrl: return videoUrl[-2]                 
               else: return ''
            return ''
 
@@ -9451,14 +9452,14 @@ class Host:
               #js = self.cm.ph.getDataBeetwenMarkers(data, 'var flashvars_', 'loadScriptUniqueId', False)[1]
               printDBG( 'Host data js: '+js[0] )
               if js:
-                 urls = js_execute( js[0]+ '\nfor (n in this){print(n+"="+this[n]+";");}')
-                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''quality_1080p=([^"^']+?);''')[0] 
+                 urls = js_execute( js[0].replace('playerObjList.', '')+ '\nfor (n in this){print(n+"="+this[n]+";");}')
+                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''media_[0-9]=([^;]+?1080P[^;]+?);''')[0] 
                  if videoPage: return videoPage
-                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''quality_720p=([^"^']+?);''')[0] 
+                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''media_[0-9]=([^;]+?720P[^;]+?);''')[0] 
                  if videoPage: return videoPage
-                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''quality_480p=([^"^']+?);''')[0] 
+                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''media_[0-9]=([^;]+?480P[^;]+?);''')[0] 
                  if videoPage: return videoPage
-                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''quality_240p=([^"^']+?);''')[0] 
+                 videoPage = self.cm.ph.getSearchGroups(urls['data'], '''media_[0-9]=([^;]+?240P[^;]+?);''')[0] 
                  if videoPage: return videoPage
            except Exception:
               printExc()
