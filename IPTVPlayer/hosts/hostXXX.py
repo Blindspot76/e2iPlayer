@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2022.01.01
+# Modified by Blindspot - 2022.01.02.
 ###################################################
 # LOCAL import
 ###################################################
@@ -2138,8 +2138,10 @@ class Host:
               next = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0]
            if next.startswith('/'): next = self.MAIN_URL + next
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'class="video-thumb', 'format-views')
+           
            for item in data:
-              phTitle = self.cm.ph.getSearchGroups(item, '''html'>([^"^']+?)</a>''', 1, True)[0] 
+              phTitle = self.cm.ph.getSearchGroups(item, '''class="">([^"^']+?)</a>''', 1, True)[0]
+              printDBG( 'Cim:  '+phTitle )
               phImage = self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?)['"]''', 1, True)[0] 
               if phImage=='': phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
