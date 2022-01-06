@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 30.12.2021
+# Modified by Blindspot # 06.01.2022
 ###################################################
 # LOCAL import
 ###################################################
@@ -183,6 +183,8 @@ class urlparser:
                        'castamp.com':           self.pp.parserCASTAMPCOM    ,
                        'castasap.pw':           self.pp.parserCASTFLASHPW    ,
                        'castflash.pw':          self.pp.parserCASTFLASHPW    ,
+                       'castfree.me':           self.pp.parserASSIAORG,
+                       'cricplay2.xyz':         self.pp.parserASSIAORG,
                        'caston.tv':             self.pp.parserCASTONTV       ,
                        'castto.me':             self.pp.parserCASTTOME      ,
                        'cda.pl':                self.pp.parserCDA           ,
