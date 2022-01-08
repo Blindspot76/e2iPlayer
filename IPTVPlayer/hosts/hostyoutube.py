@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2021-10-20
+# Blindspot - 2022-01-08
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, IsExecutable, printExc, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, IsExecutable, printExc, byteify, GetSearchHistoryDir
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
@@ -22,7 +22,15 @@ except Exception:
     import simplejson as json
 import re
 import urllib
+import os
 from Components.config import config, ConfigDirectory, getConfigListEntry
+###################################################
+
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
+from Screens.MessageBox import MessageBox
 ###################################################
 
 ###################################################
@@ -71,8 +79,11 @@ class Youtube(CBaseHostClass):
           'desc': _('Popular trending videos')},
          {'category': 'search_history',
           'title': _('Search history'),
-          'desc': _('History of searched phrases.')}]
-
+          'desc': _('History of searched phrases.')},
+          {'category': 'delete_history',
+          'title': _('Delete search history'),
+          'desc': _("Youtube last updated: 2022.01.08.")}]         
+          
         self.SEARCH_TYPES = [(_("Video"), "video"),
                                (_("Channel"), "channel"),
                                (_("Playlist"), "playlist"),
@@ -308,10 +319,24 @@ class Youtube(CBaseHostClass):
         #HISTORIA SEARCH
         elif category == "search_history":
             self.listsHistory({'name': 'history', 'category': 'search'}, 'desc', _("Type: "))
+        elif category == "delete_history":
+            self.delhistory()
         else:
             printExc()
 
         CBaseHostClass.endHandleService(self, index, refresh)
+
+    def delhistory(self):
+        printDBG('Youtube.delhistory')
+        msg = 'Are you sure you want to delete search history?'
+        ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
+        if ret[0]:
+            self.doit()
+
+    def doit(self):
+        os.remove(GetSearchHistoryDir("ytlist.txt"))
+        msg = 'Search History successfully deleted.'
+        ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO)
 
     def getSuggestionsProvider(self, index):
         printDBG('Youtube.getSuggestionsProvider')

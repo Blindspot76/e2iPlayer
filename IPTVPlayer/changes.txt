@@ -1,3 +1,5 @@
+#2022.01.08.01
+-Keresési előzmények törlése hozzáadva a Youtube-hoz
 #2022.01.07.01
 -Bajezcki.org javítva (PL)
 #2022.01.06.01
