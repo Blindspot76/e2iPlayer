@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 06.01.2022
+# Modified by Blindspot # 11.01.2022
 ###################################################
 # LOCAL import
 ###################################################
@@ -14847,67 +14847,33 @@ class pageParser(CaptchaHelper):
         return urlTab
 
     def parserEVOLOADIO(self, baseUrl):
-        urlTab=[]
-        printDBG("parserEVOLOADIO baseUrl[%r]" % baseUrl)
+        printDBG("parserEVOLOADIO baseUrl[%s]" % baseUrl)
+        urlTab = []
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        urlParams = {'header': HTTP_HEADER}
 
-        def get_movie_code(url):
-            partes=url.split("/")
-            p=len(partes)
-            code=partes[p-1]
-            return code
+        media_id = self.cm.ph.getSearchGroups(baseUrl + '/', '(?:e|f|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts:
+            return False
 
-        def prepare_url(url):
-            url=url.replace('/f/','/e/')
-            return url
+        passe = re.search('<div id="captcha_pass" value="(.+?)"></div>', data).group(1)
+        sts, crsv = self.cm.getPage('https://csrv.evosrv.com/captcha?m412548', urlParams)
+        if not sts:
+            return False
 
-        def validate_url(url):
-            regex = r"https*:\/\/evoload\.io\/(?:e|f)\/.*?$"
-            try:
-                url=re.findall(regex,url)[0]
-                url=prepare_url(url)
-            except:
-                url=''
-            return url
+        post_data = {"code": media_id, "csrv_token": crsv, "pass": passe, "token": "ok"}
+        sts, data = self.cm.getPage('https://evoload.io/SecurePlayer', urlParams, post_data)
+        if not sts:
+            return False
 
-        url=validate_url(baseUrl)
-        if url == '': return 'Wrong evoload.io embed video url'
-        code=get_movie_code(baseUrl)
-        default_headers = dict()
-        default_headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36"
-        default_headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
-        default_headers["Accept-Language"] = "es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3"
-        default_headers["Accept-Charset"] = "UTF-8"
-        default_headers["Accept-Encoding"] = "gzip"
-        import requests
-        s= requests.session()
-        req=s.get(baseUrl,headers=default_headers)
+        r = json_loads(data).get('stream')
+        if r:
+            surl = r.get('backup') if r.get('backup') else r.get('src')
+            if surl:
+                params = {'name': 'mp4', 'url': surl}
+                urlTab.append(params)
 
-        key = "6Ldv2fYUAAAAALstHex35R1aDDYakYO85jt0ot-c"
-        co = "aHR0cHM6Ly9ldm9sb2FkLmlvOjQ0Mw.."
-        loc = "https://evoload.io"
-
-        token= recaptcha_v3.get_token(key, co, '', loc)
-        if token == None or token=='':
-            return ' No token obtained'
-
-        secureplayer_url="https://evoload.io/SecurePlayer"
-        #{"code":"wEZkuDhnkURe5j","token":"03AGdBq27nr_noUxcJ98JorBLQ7m6ydE-3RfSJBX7eAQGL16Rdu0x1uT8y4Pbm5HPUcR1TmH-sjoBqgQSJUWjmAbCqOzSgcQ5VujY_mUPgs-r1eQ6pmHdhTjZnNfop5upf63-neQUEfONx3-e0roY8g8szPcog5Yu00Fk8twYd228ySQ7s-DC7ijIHv21kTAIt-BivAeqBRedao-aNLaYOANSVWSAShrFN0xOroiXVm31H8il0VJySos13fOUYXuLwSSwEVI3_yEhM7SIBut0T89oVMq6F73LPWxyo-k46hGTAym4rJoYAhUN9RJb5uo8JzWlCCri2GbhKqpc2yxgwwelnh6RMoZRDGhyYvQhF42JaTHS8joDU0xAuzdsf4r5dFIJERxj9Xeud8E3CMbBEx2MADE9vpON4WlW8fVKEQfnKmMaUGHgKIcM"}
-        #json
-        post='{"code":"' + code + '","token":"'+ token + '"}'
-        xsrf=""
-        header={}
-        header['Accept']='Accept: application/json, text/plain, */*'
-        header['Accept-Language'] = 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3'
-        header['Accept-Encoding'] = 'deflate'
-        header['Content-Type'] = 'application/json;charset=utf-8'
-        header['X-XSRF-TOKEN'] = xsrf
-        header['Origin'] = loc
-        header['Connection'] = 'keep-alive'
-        header['Referer'] = baseUrl
-        req=s.post(secureplayer_url,data=post,headers=header)
-        jso= json_loads(req.text)
-        url_stream=jso.get('stream').get('src')
-        urlTab.append({'name':'movie', 'url':strwithmeta(url_stream, {'Referer':baseUrl})})
         return urlTab
 
     def parserUSERLOADCO(self, baseUrl):
@@ -15451,3 +15417,5 @@ class pageParser(CaptchaHelper):
             red_url = re.findall("URL=([^\"]+)",data)[0]
 
         return urlparser().getVideoLinkExt(red_url)
+        
+

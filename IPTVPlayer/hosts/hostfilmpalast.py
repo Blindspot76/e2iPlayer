@@ -13,7 +13,6 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 # FOREIGN import
 ###################################################
-import re
 import urllib
 from urlparse import urljoin
 ###################################################
@@ -34,7 +33,7 @@ class FilmPalastTo(CBaseHostClass):
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
-        self.DEFAULT_ICON_URL = 'https://www.free4fisher.de/wp-content/uploads/2017/02/filmpalast-Fanart.png'
+        self.DEFAULT_ICON_URL = 'https://filmpalast.to/themes/downloadarchive/images/logo.png'
         self.MAIN_URL = None
         self.cacheSeries = {}
         self.cacheSeasons = {}
@@ -262,24 +261,14 @@ class FilmPalastTo(CBaseHostClass):
         if not sts:
             return []
 
-        items = ph.findall(data, ('<ul', '>', 'currentStreamLinks'), '</ul>', flags=0)
-        for item in items:
-            #printDBG(item)
+        data = ph.findall(data, ('<ul', '>', 'currentStreamLinks'), '</ul>', flags=0)
+        for item in data:
+            printDBG("FilmPalastTo.getLinksForVideo item [%s]" % item)
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0])
             title = ph.clean_html(ph.find(item, ('<p', '>'), '</p>', flags=0)[1])
-            if not title:
+            if title == '':
                 title = ph.clean_html(item)
-
-            url = re.findall("data-player-url=\"(.*?)\"", item)
-            if url:
-                url = url[0]
-            else:
-                url = re.findall("data-player-url=\"(.*?)\"", item)
-                if url:
-                    url = url[0]
-                else:
-                    continue
-
-            linksTab.append({'name': title, 'url': url, 'need_resolve': 1})
+            linksTab.append({'name': title, 'url': strwithmeta(url, {'Referer': cItem['url']}), 'need_resolve': 1})
 
         if len(linksTab):
             self.cacheLinks[cItem['url']] = linksTab

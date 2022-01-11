@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2022-01-08
+# Blindspot - 2022-01-10
 ###################################################
 # LOCAL import
 ###################################################
@@ -23,6 +23,7 @@ except Exception:
 import re
 import urllib
 import os
+import codecs
 from Components.config import config, ConfigDirectory, getConfigListEntry
 ###################################################
 
@@ -67,6 +68,7 @@ class Youtube(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history': 'ytlist', 'cookie': 'youtube.cookie'})
         self.UTLIST_FILE = 'ytlist.txt'
         self.DEFAULT_ICON_URL = 'https://www.mm229.com/images/youtube-button-psd-450203.png'
+        self.yeah = self.lenhistory()
         self.MAIN_GROUPED_TAB = [{'category': 'from_file',
           'title': _('User links'),
           'desc': _('User links stored in the ytlist.txt file.')},
@@ -82,7 +84,7 @@ class Youtube(CBaseHostClass):
           'desc': _('History of searched phrases.')},
           {'category': 'delete_history',
           'title': _('Delete search history'),
-          'desc': _("Youtube last updated: 2022.01.08.")}]         
+          'desc': self.yeah}]         
           
         self.SEARCH_TYPES = [(_("Video"), "video"),
                                (_("Channel"), "channel"),
@@ -323,6 +325,7 @@ class Youtube(CBaseHostClass):
             self.delhistory()
         else:
             printExc()
+        self.yeah = self.lenhistory()
 
         CBaseHostClass.endHandleService(self, index, refresh)
 
@@ -337,7 +340,19 @@ class Youtube(CBaseHostClass):
         os.remove(GetSearchHistoryDir("ytlist.txt"))
         msg = 'Search History successfully deleted.'
         ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO)
-
+    
+    def lenhistory(self):
+        num = 0
+        
+        try:
+            file = codecs.open(GetSearchHistoryDir("ytlist.txt"), 'r', 'utf-8', 'ignore')
+            for line in file:
+                num = num+1
+            file.close()
+        except:
+            return("Search History is empty.")
+        return("Number of items in search history: " + str(num))
+    
     def getSuggestionsProvider(self, index):
         printDBG('Youtube.getSuggestionsProvider')
         from Plugins.Extensions.IPTVPlayer.suggestions.google import SuggestionsProvider
