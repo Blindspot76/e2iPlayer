@@ -6,16 +6,18 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-12-13 13:16+0100\n"
+"POT-Creation-Date: 2022-01-13 17:15+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0.1\n"
+"X-Poedit-Basepath: ../..\n"
+"X-Poedit-SearchPath-0: .\n"
 
 #: ../components/iptvdirbrowser.py:74 ../components/iptvdirbrowser.py:299
 #: ../components/configbase.py:84 ../components/e2isimpledownloader.py:62
@@ -5114,8 +5116,40 @@ msgstr ""
 msgid "History of searched phrases."
 msgstr ""
 
+#: ../hosts/hostyoutube.py:80
+msgid "Explore"
+msgstr ""
+
+#: ../hosts/hostyoutube.py:81
+msgid "Popular trending videos"
+msgstr ""
+
+#: ../hosts/hostyoutube.py:86
+msgid "Delete search history"
+msgstr ""
+
 #: ../hosts/hostyoutube.py:105
 msgid "--Other--"
+msgstr ""
+
+#: ../hosts/hostyoutube.py:334
+msgid "Are you sure you want to delete search history?"
+msgstr ""
+
+#: ../hosts/hostyoutube.py:341
+msgid "Search History successfully deleted."
+msgstr ""
+
+#: ../hosts/hostyoutube.py:345
+msgid "Unable to comply. Search History is empty."
+msgstr ""
+
+#: ../hosts/hostyoutube.py:357
+msgid "Search History is empty."
+msgstr ""
+
+#: ../hosts/hostyoutube.py:354
+msgid "Number of items in search history:"
 msgstr ""
 
 #: ../hosts/hostzdfmediathek.py:37

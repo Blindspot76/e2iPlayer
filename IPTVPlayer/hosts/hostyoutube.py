@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2022-01-10
+# Blindspot - 2022-01-12
 ###################################################
 # LOCAL import
 ###################################################
@@ -337,9 +337,13 @@ class Youtube(CBaseHostClass):
             self.doit()
 
     def doit(self):
-        os.remove(GetSearchHistoryDir("ytlist.txt"))
-        msg = 'Search History successfully deleted.'
-        ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO)
+        try:
+           os.remove(GetSearchHistoryDir("ytlist.txt"))
+           msg = 'Search History successfully deleted.'
+           ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO)
+        except:
+           msg = 'Unable to comply. Search History is empty.'
+           ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO)
     
     def lenhistory(self):
         num = 0

@@ -1,3 +1,6 @@
+#2022.01.13.01
+-USTVGo javítva
+-Fordítások frissítve
 #2022.01.11.01
 -Youtube: Keresési előzmények számának kijelzése
 -FilmPalast javítva (GER)
