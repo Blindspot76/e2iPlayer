@@ -32,21 +32,21 @@ import urllib
 ###################################################
 
 def gettytul():
-    return 'https://cinemalibero.digital/' 
+    return 'https://cinemalibero.rest/' 
 
 class Cinemalibero(CBaseHostClass):
  
     def __init__(self):
         # init global variables for this class
         
-        CBaseHostClass.__init__(self, {'history':'cinemalibero.digital', 'cookie':'cinemalibero.cookie'}) # names for history and cookie files in cache
+        CBaseHostClass.__init__(self, {'history':'cinemalibero.rest', 'cookie':'cinemalibero.cookie'}) # names for history and cookie files in cache
         
         # vars default values
         # various urls
-        self.MAIN_URL = 'https://cinemalibero.digital/'
+        self.MAIN_URL = 'https://cinemalibero.rest/'
 
         # url for default icon
-        self.DEFAULT_ICON_URL = "https://cinemalibero.digital/wp-content/themes/Cinemalibero%202.0/images/logo02.png"
+        self.DEFAULT_ICON_URL = "https://cinemalibero.rest/wp-content/themes/Cinemalibero%202.0/images/logo02.png"
 
         # default header and http params
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')        
@@ -307,3 +307,4 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, Cinemalibero(), True, [])
     
+

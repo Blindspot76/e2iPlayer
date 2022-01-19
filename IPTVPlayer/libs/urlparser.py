@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 11.01.2022
+# Modified by Blindspot # 19.01.2022
 ###################################################
 # LOCAL import
 ###################################################
@@ -251,6 +251,7 @@ class urlparser:
                        'fastvideo.in':          self.pp.parserFASTVIDEOIN   ,
                        'fcdn.stream':           self.pp.parserFEMBED,
                        'fembed.com':            self.pp.parserFEMBED,
+                       'fembed-hd.com':         self.pp.parserFEMBED,
                        'feurl.com':             self.pp.parserFEMBED,
                        'filecandy.net':         self.pp.parserFILECANDYNET   ,
                        'filecloud.io':          self.pp.parserFILECLOUDIO    ,
@@ -338,6 +339,7 @@ class urlparser:
                        'liveonlinetv247.net':   self.pp.parserLIVEONLINE247 ,
                        'livestream.com':        self.pp.parserLIVESTREAMCOM,
                        'live-stream.tv':        self.pp.parserLIVESTRAMTV   ,
+                       'livetvspecial.top':     self.pp.parserTXNEWSNETWORK ,
                        'lookhd.xyz':            self.pp.parserTXNEWSNETWORK ,
                        'lookmovie.ag' :         self.pp.parserLOOKMOVIE     ,
                        'm2list.com':            self.pp.parserM2LIST        ,
@@ -406,6 +408,7 @@ class urlparser:
                        'nuovo-indirizzo.com':   self.pp.parserHDPLAYERCASA   ,
                        'nxload.com':            self.pp.parserNXLOADCOM      ,
                        'ok.ru':                 self.pp.parserOKRU          ,
+                       'ocubel.net':            self.pp.parserTXNEWSNETWORK ,
                        'oload.cloud':           self.pp.parserOPENLOADIO    ,
                        'oload.co':              self.pp.parserOPENLOADIO    ,
                        'oload.download':        self.pp.parserOPENLOADIO    ,
@@ -463,9 +466,11 @@ class urlparser:
                        'raptu.com':             self.pp.parserRAPTUCOM       ,
                        'realvid.net':           self.pp.parserFASTVIDEOIN   ,
                        'rutube.ru':             self.pp.parserRUTUBE        ,
+                       'videovard.sx':          self.pp.parserVIDEOVARDSX   ,
                        'sawlive.tv':            self.pp.parserSAWLIVETV     ,
                        'sbplay.one':            self.pp.parserSTREAMSB    ,
                        'sbplay1.com':           self.pp.parserSTREAMSB    ,
+                       'sbplay2.com':           self.pp.parserSTREAMSB    ,
                        'scs.pl':                self.pp.parserSCS           ,
                        'sendvid.com':           self.pp.parserSENDVIDCOM    ,
                        'seositer.com':          self.pp.parserYANDEX        ,
@@ -504,7 +509,7 @@ class urlparser:
                        'streamango.com':        self.pp.parserSTREAMANGOCOM  ,
                        'streamcherry.com':      self.pp.parserSTREAMANGOCOM  ,
                        'streamcloud.eu':        self.pp.parserSTREAMCLOUD   ,
-                       'streamcrypt.net':       self.pp.parserSTREAMCRYPTNET,
+                       'streamcrypt.net':       self.pp.parserVCRYPT        ,
                        'streame.net':           self.pp.parserSTREAMENET    ,
                        'streamin.to':           self.pp.parserSTREAMINTO    ,
                        'streamix.cloud':        self.pp.parserSTREAMIXCLOUD  ,
@@ -552,6 +557,7 @@ class urlparser:
                        'toclipit.com':          self.pp.parserVIUCLIPS,
                        'tronpriceprediction2020.com': self.pp.parserTRONPRICE,
                        'tubecloud.net':         self.pp.parserTUBECLOUD     ,
+                       'tubeload.co':           self.pp.parserTUBELOADCO,
                        'tune.pk':               self.pp.parserTUNEPK         ,
                        'tunein.com':            self.pp.parserTUNEINCOM      ,
                        'tunestream.net':        self.pp.parserONLYSTREAM    ,
@@ -612,6 +618,7 @@ class urlparser:
                        'videa.hu':              self.pp.parserVIDEAHU       ,
                        'vidembed.cc':           self.pp.parserVIDEMBED     ,
                        'vidembed.io':           self.pp.parserVIDEMBED     ,
+                       'vidembed.me':           self.pp.parserVIDEMBED     ,
                        'vidembed.net':          self.pp.parserVIDEMBED     , 
                        'video.filmoviplex.com': self.pp.parserNETUTV        ,
                        'video.meta.ua':         self.pp.parserMETAUA        ,
@@ -626,6 +633,7 @@ class urlparser:
                        'videomore.ru':          self.pp.parserVIDEOMORERU   ,
                        'videoslasher.com':      self.pp.parserVIDEOSLASHER  ,
                        'videos.sapo.pt':        self.pp.parserSAPOPT     ,
+                       'videovard.sx':          self.pp.parserVIDEOVARDSX   ,
                        'videoweed.com':         self.pp.parserVIDEOWEED     ,
                        'videoweed.es':          self.pp.parserVIDEOWEED     ,
                        'videowood.tv':          self.pp.parserVIDEOWOODTV   ,
@@ -640,6 +648,7 @@ class urlparser:
                        'vidoo.tv':              self.pp.parserONLYSTREAM   ,
                        'vidoza.net':            self.pp.parserVIDOZANET     ,
                        'vidoza.co':             self.pp.parserVIDOZANET     ,
+                       'viewsb.com':            self.pp.parserSTREAMSB,
                        'vidshare.tv':           self.pp.parserVIDSHARETV    ,
                        'vidsource.me':          self.pp.parserVIDSOURCE     ,
                        'vidspot.net':           self.pp.parserVIDSPOT       ,
@@ -670,6 +679,8 @@ class urlparser:
                        'vshare.eu':             self.pp.parserVSHAREEU      ,
                        'vshare.io':             self.pp.parserVSHAREIO       ,
                        'vsports.pt':            self.pp.parserSAPOPT     ,
+                       'vtube.to':              self.pp.parserONLYSTREAM    ,
+                       'vudeo.io':              self.pp.parserONLYSTREAM    ,
                        'vudeo.net':             self.pp.parserONLYSTREAM    ,
                        'vup.to':                self.pp.parserONLYSTREAM    ,
                        'vupload.com':           self.pp.parserONLYSTREAM    ,
@@ -709,6 +720,8 @@ class urlparser:
                        'showsport.xyz':         self.pp.parserSHOWSPORTXYZ,
                        'assia.org':             self.pp.parserASSIAORG,
                        'assia2.com':            self.pp.parserASSIAORG,
+                       'castfree.me':           self.pp.parserASSIAORG,
+                       'cricplay2.xyz':         self.pp.parserASSIAORG,
                        'freefeds.click':        self.pp.parserASSIAORG,
                        'givemenbastreams.com':  self.pp.parserASSIAORG,
                        'embedstream.me':        self.pp.parserEMBEDSTREAMME,
@@ -12746,40 +12759,42 @@ class pageParser(CaptchaHelper):
 
 
 
+
     def parserSTREAMSB(self, baseUrl):
         printDBG("parserSTREAMSB baseUrl[%s]" % baseUrl)
         urlTab = []
         HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         urlParams = {'header': HTTP_HEADER}
-        baseUrl = baseUrl.replace("embed-", "d/").replace("/e/", "/d/").replace("/play/", "/d/")
-        if '/d/' not in baseUrl:
-            baseUrl = baseUrl.replace(urlparser.getDomain(baseUrl), urlparser.getDomain(baseUrl) + '/d')
-        sts, data = self.cm.getPage(baseUrl, urlParams)
+
+        media_id = self.cm.ph.getSearchGroups(baseUrl + '/', '(?:embed|e|play|d|sup)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
+        printDBG("parserSTREAMSB media_id[%s]" % media_id)
+
+        def get_embedurl(media_id):
+            def makeid(length):
+                return ''.join([random_choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") for i in range(length)])
+
+            x = '{0}||{1}||{2}||streamsb'.format(makeid(12), media_id, makeid(12))
+            c1 = hexlify(x.encode('utf8')).decode('utf8')
+            x = '{0}||{1}||{2}||streamsb'.format(makeid(12), makeid(12), makeid(12))
+            c2 = hexlify(x.encode('utf8')).decode('utf8')
+            x = '{0}||{1}||{2}||streamsb'.format(makeid(12), c2, makeid(12))
+            c3 = hexlify(x.encode('utf8')).decode('utf8')
+            return 'https://{0}/sources37/{1}/{2}'.format(urlparser.getDomain(baseUrl), c1, c3)
+
+        eurl = get_embedurl(media_id)
+        urlParams['header']['watchsb'] = 'streamsb'
+        sts, data = self.cm.getPage(eurl, urlParams)
         if not sts:
             return False
-
-        sources = re.findall(r'download_video([^"]+)[^\d]+(\d+x\d+)', data)
-#        printDBG("parserSTREAMSB sources[%s]" % str(sources))
-        if sources:
-            for item in sources:
-                code, mode, hash = eval(item[0])
-                dl_url = '{0}dl?op=download_orig&id={1}&mode={2}&hash={3}'.format(urlparser.getDomain(baseUrl, False), code, mode, hash)
-                sts, data = self.cm.getPage(dl_url, urlParams)
-                error = self.cm.ph.getDataBeetwenNodes(data, ('<b', '>', 'err'), ('<br', '>'), False)[1]
-                sleep_time = self.cm.ph.getSearchGroups(error, '([0-9]+?) seconds')[0]
-                if '' != sleep_time:
-                    GetIPTVSleep().Sleep(int(sleep_time))
-                    sts, data = self.cm.getPage(dl_url, urlParams)
-                    error = self.cm.ph.getDataBeetwenNodes(data, ('<b', '>', 'err'), ('<br', '>'), False)[1]
-                videoUrl = re.search('href="([^"]+)">Direct', data)
-                SetIPTVPlayerLastHostError(error)
-                if videoUrl:
-                    params = {'name': item[1], 'url': videoUrl.group(1)}
-                    urlTab.append(params)
+        data = json_loads(data).get("stream_data", {})
+        videoUrl = data.get('file') or data.get('backup')
+        if videoUrl:
+            params = {'name': 'eurl', 'url': videoUrl}
+            urlTab.append(params)
 
         return urlTab
-    
-    
+
+       
     def parserMIXDROP(self, baseUrl):
         printDBG("parserMIXDROP baseUrl[%s]" % baseUrl)
         # example :https://mixdrop.co/f/1f13jq
@@ -14348,6 +14363,7 @@ class pageParser(CaptchaHelper):
         url = self.cm.meta.get('location', '')
         if url != '':
             baseUrl = url
+            httpParams['header']['Referer'] = baseUrl
         del httpParams['max_data_size']
         del httpParams['no_redirection']
         sts, data = self.cm.getPage(baseUrl, httpParams)
@@ -15419,3 +15435,365 @@ class pageParser(CaptchaHelper):
         return urlparser().getVideoLinkExt(red_url)
         
 
+
+    def parserEVOLOADIO(self, baseUrl):
+        printDBG("parserEVOLOADIO baseUrl[%s]" % baseUrl)
+        urlTab = []
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        urlParams = {'header': HTTP_HEADER}
+
+        media_id = self.cm.ph.getSearchGroups(baseUrl + '/', '(?:e|f|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts:
+            return False
+
+        passe = re.search('<div id="captcha_pass" value="(.+?)"></div>', data).group(1)
+        sts, crsv = self.cm.getPage('https://csrv.evosrv.com/captcha?m412548', urlParams)
+        if not sts:
+            return False
+
+        post_data = {"code": media_id, "csrv_token": crsv, "pass": passe, "token": "ok"}
+        sts, data = self.cm.getPage('https://evoload.io/SecurePlayer', urlParams, post_data)
+        if not sts:
+            return False
+
+        r = json_loads(data).get('stream')
+        if r:
+            surl = r.get('backup') if r.get('backup') else r.get('src')
+            if surl:
+                params = {'name': 'mp4', 'url': surl}
+                urlTab.append(params)
+    
+    
+    def parserTUBELOADCO(self, baseUrl):
+        printDBG("parserTUBELOADCO baseUrl[%s]" % baseUrl)
+
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer:
+            HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        domain = urlparser.getDomain(baseUrl, False)
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts:
+            return []
+
+        jsUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''src=\s?['"]([^'^"]+?main\.min\.js)['"]''')[0], baseUrl)
+        sts, jsdata = self.cm.getPage(jsUrl, urlParams)
+        if not sts:
+            return []
+
+        if 'function(h,u,n,t,e,r)' in jsdata:
+            ff = re.findall('function\(h,u,n,t,e,r\).*?}\((".+?)\)\)', jsdata, re.DOTALL)[0]
+            ff = ff.replace('"', '')
+            h, u, n, t, e, r = ff.split(',')
+            jsdata = dehunt(h, int(u), n, int(t), int(e), int(r))
+#        printDBG("parserTUBELOADCO jsdata[%s]" % jsdata)
+        jscode = self.cm.ph.getSearchGroups(jsdata, '''var\s[^=]+?=\s?([^;]+?);''', ignoreCase=True)[0]
+        jsvar = self.cm.ph.getSearchGroups(jscode, '''([^.]+?)\.replace''', ignoreCase=True)[0]
+        printDBG("parserTUBELOADCO jscode[%s]  jsvar[%s]" % (jscode, jsvar))
+
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        script = ''
+        for item in data:
+            if 'function(h,u,n,t,e,r)' in item:
+                ff = re.findall('function\(h,u,n,t,e,r\).*?}\((".+?)\)\)', item, re.DOTALL)[0]
+                ff = ff.replace('"', '')
+                h, u, n, t, e, r = ff.split(',')
+                script = dehunt(h, int(u), n, int(t), int(e), int(r))
+                if jsvar in script:
+                    break
+#        printDBG("parserTUBELOADCO script[%s]" % script)
+
+        jscode = script + '\n' + jsdata
+        jscode = jscode.replace('atob', 'base64.b64decode')
+        decode = ''
+        vars = re.compile('var\s(.*?=[^{]+?;)').findall(jscode)
+        exec('\n'.join(vars))
+
+        urlTab = []
+        if decode:
+            urlTab.append({'name': 'mp4', 'url': strwithmeta(decode, {'Referer': baseUrl})})
+
+        return urlTab
+
+    def parserVIDEOVARDSX(self, baseUrl):
+        printDBG("parserVIDEOVARDSX baseUrl[%r]" % baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer:
+            HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+
+        domain = urlparser.getDomain(baseUrl)
+        video_id = ph.search(baseUrl, r'''/[vef]/([0-9a-zA-Z]+)''')[0]
+
+        def tear_decode(data_file, data_seed):
+
+            def replacer(match):
+                chars = {
+                    '0': '5',
+                    '1': '6',
+                    '2': '7',
+                    '5': '0',
+                    '6': '1',
+                    '7': '2'
+                }
+                return chars[match.group(0)]
+
+            def str2bytes(a16):
+                a21 = []
+                for i in a16:
+                    a21.append(ord(i))
+                return a21
+
+            def bytes2str(a10):
+                a13 = 0
+                a14 = len(a10)
+                a15 = ''
+                while True:
+                    if a13 >= a14:
+                        break
+                    a15 += chr(255 & a10[a13])
+                    a13 += 1
+                return a15
+
+            def digest_pad(a36):
+                a41 = []
+                a39 = 0
+                a40 = len(a36)
+                a43 = 15 - (a40 % 16)
+                a41.append(a43)
+                while a39 < a40:
+                    a41.append(a36[a39])
+                    a39 += 1
+                a45 = a43
+                while a45 > 0:
+                    a41.append(0)
+                    a45 -= 1
+                return a41
+
+            def blocks2bytes(a29):
+                a34 = []
+                a33 = 0
+                a32 = len(a29)
+                while a33 < a32:
+                    a34 += [255 & rshift(int(a29[a33]), 24)]
+                    a34 += [255 & rshift(int(a29[a33]), 16)]
+                    a34 += [255 & rshift(int(a29[a33]), 8)]
+                    a34 += [255 & a29[a33]]
+                    a33 += 1
+                return a34
+
+            def bytes2blocks(a22):
+                a27 = []
+                a28 = 0
+                a26 = 0
+                a25 = len(a22)
+                while True:
+                    a27.append(((255 & a22[a26]) << 24) & 0xFFFFFFFF)
+                    a26 += 1
+                    if a26 >= a25:
+                        break
+                    a27[a28] |= ((255 & a22[a26]) << 16 & 0xFFFFFFFF)
+                    a26 += 1
+                    if a26 >= a25:
+                        break
+                    a27[a28] |= ((255 & a22[a26]) << 8 & 0xFFFFFFFF)
+                    a26 += 1
+                    if a26 >= a25:
+                        break
+                    a27[a28] |= (255 & a22[a26])
+                    a26 += 1
+                    if a26 >= a25:
+                        break
+                    a28 += 1
+                return a27
+
+            def xor_blocks(a76, a77):
+                return [a76[0] ^ a77[0], a76[1] ^ a77[1]]
+
+            def unpad(a46):
+                a49 = 0
+                a52 = []
+                a53 = (7 & a46[a49])
+                a49 += 1
+                a51 = (len(a46) - a53)
+                while a49 < a51:
+                    a52 += [a46[a49]]
+                    a49 += 1
+                return a52
+
+            def rshift(a, b):
+                return (a % 0x100000000) >> b
+
+            def tea_code(a79, a80):
+                a85 = a79[0]
+                a83 = a79[1]
+                a87 = 0
+
+                for a86 in range(32):
+                    a85 += int((((int(a83) << 4) ^ rshift(int(a83), 5)) + a83) ^ (a87 + a80[(a87 & 3)]))
+                    a85 = int(a85 | 0)
+                    a87 = int(a87) - int(1640531527)
+                    a83 += int(
+                        (((int(a85) << 4) ^ rshift(int(a85), 5)) + a85) ^ (a87 + a80[(rshift(a87, 11) & 3)]))
+                    a83 = int(a83 | 0)
+                return [a85, a83]
+
+            def binarydigest(a55):
+                a63 = [1633837924, 1650680933, 1667523942, 1684366951]
+                a62 = [1633837924, 1650680933]
+                a61 = a62
+                a66 = [0, 0]
+                a68 = [0, 0]
+                a59 = bytes2blocks(digest_pad(str2bytes(a55)))
+                a65 = 0
+                a67 = len(a59)
+                while a65 < a67:
+                    a66[0] = a59[a65]
+                    a65 += 1
+                    a66[1] = a59[a65]
+                    a65 += 1
+                    a68[0] = a59[a65]
+                    a65 += 1
+                    a68[1] = a59[a65]
+                    a65 += 1
+                    a62 = tea_code(xor_blocks(a66, a62), a63)
+                    a61 = tea_code(xor_blocks(a68, a61), a63)
+                    a64 = a62[0]
+                    a62[0] = a62[1]
+                    a62[1] = a61[0]
+                    a61[0] = a61[1]
+                    a61[1] = a64
+
+                return [a62[0], a62[1], a61[0], a61[1]]
+
+            def ascii2bytes(a99):
+                a2b = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9, 'K': 10,
+                       'L': 11, 'M': 12, 'N': 13, 'O': 14, 'P': 15, 'Q': 16, 'R': 17, 'S': 18, 'T': 19, 'U': 20,
+                       'V': 21, 'W': 22, 'X': 23, 'Y': 24, 'Z': 25, 'a': 26, 'b': 27, 'c': 28, 'd': 29, 'e': 30,
+                       'f': 31, 'g': 32, 'h': 33, 'i': 34, 'j': 35, 'k': 36, 'l': 37, 'm': 38, 'n': 39, 'o': 40,
+                       'p': 41, 'q': 42, 'r': 43, 's': 44, 't': 45, 'u': 46, 'v': 47, 'w': 48, 'x': 49, 'y': 50,
+                       'z': 51, '0': 52, '1': 53, '2': 54, '3': 55, '4': 56, '5': 57, '6': 58, '7': 59, '8': 60,
+                       '9': 61, '-': 62, '_': 63}
+                a6 = -1
+                a7 = len(a99)
+                a9 = 0
+                a8 = []
+
+                while True:
+                    while True:
+                        a6 += 1
+                        if a6 >= a7:
+                            return a8
+                        if a99[a6] in a2b.keys():
+                            break
+                    a8.insert(a9, int(int(a2b[a99[a6]]) << 2))
+                    while True:
+                        a6 += 1
+                        if a6 >= a7:
+                            return a8
+                        if a99[a6] in a2b.keys():
+                            break
+                    a3 = a2b[a99[a6]]
+                    a8[a9] |= rshift(int(a3), 4)
+                    a9 += 1
+                    a3 = (15 & a3)
+                    if (a3 == 0) and (a6 == (a7 - 1)):
+                        return a8
+                    a8.insert(a9, int(a3) << 4)
+                    while True:
+                        a6 += 1
+                        if a6 >= a7:
+                            return a8
+                        if a99[a6] in a2b.keys():
+                            break
+                    a3 = a2b[a99[a6]]
+                    a8[a9] |= rshift(int(a3), 2)
+                    a9 += 1
+                    a3 = (3 & a3)
+                    if (a3 == 0) and (a6 == (a7 - 1)):
+                        return a8
+                    a8.insert(a9, int(a3) << 6)
+                    while True:
+                        a6 += 1
+                        if a6 >= a7:
+                            return a8
+                        if a99[a6] in a2b.keys():
+                            break
+                    a8[a9] |= a2b[a99[a6]]
+                    a9 += 1
+
+                return a8
+
+            def ascii2binary(a0):
+                return bytes2blocks(ascii2bytes(a0))
+
+            def tea_decode(a90, a91):
+                a95 = a90[0]
+                a96 = a90[1]
+                a97 = int(-957401312)
+                for a98 in range(32):
+                    a96 = int(a96) - ((((int(a95) << 4) ^ rshift(int(a95), 5)) + a95) ^ (
+                        a97 + a91[(rshift(int(a97), 11) & 3)]))
+                    a96 = int(a96 | 0)
+                    a97 = int(a97) + 1640531527
+                    a97 = int(a97 | 0)
+                    a95 = int(a95) - int(
+                        (((int(a96) << 4) ^ rshift(int(a96), 5)) + a96) ^ (a97 + a91[(a97 & 3)]))
+                    a95 = int(a95 | 0)
+                return [a95, a96]
+
+            data_seed = re.sub('[012567]', replacer, data_seed)
+            new_data_seed = binarydigest(data_seed)
+            new_data_file = ascii2binary(data_file)
+            a69 = 0
+            a70 = len(new_data_file)
+            a71 = [1633837924, 1650680933]
+            a73 = [0, 0]
+            a74 = []
+            while a69 < a70:
+                a73[0] = new_data_file[a69]
+                a69 += 1
+                a73[1] = new_data_file[a69]
+                a69 += 1
+                a72 = xor_blocks(a71, tea_decode(a73, new_data_seed))
+                a74 += a72
+                a71[0] = a73[0]
+                a71[1] = a73[1]
+            return re.sub('[012567]', replacer, bytes2str(unpad(blocks2bytes(a74))))
+
+
+        sts, data = self.cm.getPage('https://%s/api/make/hash/%s' % (domain, video_id), urlParams)
+        if not sts:
+            return False
+        cUrl = self.cm.meta['url']
+        printDBG("parserVIDEOVARDSX data[%r]" % data)
+
+        data = json_loads(data)
+        r = data.get('hash', '')
+        if not r:
+            return False
+
+        url = 'https://%s/api/player/setup' % domain
+        post_data = {'cmd': 'get_stream', 'file_code': video_id, 'hash': r}
+
+        HTTP_HEADER['Origin'] = 'https://' + domain
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(url, urlParams, post_data)
+        if not sts:
+            return False
+        printDBG("parserVIDEOVARDSX data[%r]" % data)
+
+        resp = json_loads(data)
+        vfile = resp.get('src')
+        seed = resp.get('seed')
+        data = tear_decode(vfile, seed)
+        printDBG("parserVIDEOVARDSX tear_decode[%r]" % data)
+        urlTab = []
+        if data != '':
+            hlsUrl = strwithmeta(data, {'Origin': "https://" + domain, 'Referer': baseUrl})
+            urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
+
+        return urlTab  
