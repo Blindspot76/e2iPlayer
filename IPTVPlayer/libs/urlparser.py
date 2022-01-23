@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 19.01.2022
+# Modified by Blindspot # 23.01.2022
 ###################################################
 # LOCAL import
 ###################################################
@@ -12767,6 +12767,8 @@ class pageParser(CaptchaHelper):
         urlParams = {'header': HTTP_HEADER}
 
         media_id = self.cm.ph.getSearchGroups(baseUrl + '/', '(?:embed|e|play|d|sup)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
+        if not media_id:
+            media_id = self.cm.ph.getSearchGroups(baseUrl + '/', urlparser.getDomain(baseUrl) + '/([A-Za-z0-9]+)[/.]')[0]
         printDBG("parserSTREAMSB media_id[%s]" % media_id)
 
         def get_embedurl(media_id):
@@ -12779,20 +12781,21 @@ class pageParser(CaptchaHelper):
             c2 = hexlify(x.encode('utf8')).decode('utf8')
             x = '{0}||{1}||{2}||streamsb'.format(makeid(12), c2, makeid(12))
             c3 = hexlify(x.encode('utf8')).decode('utf8')
-            return 'https://{0}/sources37/{1}/{2}'.format(urlparser.getDomain(baseUrl), c1, c3)
+            return 'https://{0}/sourcesx38/{1}/{2}'.format(urlparser.getDomain(baseUrl), c1, c3)
 
         eurl = get_embedurl(media_id)
         urlParams['header']['watchsb'] = 'streamsb'
         sts, data = self.cm.getPage(eurl, urlParams)
         if not sts:
             return False
+
         data = json_loads(data).get("stream_data", {})
         videoUrl = data.get('file') or data.get('backup')
         if videoUrl:
-            params = {'name': 'eurl', 'url': videoUrl}
-            urlTab.append(params)
+            urlTab.extend(getDirectM3U8Playlist(videoUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
 
         return urlTab
+
 
        
     def parserMIXDROP(self, baseUrl):
