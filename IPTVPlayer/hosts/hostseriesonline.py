@@ -40,7 +40,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://series9.to/'
+    return 'https://series9.me/'
 
 
 class SeriesOnlineIO(CBaseHostClass):
@@ -119,7 +119,7 @@ class SeriesOnlineIO(CBaseHostClass):
         return strwithmeta(url, {'Cookie': cookieHeader, 'User-Agent': self.USER_AGENT})
 
     def selectDomain(self):
-        domains = ['https://series9.to/']
+        domains = ['https://series9.me/']
         domain = config.plugins.iptvplayer.seriesonlineio_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/':
@@ -141,7 +141,8 @@ class SeriesOnlineIO(CBaseHostClass):
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         self.MAIN_CAT_TAB = [{'category': 'list_filter_genre', 'title': 'Movies', 'url': self.MAIN_URL + 'movie/filter/movie'},
                              {'category': 'list_filter_genre', 'title': 'TV-Series', 'url': self.MAIN_URL + 'movie/filter/series'},
-                             {'category': 'list_filter_genre', 'title': 'Cinema', 'url': self.MAIN_URL + 'movie/filter/cinema'},
+                             {'category': 'list_filter_genre', 'title': 'Cinema Movies', 'url': self.MAIN_URL + 'movie/filter/cinema'},
+                             {'category': 'list_filter_genre', 'title': 'Featured Series', 'url': self.MAIN_URL + 'movie/filter/series-featured'},
                              {'category': 'search', 'title': _('Search'), 'search_item': True, },
                              {'category': 'search_history', 'title': _('Search history'), }
                             ]

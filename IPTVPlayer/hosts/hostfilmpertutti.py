@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.12.12. Blindspot
+# 2021.02.08. 
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -21,15 +21,15 @@ import urllib
 
 
 def gettytul():
-    return 'https://www.filmpertutti.center/'
+    return 'https://www.filmpertutti.homes/'
 
 
 class FilmPertutti(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history': 'FilmPertutti', 'cookie': 'FilmPertutti.cookie'})
-        self.MAIN_URL = 'https://www.filmpertutti.center/'
-        self.DEFAULT_ICON_URL = 'https://www.filmpertutti.center/wp-content/uploads/2021/01/favicon.ico'
+        self.MAIN_URL = 'https://www.filmpertutti.homes/'
+        self.DEFAULT_ICON_URL = 'https://www.filmpertutti.homes/wp-content/uploads/2021/01/favicon.ico'
         self.cacheLinks = {}
 
     def getPage(self, baseUrl, addParams={}, post_data=None):
@@ -46,6 +46,7 @@ class FilmPertutti(CBaseHostClass):
                         {'category': 'list_cats', 'title': 'Serie TV', 'url': self.getFullUrl('/category/serie-tv/')},
                         {'category': 'list_items', 'title': 'Prime visioni', 'url': self.getFullUrl('/prime-visioni/')},
                         {'category': 'list_items', 'title': 'Aggiornamenti Serie TV', 'url': self.getFullUrl('/aggiornamenti-serie-tv/')},
+                        {'category': 'list_items', 'title': 'Ripristini', 'url': self.getFullUrl('/ripristini/')},
                         {'category': 'search', 'title': _('Search'), 'search_item': True},
                         {'category': 'search_history', 'title': _('Search history'), }]
         self.listsTab(MAIN_CAT_TAB, cItem)
@@ -98,9 +99,9 @@ class FilmPertutti(CBaseHostClass):
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
                 if url == '':
                     continue
-                icon = self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^"^']+?\.(?:jpe?g|png)(?:\?[^'^"]*?)?)['"]''')[0]
+                icon = self.cm.ph.getSearchGroups(item, '''data-src=['"]([^"^']+?\.(?:jpg|webp)(?:\?[^'^"]*?)?)['"]''')[0]
                 if icon == '':
-                    icon = self.cm.ph.getSearchGroups(item, '''thumbnail=['"]([^"^']+?\.(?:jpe?g|png)(?:\?[^'^"]*?)?)['"]''')[0]
+                    icon = self.cm.ph.getSearchGroups(item, '''thumbnail=['"]([^"^']+?\.(?:jpg|png)(?:\?[^'^"]*?)?)['"]''')[0]
                 descTab = []
                 item = self.cm.ph.getAllItemsBeetwenNodes(item, ('<div', '>'), ('</div', '>'))
                 for t in item:

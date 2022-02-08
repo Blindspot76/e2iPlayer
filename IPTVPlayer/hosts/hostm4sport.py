@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-09 by Alec - M4 SPORT
+# 2022-02-08 by Blindspot - M4 SPORT
 ###################################################
-HOST_VERSION = "1.3"
+HOST_VERSION = "1.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -97,49 +97,49 @@ class m4sport(CBaseHostClass):
                 self.aid_ki = 'ID: ' + n_bx + '\n'
             else:
                 self.aid_ki = ''
-            msg_boxutca = self.aid_ki + 'm4sport - v' + HOST_VERSION + '\n\nBoxutca adásainak megjelenítése...'
+            msg_boxutca = self.aid_ki + 'm4sport - v' + HOST_VERSION + '\n\nBoxutca adásainak megjelenítése'
             n_f = self.malvadst('1', '11', 'm4_foci')
             if n_f != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_f + '\n'
             else:
                 self.aid_ki = ''
-            msg_foci = self.aid_ki + 'Magyar Foci adásainak megjelenítése...'
+            msg_foci = self.aid_ki + 'Magyar Foci adásainak megjelenítése'
             n_fbl = self.malvadst('1', '11', 'm4_blfoci')
             if n_fbl != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_fbl + '\n'
             else:
                 self.aid_ki = ''
-            msg_blfoci = self.aid_ki + 'UEFA Bajnokok Ligája adásainak megjelenítése...\n\n(Előfordulhat, hogy egyes műsorokat nem lehet lejátszani a tartalom védelme miatt! - "Nincs elérhető link." üzenet jelenik meg)'
+            msg_blfoci = self.aid_ki + 'UEFA Bajnokok Ligája adásainak megjelenítése\n\n(Előfordulhat, hogy egyes műsorokat nem lehet lejátszani a tartalom védelme miatt! - "Nincs elérhető link." üzenet jelenik meg)'
             n_sh = self.malvadst('1', '11', 'm4_sporthirek')
             if n_sh != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_sh + '\n'
             else:
                 self.aid_ki = ''
-            msg_sporthirek = self.aid_ki + 'Sporthírek adásainak megjelenítése...'
+            msg_sporthirek = self.aid_ki + 'Sporthírek adásainak megjelenítése'
             n_sk = self.malvadst('1', '11', 'm4_kozvetitesek')
             if n_sk != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_sk + '\n'
             else:
                 self.aid_ki = ''
-            msg_kozvetitesek = self.aid_ki + 'Sportközvetítések megjelenítése...'
+            msg_kozvetitesek = self.aid_ki + 'Sportközvetítések megjelenítése'
             n_krs = self.malvadst('1', '11', 'm4_kereses')
             if n_krs != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_krs + '\n'
             else:
                 self.aid_ki = ''
-            msg_kereses = self.aid_ki + 'Keresés eredményeinek megjelenítése...'
+            msg_kereses = self.aid_ki + 'Keresés eredményeinek megjelenítése'
             n_krse = self.malvadst('1', '11', 'm4_kereses_elozmeny')
             if n_krse != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_krse + '\n'
             else:
                 self.aid_ki = ''
-            msg_keres_elozmeny = self.aid_ki + 'Keresés az előzmények között...'
+            msg_keres_elozmeny = self.aid_ki + 'Keresés az előzmények között'
             n_elo = self.malvadst('1', '11', 'm4_elo')
             if n_elo != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_elo + '\n'
             else:
                 self.aid_ki = ''
-            msg_elo = self.aid_ki + 'M4 élőadásának megjelenítése...'
+            msg_elo = self.aid_ki + 'M4 élő adásainak megjelenítése.' + '\n' + 'FONTOS! Ezen link alatt a csatorna minden élő közvetítése megtalálható, ezek száma az aktuális események függvényében változhat.'
             MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'BOXUTCA', 'tab_id': 'boxutca', 'desc': msg_boxutca, 'icon':self.DEFAULT_ICON_URL},
                             {'category': 'list_main', 'title': 'MAGYAR FOCI', 'tab_id': 'foci', 'desc': msg_foci, 'icon':self.ICON_URL_FOCI},
                             {'category': 'list_main', 'title': 'UEFA BAJNOKOK LIGÁJA FOCI', 'tab_id': 'blfoci', 'desc': msg_blfoci, 'icon':self.ICON_URL_FOCI},
@@ -149,7 +149,7 @@ class m4sport(CBaseHostClass):
                             {'category': 'search_history', 'title': 'Keresés az előzmények közt', 'tab_id': 'keres_elozmeny', 'desc': msg_keres_elozmeny, 'icon':self.DEFAULT_ICON_URL}
                            ]
             self.listsTab(MAIN_CAT_TAB, cItem)
-            pvt = 'M4 ÉLŐADÁSA'
+            pvt = 'M4 ÉLŐ ADÁSA'
             pvd = msg_elo
             pvu = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLTU3JTMzOyczO1sso1c810U3NydcHANGcC+w='))
             icon = self.ICON_URL_ELO
@@ -246,51 +246,80 @@ class m4sport(CBaseHostClass):
             printExc()
         
     def getLinksForVideo(self, cItem):
+        a = 0
         url = cItem['url']
         url2 = cItem['url2']
         md = cItem['md']
         if md == 'elo':
             self.susn('2', '11', 'm4_elo')
+            name = ["mtv4live","m4sport1","m4sport2","m4sport3","m4sport4","m4sport5"]
+            urllist = []
+            for i in name:
+                new = self.kvlva(url, i)
+                urllist.append(new)
+                a = 1
+            for i in urllist:
+                if i == '':
+                     urllist.remove(i)
         videoUrls = []
-        turl = self.kvlva(url)
+        turl = self.kvlva(url, False)
         if len(turl) == 0:
-            turl = self.kvlva(url2)
-        uri = urlparser.decorateParamsFromUrl(turl)
-        protocol = uri.meta.get('iptv_proto', '')
-        if protocol == 'm3u8':
-            retTab = getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
-            videoUrls.extend(retTab)
-        elif protocol == 'f4m':
-            retTab = getF4MLinksWithMeta(uri)
-            videoUrls.extend(retTab)
-        elif protocol == 'mpd':
-            retTab = getMPDLinksWithMeta(uri, False)
-            videoUrls.extend(retTab)
-        else:
-            videoUrls.append({'name':'direct link', 'url':uri})
+            turl = self.kvlva(url2, False)
+        if a == 1:
+             turl = urllist
+             for i in turl:
+                 uri = urlparser.decorateParamsFromUrl(i)
+                 protocol = uri.meta.get('iptv_proto', '')
+                 if protocol == 'm3u8':
+                     retTab = getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
+                     printDBG(retTab)
+                     c = turl.index(i)
+                     for b in retTab:
+                         retTab[retTab.index(b)]['name'] = name[c] + " " + retTab[retTab.index(b)]['name']
+                     videoUrls.extend(retTab)
+        if a == 0:
+             uri = urlparser.decorateParamsFromUrl(turl)
+             protocol = uri.meta.get('iptv_proto', '')
+             if protocol == 'm3u8':
+                 retTab = getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
+                 videoUrls.extend(retTab)
+             elif protocol == 'f4m':
+                retTab = getF4MLinksWithMeta(uri)
+                videoUrls.extend(retTab)
+             elif protocol == 'mpd':
+                retTab = getMPDLinksWithMeta(uri, False)
+                videoUrls.extend(retTab)
+             else:
+                videoUrls.append({'name':'direct link', 'url':uri})
         return videoUrls
         
-    def kvlva(self, pu=''):
+    def kvlva(self, pu, opcio):
         bu = ''
         try:
             if pu != '':
                 sts, data = self.getPage(pu)
-                if not sts: return ''
-                if len(data) == 0: return ''
+                if not sts: 
+                    return ''
                 tn = self.cm.ph.getDataBeetwenMarkers(data, 'token":"', '","', False)[1]
                 if len(tn) == 0:
                     tn = self.cm.ph.getDataBeetwenMarkers(data, 'streamId":"', '","', False)[1]
-                    if len(tn) == 0: return ''
-                tul = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y/ISaxMLdLLTU3JTMzOyczO1ssohQrmpZbDpAsyCuzLMlNS820BYd8Vcw==')) + tn
+                    if len(tn) == 0: 
+                        return ''
+                if not opcio:
+                    tul = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y/ISaxMLdLLTU3JTMzOyczO1ssohQrmpZbDpAsyCuzLMlNS820BYd8Vcw==')) + tn
+                if opcio:
+                    tul = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y/ISaxMLdLLTU3JTMzOyczO1ssohQrmpZbDpAsyCuzLMlNS820BYd8Vcw==')) + opcio
                 sts, data = self.getPage(tul)
-                if not sts: return ''
-                if len(data) == 0: return ''
+                if not sts: 
+                    return ''
                 vl = self.cm.ph.getDataBeetwenMarkers(data, 'file": "', '",', False)[1]
-                if len(vl) == 0: return ''
+                if len(vl) == 0: 
+                    return ''
                 vl = vl.replace('\/','/')
                 if vl.startswith('/'):
                     vl = 'https:' + vl
-                if not self.cm.isValidUrl(vl): return ''
+                if not self.cm.isValidUrl(vl): 
+                    return ''
                 if len(vl) != '':
                     bu = vl
         except Exception:

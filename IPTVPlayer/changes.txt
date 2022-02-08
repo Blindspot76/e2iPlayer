@@ -1,3 +1,6 @@
+#2022.02.08.01
+-M4 sport bővítve (Minden élő közvetítés elérhető)
+-Kisebb javítások
 #2022.01.23.01
 -StreamSB tárhelytámogatás javítva
 #2022.01.19.01
