@@ -1,3 +1,5 @@
+#2022.02.11.01
+-M4 sport frissítve
 #2022.02.08.01
 -M4 sport bővítve (Minden élő közvetítés elérhető)
 -Kisebb javítások

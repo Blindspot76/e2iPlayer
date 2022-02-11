@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-02-08 by Blindspot - M4 SPORT
+# 2022-02-11 by Blindspot - M4 SPORT
 ###################################################
-HOST_VERSION = "1.4"
+HOST_VERSION = "1.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -139,7 +139,12 @@ class m4sport(CBaseHostClass):
                 self.aid_ki = 'ID: ' + n_elo + '\n'
             else:
                 self.aid_ki = ''
-            msg_elo = self.aid_ki + 'M4 élő adásainak megjelenítése.' + '\n' + 'FONTOS! Ezen link alatt a csatorna minden élő közvetítése megtalálható, ezek száma az aktuális események függvényében változhat.'
+            msg_elo = self.aid_ki + 'M4 élő adásának megjelenítése.'
+            msg_elo1 = self.aid_ki + 'M4 Sport 1 élő adásának megjelenítése.'
+            msg_elo2 = self.aid_ki + 'M4 Sport 2 élő adásának megjelenítése.'
+            msg_elo3 = self.aid_ki + 'M4 Sport 3 élő adásának megjelenítése.'
+            msg_elo4 = self.aid_ki + 'M4 Sport 4 élő adásának megjelenítése.'
+            msg_elo5 = self.aid_ki + 'M4 Sport 5 élő adásának megjelenítése.'
             MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'BOXUTCA', 'tab_id': 'boxutca', 'desc': msg_boxutca, 'icon':self.DEFAULT_ICON_URL},
                             {'category': 'list_main', 'title': 'MAGYAR FOCI', 'tab_id': 'foci', 'desc': msg_foci, 'icon':self.ICON_URL_FOCI},
                             {'category': 'list_main', 'title': 'UEFA BAJNOKOK LIGÁJA FOCI', 'tab_id': 'blfoci', 'desc': msg_blfoci, 'icon':self.ICON_URL_FOCI},
@@ -151,9 +156,39 @@ class m4sport(CBaseHostClass):
             self.listsTab(MAIN_CAT_TAB, cItem)
             pvt = 'M4 ÉLŐ ADÁSA'
             pvd = msg_elo
-            pvu = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLTU3JTMzOyczO1sso1c810U3NydcHANGcC+w='))
+            pvu = "https://www.mediaklikk.hu/m4-elo/"
             icon = self.ICON_URL_ELO
-            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo'})
+            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "mtv4live"})
+            self.addVideo(params)
+            pvt = 'M4 SPORT 1'
+            pvd = msg_elo1
+            pvu = "https://www.mediaklikk.hu/m4-elo/"
+            icon = self.ICON_URL_ELO
+            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "m4sport1"})
+            self.addVideo(params)
+            pvt = 'M4 SPORT 2'
+            pvd = msg_elo2
+            pvu = "https://www.mediaklikk.hu/m4-elo/"
+            icon = self.ICON_URL_ELO
+            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "m4sport2"})
+            self.addVideo(params)
+            pvt = 'M4 SPORT 3'
+            pvd = msg_elo3
+            pvu = "https://www.mediaklikk.hu/m4-elo/"
+            icon = self.ICON_URL_ELO
+            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "m4sport3"})
+            self.addVideo(params)
+            pvt = 'M4 SPORT 4'
+            pvd = msg_elo4
+            pvu = "https://www.mediaklikk.hu/m4-elo/"
+            icon = self.ICON_URL_ELO
+            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "m4sport4"})
+            self.addVideo(params)
+            pvt = 'M4 SPORT 5'
+            pvd = msg_elo5
+            pvu = "https://www.mediaklikk.hu/m4-elo/"
+            icon = self.ICON_URL_ELO
+            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "m4sport5"})
             self.addVideo(params)
         except Exception:
             printExc()
@@ -250,14 +285,13 @@ class m4sport(CBaseHostClass):
         url = cItem['url']
         url2 = cItem['url2']
         md = cItem['md']
+        printDBG(md)
         if md == 'elo':
             self.susn('2', '11', 'm4_elo')
-            name = ["mtv4live","m4sport1","m4sport2","m4sport3","m4sport4","m4sport5"]
             urllist = []
-            for i in name:
-                new = self.kvlva(url, i)
-                urllist.append(new)
-                a = 1
+            new = self.kvlva(url, cItem['id'])
+            urllist.append(new)
+            a = 1
             for i in urllist:
                 if i == '':
                      urllist.remove(i)
@@ -272,11 +306,9 @@ class m4sport(CBaseHostClass):
                  protocol = uri.meta.get('iptv_proto', '')
                  if protocol == 'm3u8':
                      retTab = getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
-                     printDBG(retTab)
-                     c = turl.index(i)
-                     for b in retTab:
-                         retTab[retTab.index(b)]['name'] = name[c] + " " + retTab[retTab.index(b)]['name']
-                     videoUrls.extend(retTab)
+                     retTab = retTab[-1]
+                     retTab['name'] = 'direct link'
+                     videoUrls.append(retTab)
         if a == 0:
              uri = urlparser.decorateParamsFromUrl(turl)
              protocol = uri.meta.get('iptv_proto', '')
@@ -306,9 +338,9 @@ class m4sport(CBaseHostClass):
                     if len(tn) == 0: 
                         return ''
                 if not opcio:
-                    tul = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y/ISaxMLdLLTU3JTMzOyczO1ssohQrmpZbDpAsyCuzLMlNS820BYd8Vcw==')) + tn
+                    tul = "https://player.mediaklikk.hu/playernew/player.php?video=" + tn
                 if opcio:
-                    tul = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y/ISaxMLdLLTU3JTMzOyczO1ssohQrmpZbDpAsyCuzLMlNS820BYd8Vcw==')) + opcio
+                    tul = "https://player.mediaklikk.hu/playernew/player.php?video=" + opcio
                 sts, data = self.getPage(tul)
                 if not sts: 
                     return ''
