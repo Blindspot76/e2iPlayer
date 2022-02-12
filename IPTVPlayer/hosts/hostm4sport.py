@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-02-11 by Blindspot - M4 SPORT
+# 2022-02-12 by Blindspot - M4 SPORT
 ###################################################
-HOST_VERSION = "1.5"
+HOST_VERSION = "1.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -140,6 +140,7 @@ class m4sport(CBaseHostClass):
             else:
                 self.aid_ki = ''
             msg_elo = self.aid_ki + 'M4 élő adásának megjelenítése.'
+            msg_eloplus = self.aid_ki + 'M4 Sport + élő adásának megjelenítése.' + "\n" + 'Figyelem! Ez az élő adás csak hétvégén érhető el.'
             msg_elo1 = self.aid_ki + 'M4 Sport 1 élő adásának megjelenítése.'
             msg_elo2 = self.aid_ki + 'M4 Sport 2 élő adásának megjelenítése.'
             msg_elo3 = self.aid_ki + 'M4 Sport 3 élő adásának megjelenítése.'
@@ -159,6 +160,12 @@ class m4sport(CBaseHostClass):
             pvu = "https://www.mediaklikk.hu/m4-elo/"
             icon = self.ICON_URL_ELO
             params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "mtv4live"})
+            self.addVideo(params)
+            pvt = 'M4 Sport+'
+            pvd = msg_eloplus
+            pvu = "https://www.mediaklikk.hu/m4-elo/"
+            icon = self.ICON_URL_ELO
+            params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "mtv4plus"})
             self.addVideo(params)
             pvt = 'M4 SPORT 1'
             pvd = msg_elo1
