@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-02-12 by Blindspot - M4 SPORT
+# 2022-02-13 by Blindspot - M4 SPORT
 ###################################################
-HOST_VERSION = "1.6"
+HOST_VERSION = "1.7"
 ###################################################
 # LOCAL import
 ###################################################
@@ -140,7 +140,7 @@ class m4sport(CBaseHostClass):
             else:
                 self.aid_ki = ''
             msg_elo = self.aid_ki + 'M4 élő adásának megjelenítése.'
-            msg_eloplus = self.aid_ki + 'M4 Sport + élő adásának megjelenítése.' + "\n" + 'Figyelem! Ez az élő adás csak hétvégén érhető el.'
+            msg_eloplus = self.aid_ki + 'M4 Sport + élő adásának megjelenítése.' + "\n" + 'Figyelem! Ez az élő adás csak hétvégén érhető el, a fennmaradó időben a Duna World adása látható.'
             msg_elo1 = self.aid_ki + 'M4 Sport 1 élő adásának megjelenítése.'
             msg_elo2 = self.aid_ki + 'M4 Sport 2 élő adásának megjelenítése.'
             msg_elo3 = self.aid_ki + 'M4 Sport 3 élő adásának megjelenítése.'
@@ -161,7 +161,7 @@ class m4sport(CBaseHostClass):
             icon = self.ICON_URL_ELO
             params = MergeDicts(cItem, {'good_for_fav':False, 'title':pvt, 'url':pvu, 'url2':pvu, 'desc':pvd, 'icon':icon, 'md': 'elo', 'id': "mtv4live"})
             self.addVideo(params)
-            pvt = 'M4 Sport+'
+            pvt = 'M4 SPORT+'
             pvd = msg_eloplus
             pvu = "https://www.mediaklikk.hu/m4-elo/"
             icon = self.ICON_URL_ELO
@@ -347,13 +347,16 @@ class m4sport(CBaseHostClass):
                 if not opcio:
                     tul = "https://player.mediaklikk.hu/playernew/player.php?video=" + tn
                 if opcio:
-                    tul = "https://player.mediaklikk.hu/playernew/player.php?video=" + opcio
+                    tul = "https://player.mediaklikk.hu/playernew/player.php?video=" + opcio + "&noflash=yes&osfamily=Android&osversion=7.0&browsername=Chrome%20Mobile&browserversion=&title=&contentid=" + opcio + "&embedded=1"
                 sts, data = self.getPage(tul)
                 if not sts: 
                     return ''
-                vl = self.cm.ph.getDataBeetwenMarkers(data, 'file": "', '",', False)[1]
-                if len(vl) == 0: 
-                    return ''
+                printDBG(data)
+                vl = self.cm.ph.getAllItemsBeetwenMarkers(data, 'file": "', '",', False)
+                if len(vl) > 1:
+                    vl = vl[1]
+                else:
+                   vl = vl[0]
                 vl = vl.replace('\/','/')
                 if vl.startswith('/'):
                     vl = 'https:' + vl
