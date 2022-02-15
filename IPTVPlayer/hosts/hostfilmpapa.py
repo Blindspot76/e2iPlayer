@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.07.25. 
+# 2022.02.15. 
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -98,9 +98,20 @@ class FilmPapa(CBaseHostClass):
             title = self.cm.ph.getDataBeetwenMarkers(m, 'alt="','" width=', False) [1]
             if "&#8211;" in title:
                 title = title.replace("&#8211;", "-")
+            if "&#8217;" in title:
+                title = title.replace("&#8217;", "")
             icon = self.cm.ph.getDataBeetwenMarkers(m, 'img src="','" alt="', False) [1]
             url = self.cm.ph.getDataBeetwenMarkers(m, '<a href="','">', False) [1]
-            desc = "IMDB pontszám: " + self.cm.ph.getDataBeetwenMarkers(m, '<span class="icon-star imdb tooltip">',' <span class=', False) [1] + ", Tartalom: " + self.cm.ph.getDataBeetwenMarkers(m, "<p class='story'>",'</p></div>', False) [1]
+            sts, data2 = self.getPage(url)
+            if not sts:
+                return
+            desc = "IMDB pontszám: " + self.cm.ph.getDataBeetwenMarkers(m, '<span class="icon-star imdb tooltip">',' <span class=', False) [1] + ", Tartalom: " + self.cm.ph.getDataBeetwenMarkers(data2, '<div class="description">','</div>', False) [1]
+            if '<br />' in desc or '</br>' in desc:
+                try:
+                   desc = desc.replace('<br />', "")
+                   desc = desc.replace('</br>', "")
+                except:
+                   pass
             params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
             self.addVideo(params)
         if max != "There were no results found.":
@@ -117,7 +128,8 @@ class FilmPapa(CBaseHostClass):
         for c in cat:
             title = self.cm.ph.getDataBeetwenMarkers(c, '" >','</a>', False) [1]
             if title == "":
-			    title = self.cm.ph.getDataBeetwenMarkers(c, ' title="Online film sorozatok">','</a>', False) [1]
+                title = self.cm.ph.getDataBeetwenMarkers(c, 'title=','/a>', False) [1]
+                title = self.cm.ph.getDataBeetwenMarkers(title, '">','<', False) [1]
             page = 1
             icon = None
             url = self.cm.ph.getDataBeetwenMarkers(c, '<a href="','"', False) [1]
@@ -168,9 +180,20 @@ class FilmPapa(CBaseHostClass):
             title = self.cm.ph.getDataBeetwenMarkers(m, 'alt="','" width=', False) [1]
             if "&#8211;" in title:
                 title = title.replace("&#8211;", "-")
+            if "&#8217;" in title:
+                title = title.replace("&#8217;", "")
             icon = self.cm.ph.getDataBeetwenMarkers(m, 'img src="','" alt="', False) [1]
             url = self.cm.ph.getDataBeetwenMarkers(m, '<a href="','">', False) [1]
-            desc = "IMDB pontszám: " + self.cm.ph.getDataBeetwenMarkers(m, '<span class="icon-star imdb tooltip">',' <span class=', False) [1] + ", Tartalom: " + self.cm.ph.getDataBeetwenMarkers(m, "<p class='story'>",'</p></div>', False) [1]
+            sts, data2 = self.getPage(url)
+            if not sts:
+                return
+            desc = "IMDB pontszám: " + self.cm.ph.getDataBeetwenMarkers(m, '<span class="icon-star imdb tooltip">',' <span class=', False) [1] + ", Tartalom: " + self.cm.ph.getDataBeetwenMarkers(data2, '<div class="description">','</div>', False) [1]
+            if '<br />' in desc or '</br>' in desc:
+                try:
+                   desc = desc.replace('<br />', "")
+                   desc = desc.replace('</br>', "")
+                except:
+                   pass
             params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
             self.addVideo(params)
 
