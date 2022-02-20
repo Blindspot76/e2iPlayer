@@ -1,3 +1,5 @@
+#2022.02.20.01
+-DMDAMedia javítva (HU)
 #2022.02.15.01
 -FilmPapa javítva (HU)
 #2022.02.13.01
