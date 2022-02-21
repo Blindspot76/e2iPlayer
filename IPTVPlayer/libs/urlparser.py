@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 23.01.2022
+# Modified by Blindspot # 20.02.2022
 ###################################################
 # LOCAL import
 ###################################################
@@ -268,6 +268,7 @@ class urlparser:
                        'flashx.co':             self.pp.parserFLASHXTV      ,
                        'flashx.pw':             self.pp.parserFLASHXTV      ,
                        'flashx.tv':             self.pp.parserFLASHXTV      ,
+                       'flashx.net':            self.pp.parserFLASHXTV      ,
                        'fplayer.info':          self.pp.parserFEMBED,
                        'freedisc.pl':           self.pp.parserFREEDISC      ,
                        'fxstream.biz':          self.pp.parserFXSTREAMBIZ   ,
@@ -361,6 +362,7 @@ class urlparser:
                        'mirrorace.com':         self.pp.parserMIRRORACE     ,
                        'mixdrop.bz':            self.pp.parserMIXDROP       ,
                        'mixdrop.co':            self.pp.parserMIXDROP       ,
+                       'mixdrop.ch':            self.pp.parserMIXDROP       ,
                        'mixdrop.club':          self.pp.parserMIXDROP       ,
                        'mixdrop.to':            self.pp.parserMIXDROP       ,
                        'moevideo.net':          self.pp.parserPLAYEREPLAY   ,
@@ -720,6 +722,7 @@ class urlparser:
                        'showsport.xyz':         self.pp.parserSHOWSPORTXYZ,
                        'assia.org':             self.pp.parserASSIAORG,
                        'assia2.com':            self.pp.parserASSIAORG,
+                       'assia4.com':            self.pp.parserASSIAORG,
                        'castfree.me':           self.pp.parserASSIAORG,
                        'cricplay2.xyz':         self.pp.parserASSIAORG,
                        'freefeds.click':        self.pp.parserASSIAORG,
