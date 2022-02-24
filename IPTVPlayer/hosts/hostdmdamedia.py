@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2022.02.20. 
+# Blindspot - 2022.02.24. 
 ###################################################
-HOST_VERSION = "1.5"
+HOST_VERSION = "1.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -147,11 +147,13 @@ class Dmdamedia(CBaseHostClass):
         for m in found:
             if (b < 28*int(page) or b == 28*int(page)) and (b > num or b == num):
                  title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
-                 icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
+                 icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','"', False) [1]
+                 if not icon:
+                     icon = self.cm.ph.getDataBeetwenMarkers(m, '<img class="poster-load" src="','"', False) [1]
                  icon = "https://dmdamedia.hu" + icon
                  if "https://dmdamedia.hu/" not in icon:
                      icon = icon.replace("https://dmdamedia.hu", "https://dmdamedia.hu/")
-                 newurl = self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
+                 newurl = self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"', False) [1]
                  if "https://dmdamedia.eu/" not in newurl:
                      newurl = "https://dmdamedia.hu" + newurl
                  sts, data = self.getPage(newurl)
@@ -164,7 +166,7 @@ class Dmdamedia(CBaseHostClass):
                 params = {'category': 'list_items', 'title': "Következő oldal", 'icon': None , 'url': url, 'page': int(page)+1}
                 self.addDir(params)
         else:
-           msg = 'A megadott kategóriában sajnos nem találtam semmit.' + '\n' + 'Próbáld újra később.'
+           msg = 'A megadott kategóriában sajnos nem találtam semmit. Próbáld újra később.'
            ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO)        
     
     def exploreItemsF(self, cItem, title, icon):
@@ -346,10 +348,8 @@ class Dmdamedia(CBaseHostClass):
             p = p.lower()
             for m in found:
                 title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
-                tik = title.split()				    
-                for t in tik:
-                    t = t.lower()
-                if p in t:
+                titl = title.lower()
+                if p in titl:
                      icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
                      cleanurl = url.strip("/film")
                      icon = cleanurl + icon
@@ -373,19 +373,17 @@ class Dmdamedia(CBaseHostClass):
             p = p.lower()
             for m in movies:
                 title = self.cm.ph.getDataBeetwenMarkers(m, '><h1>','</h1>', False) [1]
-                tik = title.split()				    
-                for t in tik:
-                    t = t.lower()
-                    if p in t:
-                         icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
-                         icon = url + icon
-                         newurl = self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
-                         if "https://dmdamedia.eu/" not in newurl:
-                             newurl = "https://dmdamedia.hu" + newurl
-                         sts, data = self.getPage(newurl)
-                         desc = self.cm.ph.getDataBeetwenMarkers(data, "<p>", "</p>", False) [1]
-                         params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl, 'desc': desc}
-                         self.addDir(params)
+                tik = title.lower()				    
+                if p in tik:
+                     icon = self.cm.ph.getDataBeetwenMarkers(m, 'data-src="','" title', False) [1]
+                     icon = url + icon
+                     newurl = self.cm.ph.getDataBeetwenMarkers(m, '<a href="', '"><img', False) [1]
+                     if "https://dmdamedia.eu/" not in newurl:
+                         newurl = "https://dmdamedia.hu" + newurl
+                     sts, data = self.getPage(newurl)
+                     desc = self.cm.ph.getDataBeetwenMarkers(data, "<p>", "</p>", False) [1]
+                     params = {'category':'explore_item','title':title, 'icon': icon , 'url': newurl, 'desc': desc}
+                     self.addDir(params)
 
 class IPTVHost(CHostBase):
 
