@@ -1,4 +1,3 @@
-host1tvru
 host123movieshd
 host3player
 host3sktv
@@ -58,7 +57,6 @@ hostfilmativa
 hostfilmehdnet
 hostfilmeonlineto
 hostfilmezz
-hostfilmixco
 hostfilmoviplex
 hostfilmpalast
 hostfilmpapa
@@ -76,7 +74,6 @@ hostgamatotvme
 hostgovodtv
 hostgreekdocumentaries3
 hostguardaserie
-hosthd1080online
 hosthdfilmetv
 hosthdfull
 hosthdpopcornscom
@@ -92,8 +89,6 @@ hostitvcom
 hostjoemonsterorg
 hostkabarety
 hostkijknl
-hostkinogo
-hostkinotan
 hostkinox
 hostkisscartoonme
 hostkkiste
@@ -110,7 +105,6 @@ hostmediasetplay
 hostmediayou
 hostmindigo
 hostmindigtv
-hostmovie4kto
 hostmovienightws
 hostmovierulzsx
 hostmovizlandcom
@@ -154,7 +148,6 @@ hostshahiidanimenet
 hostshoutcast
 hostskstream
 hostsolarmovie
-hostsovdub
 hostspiegeltv
 hostsportdeutschland
 hostsportitalia

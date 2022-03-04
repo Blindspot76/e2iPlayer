@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-01-11 by Blindspot - modified iptvhostgroups
+# 2022-03-04 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -26,7 +26,7 @@ class IPTVHostsGroups:
         
         # groups
         self.PREDEFINED_GROUPS = ["userdefined", "moviesandseries", "cartoonsandanime", "music", "sport", "live", "documentary", "science", \
-                                  "polish", "english", "german", "french", "russian", "hungarian", "arabic", "greek", "latino", "italian", \
+                                  "polish", "english", "german", "french", "hungarian", "arabic", "greek", "latino", "italian", \
                                   "swedish","balkans","others"]
         self.PREDEFINED_GROUPS_TITLES = {"userdefined":      "Kedvencek", 
                                          "moviesandseries":  "Filmek és Sorozatok",
@@ -39,8 +39,7 @@ class IPTVHostsGroups:
                                          "polish":           "Polish",
                                          "english":          "English",
                                          "german":           "German",
-                                         "french":           "French",
-                                         "russian":          "Russian",
+                                         "french":           "French",                                         
                                          "hungarian":        "Hungarian",
                                          "arabic":           "Arabic",
                                          "greek":            "Greek",
@@ -76,8 +75,7 @@ class IPTVHostsGroups:
         'rtlmost' : [ 'hungarian', 'moviesandseries'] ,
         'mindigtv' : [ 'hungarian', 'live'] ,
         'mindigo' : [ 'hungarian', 'live'] ,
-        'mytvtelenor' : [ 'hungarian', 'live'] ,
-        '1tvru': [ 'russian' ],
+        'mytvtelenor' : [ 'hungarian', 'live'] ,        
         '123movieshd' : [ 'english', 'moviesandseries'] ,
         '3player' : [ 'english'] ,
         '3sktv' : [ 'arabic', 'moviesandseries'] ,
@@ -110,7 +108,7 @@ class IPTVHostsGroups:
         'cinemay' : [ 'french', 'moviesandseries'] ,
         'cineto' : [ 'english', 'german', 'moviesandseries'] ,
         'classiccinemaonline' : [ 'english', 'moviesandseries'] ,
-        'dailymotion' : [ 'hungarian', 'arabic', 'balkans', 'documentary', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'science', 'swedish'] ,
+        'dailymotion' : [ 'hungarian', 'arabic', 'balkans', 'documentary', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'science', 'swedish'] ,
         'dancetrippin' : [ 'english', 'music'] ,        
         'ddl' : [ 'english', 'german', 'moviesandseries'] ,
         'dixmax' : [ 'latino', 'moviesandseries'] ,
@@ -137,7 +135,6 @@ class IPTVHostsGroups:
         'filmativa' : [ 'balkans', 'moviesandseries'] ,
         'filmehdnet' : [ 'balkans', 'moviesandseries'] ,
         'filmeonlineto' : [ 'balkans', 'english', 'moviesandseries'] ,
-        'filmixco' : [ 'moviesandseries', 'russian'] ,
         'filmovizijastudio' : [ 'balkans', 'moviesandseries'] ,
         'filmpalast' : [ 'german', 'moviesandseries'] ,
         'filmpertutti' : [ 'italian', 'moviesandseries'] ,
@@ -153,12 +150,11 @@ class IPTVHostsGroups:
         'govodtv' : [ 'moviesandseries', 'polish'] ,       
         'greekdocumentaries3' : [ 'documentary', 'greek'] ,
         'guardaserie' : [ 'italian', 'moviesandseries'] ,
-        'hd1080online' : [ 'moviesandseries', 'russian'] ,
         'hdfilmetv' : [ 'german', 'moviesandseries'] ,
         'hdfull' : [ 'latino', 'moviesandseries'] ,
         'hdpopcornscom' : [ 'english', 'moviesandseries'] ,
         'hdstreams' : [ 'german', 'moviesandseries'] ,
-        'hitboxtv' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
+        'hitboxtv' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'others', 'polish', 'sport', 'swedish'] ,
         'hoofootcom' : [ 'english', 'sport'] ,
         'icefilmsinfo' : [ 'english', 'moviesandseries'] ,
         'iitvpl' : [ 'moviesandseries', 'polish'] ,
@@ -169,9 +165,6 @@ class IPTVHostsGroups:
         'joemonsterorg' : [ 'polish'] ,
         'kabarety' : [ 'others', 'polish'] ,
         'kijknl' : [ 'others'] ,
-        'kinogo' : [ 'moviesandseries', 'russian'] ,
-        'kinopokaz' : [ 'moviesandseries', 'russian'] ,
-        'kinotan' : [ 'moviesandseries', 'russian'] ,
         'kinox' : [ 'german', 'moviesandseries'] ,
         'kisscartoonme' : [ 'cartoonsandanime', 'english'] ,
         'kkiste' : [ 'german', 'moviesandseries'] ,
@@ -186,7 +179,6 @@ class IPTVHostsGroups:
         'maxtvgo' : [ 'polish'] ,
         'meczykipl' : [ 'polish', 'sport'] ,
         'mediasetplay' : [ 'italian'] ,        
-        'movie4kto' : [ 'english', 'french', 'german', 'moviesandseries', 'russian'] ,
         'movienightws' : [ 'english', 'moviesandseries'] ,
         'movierulzsx' : [ 'arabic', 'english', 'moviesandseries'] ,
         'movizlandcom' : [ 'arabic', 'moviesandseries'] ,
@@ -226,8 +218,7 @@ class IPTVHostsGroups:
         'shahiidanimenet' : [ 'arabic', 'cartoonsandanime'] ,
         'shoutcast' : [ 'music'] ,
         'skstream' : [ 'french', 'moviesandseries'] ,
-        'solarmovie' : [ 'english', 'latino', 'moviesandseries'] ,
-        'sovdub' : [ 'moviesandseries', 'russian'] ,
+        'solarmovie' : [ 'english', 'latino', 'moviesandseries'] ,     
         'spiegeltv' : [ 'german'] ,
         'sportdeutschland' : [ 'german', 'sport'] ,
         'sportitalia' : [ 'italian', 'sport'] ,
@@ -248,14 +239,14 @@ class IPTVHostsGroups:
         'tvproart' : [ 'polish'] ,
         'tvpvod' : [ 'polish'] ,
         'tvrepublika' : [ 'polish'] ,
-        'twitchtv' : [ 'hungarian', 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
+        'twitchtv' : [ 'hungarian', 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'others', 'polish', 'sport', 'swedish'] ,
         'uktvplay' : [ 'english'] ,
         'urllist' : [ 'others'] ,
         'ustreamtv' : [ 'english', 'live', 'science'] ,
         'ustvgo' : [ 'english', 'live'] ,
         'vevo' : [ 'music'] ,
         'vidcorncom' : [ 'latino', 'moviesandseries'] ,
-        'vimeo' : [ 'hungarian', 'arabic', 'balkans', 'french', 'german', 'greek', 'italian', 'latino', 'music', 'others', 'polish', 'russian', 'swedish'] ,
+        'vimeo' : [ 'hungarian', 'arabic', 'balkans', 'french', 'german', 'greek', 'italian', 'latino', 'music', 'others', 'polish', 'swedish'] ,
         'vizjerpl' : [ 'moviesandseries', 'polish'] ,
         'vodpl' : [ 'polish'] ,
         'vumedicom' : [ 'documentary', 'english', 'science'] ,
@@ -273,7 +264,7 @@ class IPTVHostsGroups:
         'xrysoise' : [ 'greek', 'moviesandseries'] ,
         'yesmoviesto' : [ 'english', 'moviesandseries'] ,
         'yifytv' : [ 'english', 'moviesandseries'] ,
-        'youtube' : [ 'hungarian', 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'swedish'] ,
+        'youtube' : [ 'hungarian', 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'swedish'] ,
         'zaluknijcc' : ['polish', 'moviesandseries'] ,
         'zdfmediathek' : ['german']
         }        
