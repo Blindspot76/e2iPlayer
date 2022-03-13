@@ -12,6 +12,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir, 
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, getMPDLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs import ph
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 ###################################################
 
 ###################################################
@@ -1324,6 +1325,13 @@ class webhuplayer(CBaseHostClass):
                 uri = urlparser.decorateParamsFromUrl(cItem['url'], True)
                 videoUrls.append({'name':'picture link', 'url':uri})
             else:
+                if cItem['url'] == "https://archivum.mtva.hu/m3/stream?target=live":
+                    sts, data = self.cm.getPage(cItem['url'])
+                    if not sts:
+                        return
+                    data = self.cm.ph.getDataBeetwenMarkers(data, '"url":"', '","', False)[1]
+                    data = data.replace('\/', '/')
+                    cItem['url'] = data
                 uri = urlparser.decorateParamsFromUrl(cItem['url'])
                 protocol = uri.meta.get('iptv_proto', '')
                 urlSupport = self.up.checkHostSupport( uri )

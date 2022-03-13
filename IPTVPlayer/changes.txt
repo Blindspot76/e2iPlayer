@@ -1,3 +1,5 @@
+#2022.03.12.01
+-M3 javítva (WebHUPlayer tartalom-frissítés szükséges)
 #2022.03.04.01
 -Orosz hostok törölve, Kisebb javítások
 #2022.02.24.01
