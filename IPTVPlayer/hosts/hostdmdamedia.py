@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2022.02.24. 
+# Blindspot - 2022.03.20. 
 ###################################################
-HOST_VERSION = "1.6"
+HOST_VERSION = "1.8"
 ###################################################
 # LOCAL import
 ###################################################
@@ -141,7 +141,7 @@ class Dmdamedia(CBaseHostClass):
         sts, data = self.getPage(url)                
         if not sts:
             return
-        found = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="wrap">','/></a></div>')
+        found = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="sorozatok">','/></a></div>')
         b = 0
         num = 28*int(page)-28
         for m in found:

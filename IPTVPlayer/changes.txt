@@ -1,3 +1,5 @@
+#2022.03.21.01
+-DMDAMedia sorozatok javítva
 #2022.03.12.01
 -M3 javítva (WebHUPlayer tartalom-frissítés szükséges)
 #2022.03.04.01
