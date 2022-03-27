@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-08-06 - Web HU Player
+# 2022-03-26 - Web HU Player
 ###################################################
-HOST_VERSION = "3.0"
+HOST_VERSION = "3.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -1332,6 +1332,12 @@ class webhuplayer(CBaseHostClass):
                     data = self.cm.ph.getDataBeetwenMarkers(data, '"url":"', '","', False)[1]
                     data = data.replace('\/', '/')
                     cItem['url'] = data
+                if "https://onlinestream.live/" in cItem['url']:
+                    sts, data = self.cm.getPage(cItem['url'])
+                    if not sts:
+                        return
+                    dat = self.cm.ph.getDataBeetwenMarkers(data, '</li><li><a target="_blank" href="', '"><span>', False) [1]
+                    cItem['url'] = dat
                 uri = urlparser.decorateParamsFromUrl(cItem['url'])
                 protocol = uri.meta.get('iptv_proto', '')
                 urlSupport = self.up.checkHostSupport( uri )
