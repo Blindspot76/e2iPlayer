@@ -1,3 +1,5 @@
+#2022.04.03.01
+-OnlineStream.Live hozzáadva (Béta)
 #2022.03.27.01
 -WebHUPlayer frissítve (OnlineStream támogatás)
 #2022.03.21.01
