@@ -1,3 +1,6 @@
+#2022.04.10.01
+-OnlineStream frissítve (Műsorinformáció megjelenítése,
+                         MJPEG formátum támogatása).
 #2022.04.03.01
 -OnlineStream.Live hozzáadva (Béta)
 #2022.03.27.01

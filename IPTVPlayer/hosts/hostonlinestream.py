@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# 2021.04.03. Blindspot
+# 2021.04.10. Blindspot
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass 
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, RetHost, CUrlItem, CDisplayListItem 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
@@ -50,13 +50,31 @@ class OnlineStream(CBaseHostClass):
     def _uriIsValid(self, url):
         return '://' in url
     
+    def _isPicture(self, url):
+        def _checkExtension(url):
+            return url.endswith(".jpeg") or url.endswith(".jpg") or url.endswith(".png") or url.endswith(".mjpg") or url.endswith(".cgi")
+        if _checkExtension(url):
+            return True
+        if _checkExtension(url.split('|')[0]):
+            return True
+        if _checkExtension(url.split('?')[0]):
+            return True
+        return False
+    
     def getLinksForVideo(self, cItem):
         printDBG('OnlineStream.getLinksForVideo')
         sts, data = self.cm.getPage(cItem['url'])
         if not sts:
             return
         videoUrls = []
-        dat = self.cm.ph.getDataBeetwenMarkers(data, '<li><a target="_blank" href="', '"><span>', False) [1]
+        dat = self.cm.ph.getDataBeetwenMarkers(data, '<li><a target="_blank" href="', '">', False) [1]
+        if dat == "":
+            dat = self.cm.ph.getDataBeetwenMarkers(data, '<li><a href="', '">', False) [1]
+            dat = "https://onlinestream.live" + dat
+            sts, data = self.cm.getPage(dat)
+            if not sts:
+                return
+            dat = self.cm.ph.getDataBeetwenMarkers(data, "https://", "m3u8")[1]
         if cItem['title'] == 'M3':
             url = "https://archivum.mtva.hu/m3/stream?target=live"
             sts, data = self.cm.getPage(url)
@@ -64,6 +82,10 @@ class OnlineStream(CBaseHostClass):
                 return
             dat = self.cm.ph.getDataBeetwenMarkers(data, '"url":"', '","', False)[1]
             dat = dat.replace('\/', '/')
+        if self._isPicture(dat):
+            
+            dat = dat.replace("mjpg", "jpg")
+            dat = dat.replace("video", "image")
         uri = urlparser.decorateParamsFromUrl(dat)
         protocol = uri.meta.get('iptv_proto', '')
         urlSupport = self.up.checkHostSupport( uri )
@@ -80,6 +102,9 @@ class OnlineStream(CBaseHostClass):
            elif protocol == 'mpd':
               retTab = getMPDLinksWithMeta(uri, False)
               videoUrls.extend(retTab)
+           elif dat.endswith(".jpg"):
+                uri = urlparser.decorateParamsFromUrl(dat, True)
+                videoUrls.append({'name':'picture link', 'url':uri})
            else:
               videoUrls.append({'name':'direct link', 'url':uri})
         return videoUrls
@@ -94,7 +119,7 @@ class OnlineStream(CBaseHostClass):
                         {'category':'search',          'title': _('Keresés'), 'search_item':True},
                         {'category':'search_history',  'title': _('Keresési előzmények')}]
         self.listsTab(MAIN_CAT_TAB, cItem) 
-    
+        
     def listItems(self, cItem):
         printDBG('OnlineStream.listItems')    
         sts, dat = self.getPage(cItem['url'] + str(cItem['page']))
@@ -132,6 +157,22 @@ class OnlineStream(CBaseHostClass):
             if icon == 'https://onlinestream.live':
                 icon = None
             desc = self.cm.ph.getDataBeetwenMarkers(inf, 'Leírás, szlogen:</td><th>', '</th></tr>', False)[1]
+            printDBG(str(desc))
+            descs = self.cm.ph.getDataBeetwenMarkers(data, 'Műsorlista (utolsó 10)', 'Mégtöbb műsor visszamenőleg', False)[1]
+            desctime = self.cm.ph.getAllItemsBeetwenMarkers(descs, '<span class="badge">', '</span>', False)
+            descstr = self.cm.ph.getAllItemsBeetwenMarkers(descs, '<div class="info_tracklist_szamcim">', '</div>', False)
+            
+            if desc:
+                desc = desc + "\n" + "Műsorlista (utolsó 10):"
+            else:
+               desc = "Műsorlista (utolsó 10):"
+            for i in descstr:
+                if i == "":
+                   descstr[descstr.index(i)] = "Jelenleg nem elérhető a műsortartalom."
+            for i in desctime:
+                desc = str(desc) + "\n" + str(i) + "   " + str(descstr[desctime.index(i)])
+            if desc == "Műsorlista (utolsó 10):":
+                desc = "Jelenleg nincs elérhető információ."
             params = {'category':'list_more','title':title, 'icon': icon , 'url': url, 'desc': desc}
             self.addDir(params)
             yes = 1
@@ -150,10 +191,12 @@ class OnlineStream(CBaseHostClass):
         data = self.cm.ph.getDataBeetwenMarkers(dat, '<div class="dropdown info_csatornalista_select">', '</a></li></ul></div></div>')[1]
         printDBG("data " + str(data))
         if '<a class="ajax_link" href="' not in str(data):
-            params = {'title': cItem['title'], 'icon': cItem['icon'] , 'url': cItem['url'], 'desc': cItem['desc']}
+            params = {'title': cItem['title'], 'icon': cItem['icon'] , 'url': cItem['url'], 'desc': cItem['desc'], 'type': None}
             sts, data = self.cm.getPage(cItem['url'])
             if 'Audió infó' in data and 'Videó infó' not in data:
                 self.addAudio(params)
+            elif 'MJPEG' in data:
+               self.addPicture(params)
             else:
                self.addVideo(params)
             return
@@ -169,7 +212,7 @@ class OnlineStream(CBaseHostClass):
             title = title.replace('&nbsp;', '')
             printDBG("title " + title)
             params = {'title': title, 'icon': cItem['icon'] , 'url': url,'desc': cItem['desc']}
-            if 'Audió infó' in dat:
+            if 'Audió infó' in dat and 'Videó infó' not in dat:
                 self.addAudio(params)
             else:
                self.addVideo(params)
@@ -208,7 +251,7 @@ class OnlineStream(CBaseHostClass):
     
     
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("FilmVilag.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG("OnlineStream.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         searchPattern = searchPattern.replace(" ", "+")
         url = 'https://onlinestream.live/?search=' + searchPattern + '&broad=&feat=&chtype=&server=&format=&sort=&fp=20&p='
         cItem['url'] = url
