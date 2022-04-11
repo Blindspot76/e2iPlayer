@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 20.02.2022
+# Modified by Blindspot # 2022.04.11.
 ###################################################
 # LOCAL import
 ###################################################
@@ -183,7 +183,7 @@ class urlparser:
                        'castamp.com':           self.pp.parserCASTAMPCOM    ,
                        'castasap.pw':           self.pp.parserCASTFLASHPW    ,
                        'castflash.pw':          self.pp.parserCASTFLASHPW    ,
-                       'castfree.me':           self.pp.parserASSIAORG,
+                       'castfree.me':           self.pp.parserCASTFREEME     ,
                        'cricplay2.xyz':         self.pp.parserASSIAORG,
                        'caston.tv':             self.pp.parserCASTONTV       ,
                        'castto.me':             self.pp.parserCASTTOME      ,
@@ -473,6 +473,7 @@ class urlparser:
                        'sbplay.one':            self.pp.parserSTREAMSB    ,
                        'sbplay1.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.com':           self.pp.parserSTREAMSB    ,
+                       'sbplay2.xyz':           self.pp.parserSTREAMSB    ,
                        'scs.pl':                self.pp.parserSCS           ,
                        'sendvid.com':           self.pp.parserSENDVIDCOM    ,
                        'seositer.com':          self.pp.parserYANDEX        ,
@@ -525,6 +526,7 @@ class urlparser:
                        'streamplay.to':         self.pp.parserSTREAMPLAY    ,
                        'sbplay.org':            self.pp.parserSTREAMSB      ,
                        'streamsb.net':          self.pp.parserSTREAMSB      ,
+                       'streamta.pe':           self.pp.parserSTREAMTAPE    ,
                        'streamtape.com':        self.pp.parserSTREAMTAPE    ,
                        'streamtape.net':        self.pp.parserSTREAMTAPE    ,
                        'streamtape.to':         self.pp.parserSTREAMTAPE    ,
@@ -15803,3 +15805,28 @@ class pageParser(CaptchaHelper):
             urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
 
         return urlTab  
+
+    def parserCASTFREEME(self, baseUrl):
+        printDBG("parserCASTFREEME baseUrl[%r]" % baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer:
+            HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts:
+            return False
+        cUrl = self.cm.meta['url']
+
+        url = eval(re.findall('return\((\[.+?\])', data)[0])
+        url = ''.join(url).replace('\/', '/')
+
+        urlTab = []
+        if 'm3u' in url:
+            url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
+            urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
+        else:
+            url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
+            urlTab.append({'name': 'mp4', 'url': url})
+
+        return urlTab 

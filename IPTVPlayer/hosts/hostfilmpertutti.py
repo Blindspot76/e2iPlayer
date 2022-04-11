@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.02.08. 
+# 2021.12.12. Blindspot
 ###################################################
-HOST_VERSION = "1.2"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -21,15 +21,15 @@ import urllib
 
 
 def gettytul():
-    return 'https://www.filmpertutti.homes/'
+    return 'https://www.filmpertutti.rest/'
 
 
 class FilmPertutti(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history': 'FilmPertutti', 'cookie': 'FilmPertutti.cookie'})
-        self.MAIN_URL = 'https://www.filmpertutti.homes/'
-        self.DEFAULT_ICON_URL = 'https://www.filmpertutti.homes/wp-content/uploads/2021/01/favicon.ico'
+        self.MAIN_URL = 'https://www.filmpertutti.rest/'
+        self.DEFAULT_ICON_URL = 'https://www.filmpertutti.rest/wp-content/uploads/2021/01/favicon.ico'
         self.cacheLinks = {}
 
     def getPage(self, baseUrl, addParams={}, post_data=None):
@@ -99,9 +99,9 @@ class FilmPertutti(CBaseHostClass):
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
                 if url == '':
                     continue
-                icon = self.cm.ph.getSearchGroups(item, '''data-src=['"]([^"^']+?\.(?:jpg|webp)(?:\?[^'^"]*?)?)['"]''')[0]
+                icon = self.cm.ph.getSearchGroups(item, '''data-src-webp=['"]([^"^']+?\.(?:jpg|webp)(?:\?[^'^"]*?)?)['"]''')[0]
                 if icon == '':
-                    icon = self.cm.ph.getSearchGroups(item, '''thumbnail=['"]([^"^']+?\.(?:jpg|png)(?:\?[^'^"]*?)?)['"]''')[0]
+                    icon = self.cm.ph.getSearchGroups(item, '''data-thumbnail=['"]([^"^']+?\.(?:jpg|png)(?:\?[^'^"]*?)?)['"]''')[0]
                 descTab = []
                 item = self.cm.ph.getAllItemsBeetwenNodes(item, ('<div', '>'), ('</div', '>'))
                 for t in item:

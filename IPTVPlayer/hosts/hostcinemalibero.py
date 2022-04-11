@@ -32,7 +32,7 @@ import urllib
 ###################################################
 
 def gettytul():
-    return 'https://cinemalibero.top/' # main url of host
+    return 'https://cinemalibero.city/' # main url of host
 
 class Cinemalibero(CBaseHostClass):
  
@@ -43,10 +43,10 @@ class Cinemalibero(CBaseHostClass):
         
         # vars default values
         # various urls
-        self.MAIN_URL = 'https://cinemalibero.top/'
+        self.MAIN_URL = 'https://cinemalibero.city/'
 
         # url for default icon
-        self.DEFAULT_ICON_URL = "https://cinemalibero.top/wp-content/themes/Cinemalibero%202.0/images/logo02.png"
+        self.DEFAULT_ICON_URL = "https://cinemalibero.city/wp-content/themes/Cinemalibero%202.0/images/logo02.png"
 
         # default header and http params
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')        

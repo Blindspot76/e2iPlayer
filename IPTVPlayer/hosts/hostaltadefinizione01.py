@@ -20,7 +20,7 @@ except Exception:
 
 
 def gettytul():
-    return 'https://www.altadefinizione01.homes/'
+    return 'https://www.altadefinizione01.immo/#gsc.tab=0'
 
 
 class Altadefinizione(CBaseHostClass):
@@ -33,7 +33,7 @@ class Altadefinizione(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
-        self.MAIN_URL = 'https://www.altadefinizione01.homes/'
+        self.MAIN_URL = 'https://www.altadefinizione01.immo/#gsc.tab=0'
         self.DEFAULT_ICON_URL = 'http://www.sabinacornovac.ro/wp-content/uploads/2017/04/42557652-Cinema-Camera-icon-Movie-Lover-Series-Icon-Stock-Vector-585x355.jpg'
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
