@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2022.04.11.
+# Modified by Blindspot # 2022.04.23.
 ###################################################
 # LOCAL import
 ###################################################
@@ -357,6 +357,7 @@ class urlparser:
                        'megom.tv':              self.pp.parserMEGOMTV        ,
                        'megustavid.com':        self.pp.parserMEGUSTAVID    ,
                        'melbil.net':            self.pp.parserTXNEWSNETWORK ,
+                       'membed.net':            self.pp.parserMEMBED        ,
                        'mightyupload.com':      self.pp.parserMIGHTYUPLOAD  ,
                        'miplayer.net':          self.pp.parserMIPLAYERNET   ,
                        'mirrorace.com':         self.pp.parserMIRRORACE     ,
@@ -15829,4 +15830,35 @@ class pageParser(CaptchaHelper):
             url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
             urlTab.append({'name': 'mp4', 'url': url})
 
-        return urlTab 
+        return urlTab
+    
+    def parserMEMBED(self, url):
+        printDBG("parserMEMBED url: " + url)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = url.meta.get('Referer')
+        if referer:
+            HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts:
+            return
+        urlTab = []
+        all = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="list-server-items">', '</ul>', False)[1]
+        links = self.cm.ph.getAllItemsBeetwenMarkers(all, 'data-video="', '">', False)
+        names = self.cm.ph.getAllItemsBeetwenMarkers(all, '">', '</li>', False)
+        for i in names:
+            if links[names.index(i)] == "":
+                pass
+            else:
+               url = [{'url': None}]
+               if "https://dood.ws" in links[names.index(i)]:
+                   url = self.parserDOOD(links[names.index(i)])
+               if "https://mixdrop.co" in links[names.index(i)]:
+                   url = self.parserMIXDROP(links[names.index(i)])
+               if "https://embedsito.com" in links[names.index(i)]:
+                   url = self.parserFEMBED(links[names.index(i)])
+               if url == []:
+                   url = [{'url': None}]
+               urlTab.append({'name': i, 'url': url[0]['url']})
+        return urlTab
+        
