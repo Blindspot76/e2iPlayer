@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2022.04.23.
+# Modified by Blindspot # 2022.05.02.
 ###################################################
 # LOCAL import
 ###################################################
@@ -309,6 +309,7 @@ class urlparser:
                        'hqq.tv':                self.pp.parserNETUTV         ,
                        'hqq.to':                self.pp.parserNETUTV         ,
                        'hqq.watch':             self.pp.parserNETUTV         ,
+                       'netu.wiztube.xyz':      self.pp.parserNETUTV         ,
                        'hxfile.co':             self.pp.parserONLYSTREAM     ,
                        'hxload.io':             self.pp.parserVIDBOMCOM      ,
                        'hydrax.net':            self.pp.parserONLYSTREAM     ,
