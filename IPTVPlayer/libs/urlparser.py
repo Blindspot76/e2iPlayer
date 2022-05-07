@@ -1,5 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2022.05.02.
+# Modified by Blindspot # 2022.05.07.
+# Fixed Parser for Evoload.io 
 ###################################################
 # LOCAL import
 ###################################################
@@ -225,6 +226,7 @@ class urlparser:
                        'dood.watch':            self.pp.parserDOOD          ,
                        'dood.ws':               self.pp.parserDOOD          ,
                        'dood.sh':               self.pp.parserDOOD          ,
+                       'dood.pm':               self.pp.parserDOOD          ,
                        'doodstream.com':        self.pp.parserDOOD          ,
                        'dotstream.tv':          self.pp.parserDOTSTREAMTV   ,
                        'droonws.xyz':           self.pp.parserTXNEWSNETWORK , 
@@ -14888,8 +14890,9 @@ class pageParser(CaptchaHelper):
         if not sts:
             return False
 
-        post_data = {"code": media_id, "csrv_token": crsv, "pass": passe, "token": "ok"}
+        post_data = {"code": media_id, "csrv_token": crsv, "pass": passe, "token": "ok", "reff": baseUrl}
         sts, data = self.cm.getPage('https://evoload.io/SecurePlayer', urlParams, post_data)
+        printDBG(str(data))
         if not sts:
             return False
 
@@ -15443,37 +15446,6 @@ class pageParser(CaptchaHelper):
             red_url = re.findall("URL=([^\"]+)",data)[0]
 
         return urlparser().getVideoLinkExt(red_url)
-        
-
-
-    def parserEVOLOADIO(self, baseUrl):
-        printDBG("parserEVOLOADIO baseUrl[%s]" % baseUrl)
-        urlTab = []
-        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
-        urlParams = {'header': HTTP_HEADER}
-
-        media_id = self.cm.ph.getSearchGroups(baseUrl + '/', '(?:e|f|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
-        sts, data = self.cm.getPage(baseUrl, urlParams)
-        if not sts:
-            return False
-
-        passe = re.search('<div id="captcha_pass" value="(.+?)"></div>', data).group(1)
-        sts, crsv = self.cm.getPage('https://csrv.evosrv.com/captcha?m412548', urlParams)
-        if not sts:
-            return False
-
-        post_data = {"code": media_id, "csrv_token": crsv, "pass": passe, "token": "ok"}
-        sts, data = self.cm.getPage('https://evoload.io/SecurePlayer', urlParams, post_data)
-        if not sts:
-            return False
-
-        r = json_loads(data).get('stream')
-        if r:
-            surl = r.get('backup') if r.get('backup') else r.get('src')
-            if surl:
-                params = {'name': 'mp4', 'url': surl}
-                urlTab.append(params)
-    
     
     def parserTUBELOADCO(self, baseUrl):
         printDBG("parserTUBELOADCO baseUrl[%s]" % baseUrl)
