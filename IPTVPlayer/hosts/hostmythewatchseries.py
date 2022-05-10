@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Modified by Blindspot 2022-05-10
 ###################################################
 # LOCAL import
 ###################################################
@@ -16,7 +17,7 @@ import urllib
 
 
 def gettytul():
-    return 'https://gowatchseries.online/'
+    return 'https://gowatchseries.live/'
 
 class MyTheWatchseries(CBaseHostClass):
  
@@ -29,14 +30,14 @@ class MyTheWatchseries(CBaseHostClass):
         
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'https://gowatchseries.online/img/icon/logo.png'
+        self.DEFAULT_ICON_URL = 'https://gowatchseries.live/img/icon/logo.png'
         self.MAIN_URL = None
         self.cacheLinks = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         
     def selectDomain(self):
-        self.MAIN_URL = 'https://gowatchseries.online/'
+        self.MAIN_URL = 'https://gowatchseries.live/'
         params = dict(self.defaultParams)
         params['with_metadata'] = True
         sts, data = self.getPage(self.getMainUrl(), params)
