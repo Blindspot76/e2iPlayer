@@ -1,3 +1,6 @@
+#2022.05.16.01
+-SpankBang javítva (XXX).
+-Filmvilág 2 frissítve.
 #2022.05.11.01
 -Filmvilág 2 Tartalom-megjelenítés javítva.
 -MyDirtyHobby javítva (XXX).

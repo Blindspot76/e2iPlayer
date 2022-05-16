@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2022.05.11. Blindspot
+# 2022.05.16. Blindspot
 ###################################################
-HOST_VERSION = "1.3"
+HOST_VERSION = "1.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -87,28 +87,42 @@ class FilmVilag(CBaseHostClass):
                         {'category':'search_history',  'title': _('Keresési előzmények'), 'desc': "Egyes videómegosztók pillanatnyilag nem támogatottak"}]
         self.listsTab(MAIN_CAT_TAB, cItem) 
 
-    def getdesc(self, url):
+    def getdesc(self, title, iurl):
+        sts, data = self.getPage(iurl)
+        ogdesc = self.cm.ph.getDataBeetwenMarkers(data, '<meta property="og:description" content="', '" />', False)[1]
+        ogdesc = ogdesc.split(",")
+        ogdesc.pop(1)
+        if len(ogdesc) == 3:
+            ogdesc.pop(1)
+        ogdesc = ",".join(ogdesc)
+        printDBG(ogdesc)
+        url = False
+        if "HD" in title or "FHD" in title or "(4K)" in title or "(2K)" in title:
+            title = title.replace("FHD", "").replace("HD", "").replace("(4K)", "").replace("(2K)", "")
+        title = title.replace(" ", "+")
+        sts, data = self.getPage("https://port.hu/kereso?q=" + title + "&type=movie" + "&s=relevance")
+        if not sts:
+            return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a class="title"', '<div class="wrapper must-shorten">')
+        for i in data:
+            neodesc = self.cm.ph.getDataBeetwenMarkers(i, '<label class="summary">', '<', False)[1]
+            neodesc = neodesc.split()
+            neodesc = " ".join(neodesc)
+            neodesc = neodesc.split(",")
+            if len(neodesc) == 3:
+                neodesc.pop(1)
+            neodesc = ",".join(neodesc)
+            printDBG(neodesc)
+            if neodesc in ogdesc or ogdesc in neodesc:
+                url = self.cm.ph.getDataBeetwenMarkers(i, '<a class="title" href="', '">', False)[1]
+                break
+        if not url:
+            url = self.cm.ph.getDataBeetwenMarkers(data[0], '<a class="title" href="', '">', False)[1]
+        url = "https://port.hu" + url
         sts, data = self.getPage(url)
-        desc = self.cm.ph.getDataBeetwenMarkers(data, "Letöltés", "<p>&nbsp;</p>", False)[1]
-        printDBG("Eredeti: " + desc)
-        if not desc:
-            desc = self.cm.ph.getDataBeetwenMarkers(data, "<p><img alt=", "<p>&nbsp;</p>", False)[1]
-        printDBG("Új: " + desc)
-        text = self.cm.ph.getDataBeetwenMarkers(desc, "<p>", "</p>", False)[1]
-        printDBG("Eredeti: " + text)
-        if not text:
-            text = self.cm.ph.getDataBeetwenMarkers(desc, '" />', "</p>", False)[1]
-        printDBG("Új: " + text)
-        rendez = self.cm.ph.getDataBeetwenMarkers(desc, "</span>", "<span", False)[1]
-        printDBG("Eredeti: " + rendez)
-        szerep = self.cm.ph.getDataBeetwenMarkers(desc, "Szereplők:</span>", "</h2>", False)[1]
-        printDBG("Eredeti: " + szerep)
-        if not szerep:
-            szerep = self.cm.ph.getDataBeetwenMarkers(desc, "SZEREPLŐK:</span>", "</h2>", False)[1]
-            if not szerep:
-                szerep = self.cm.ph.getDataBeetwenMarkers(desc, "Szereplők: </span>", "</h2>", False)[1]
-        printDBG("Új: " + szerep)
-        desc = "Tartalom: " + text + "\n" + "Rendező: " + rendez + "\n" + "Szereplők: " + szerep
+        if not sts:
+            return
+        desc = self.cm.ph.getDataBeetwenMarkers(data, '<meta property="description" content="', '">', False) [1]
         return desc
 
     def listItems(self, cItem):
@@ -123,7 +137,7 @@ class FilmVilag(CBaseHostClass):
             title = self.cm.ph.getDataBeetwenMarkers(m, '<span class="decoration" title="','"></span>', False) [1]
             icon = self.cm.ph.getDataBeetwenMarkers(m, '<img src="','" width', False) [1]
             url = self.MAIN_URL + self.cm.ph.getDataBeetwenMarkers(m, '<a href="','">', False) [1]
-            desc = self.getdesc(url)
+            desc = self.getdesc(title, url)
             params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
             self.addVideo(params)
         if "Következő &raquo" in data:
@@ -223,9 +237,10 @@ class FilmVilag(CBaseHostClass):
                 printDBG(result)
                 title = self.cm.ph.getDataBeetwenMarkers(result, 'span class="span-a-title">','</span>', False) [1]
                 printDBG(title)
+                icon = self.cm.ph.getDataBeetwenMarkers(result, 'height="169" src="','"', False) [1]
                 url = self.cm.ph.getDataBeetwenMarkers(result, '" src="','"', False) [1]
-                desc = self.getdesc(n)
-                params = {'title':title, 'icon': False , 'url': url, 'desc': desc}
+                desc = self.getdesc(title, n)
+                params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
                 self.addVideo(params)
 
 class IPTVHost(CHostBase):
