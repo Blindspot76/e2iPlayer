@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-04-15 by Blindspot - modified iptvhostgroups
+# 2022-05-17 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -117,8 +117,7 @@ class IPTVHostsGroups:
         'dokumentalnenet' : [ 'documentary', 'polish', 'science'] ,
         'dplayit' : [ 'italian'] ,
         'dpstreamingcx' : [ 'french', 'moviesandseries'] ,
-        'drdk' : [ 'others'] ,
-        'dsda' : [ 'documentary', 'italian', 'science'] ,
+        'drdk' : [ 'others'] ,        
         'efilmytv' : [ 'moviesandseries', 'polish'] ,
         'egybest' : [ 'arabic', 'moviesandseries'] ,
         'ekinotv' : [ 'moviesandseries', 'polish'] ,
