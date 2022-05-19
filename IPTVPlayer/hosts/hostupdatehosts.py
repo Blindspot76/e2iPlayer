@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-04-11 by Blindspot - updatehosts HU host telepítő
+# 2022-05-18 by Blindspot - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "4.5"
+HOST_VERSION = "4.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -412,17 +412,17 @@ class updatehosts(CBaseHostClass):
                 self.susn('2', '9', 'updatehosts_main_telepites')
                 uvk = self.vohfg(self.vivn,self.geteprvz())
                 if uvk:
-                    n_tt = 'Telepítés  -  Új verzió elérhető'
-                    n_tft = 'Frissítés  -  A meglévő verzió frissíthető'
+                    n_tt = 'Telepítés / Install -  Új verzió elérhető'
+                    n_tft = 'Frissítés  / Update -  A meglévő verzió frissíthető'
                 else:
-                    n_tt = 'Telepítés'
-                    n_tft = 'Frissítés'
+                    n_tt = 'Telepítés / Install'
+                    n_tft = 'Frissítés / Update'
                     tmpc = self.eplrucmtr()
                     if tmpc != '':
                         tmpct = self.eplrcmtse()
                         if len(tmpct) == 1:
                             if tmpct[0] != tmpc:
-                                n_tft = 'Frissítés  -  A meglévő verzió frissíthető'
+                                n_tft = 'Frissítés / Update  -  A meglévő verzió frissíthető'
                 n_mmsb = self.malvadst('1', '9', 'updatehosts_p_telepites')
                 if n_mmsb != '' and self.aid:
                     self.aid_ki = 'ID: ' + n_mmsb + '\n'
