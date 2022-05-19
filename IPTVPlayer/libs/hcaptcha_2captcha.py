@@ -33,12 +33,24 @@ class UnCaptchahCaptcha:
             mainUrl = self.getMainUrl()
         return self.cm.getFullUrl(url, mainUrl)
 
-    def processCaptcha(self, sitekey, referer='', captchaType=''):
+    def processCaptcha(self, sitekey, referer=''):
         sleepObj = None
         token = ''
         errorMsgTab = []
         apiKey = config.plugins.iptvplayer.api_key_2captcha.value
-        apiUrl = self.getFullUrl('/in.php?key=') + apiKey + '&method=hcaptcha&sitekey=' + sitekey + '&json=1&pageurl=' + urllib.quote(referer)
+
+        #read ip of box
+
+        sts, ip = self.cm.getPage('https://api.ipify.org')
+
+        if sts:
+            printDBG("Public IP of box: %s " % ip)
+            # add port 443?
+            # ip = ip + ":443"
+            apiUrl = self.getFullUrl('/in.php?key=') + apiKey + '&method=hcaptcha&sitekey=' + sitekey + '&json=1&pageurl=' + urllib.quote(referer) + "&proxy=" + ip
+        else:
+            apiUrl = self.getFullUrl('/in.php?key=') + apiKey + '&method=hcaptcha&sitekey=' + sitekey + '&json=1&pageurl=' + urllib.quote(referer)
+
         try:
             token = ''
             sts, data = self.cm.getPage(apiUrl)

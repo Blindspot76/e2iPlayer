@@ -6,7 +6,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor,tshost
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser    import urlparser as ts_urlparser
-from Plugins.Extensions.IPTVPlayer.components.captcha_helper import CaptchaHelper
+from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
 try:
     from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
     from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
