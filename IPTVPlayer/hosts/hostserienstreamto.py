@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
+from Plugins.Extensions.IPTVPlayer.components.captcha_helper import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, MergeDicts, ReadTextFile, WriteTextFile, GetTmpDir, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs import ph
@@ -53,7 +53,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://serien.sx/'
+    return 'https://serienstream.to/'
 
 
 class SerienStreamTo(CBaseHostClass, CaptchaHelper):
@@ -67,8 +67,8 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
-        self.MAIN_URL = 'https://serien.sx/'
-        self.DEFAULT_ICON_URL = 'https://serienstream.sx/public/img/facebook.jpg'
+        self.MAIN_URL = 'https://s.to/'
+        self.DEFAULT_ICON_URL = 'https://s.to/public/img/facebook.jpg'
 
         self.MAIN_CAT_TAB = [{'category': 'all_series', 'title': 'Alle Serien', 'url': self.getFullUrl('/serien-alphabet')},
                              {'category': 'list_abc', 'title': _('A-Z'), 'url': self.MAIN_URL},
@@ -240,7 +240,7 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
             return
 
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div class="seriesContentBox"', '<div class="series-add')[1]
-        icon = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''data-src=['"]([^'^"]+?)['"]''')[0])
+        icon = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''src=['"]([^'^"]+?)['"]''')[0])
         if '' == icon:
             icon = cItem.get('series_title', '')
         desc = self.cleanHtmlStr(self.cm.ph.getSearchGroups(tmp, '''description=['"]([^'^"]+?)['"]''')[0])
@@ -422,26 +422,13 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
                 printDBG(data)
                 printDBG("+++++++++++")
                 if sts and 'google.com/recaptcha/' in data and 'sitekey' in data:
-                    token = ''
-
-                    sitekey = re.findall("'sitekey': '(.*?)'", data)
-                    if sitekey:
-                        (token, errorMsgTab) = CaptchaHelper.processCaptcha(self, sitekey[0], videoUrl)
-                        printDBG("Captcha Token: %s" % token)
-
-                    if not token:
-                        message = _('Link protected with google recaptcha v2.')
-                        if True != self.loggedIn:
-                            message += '\n' + _('Please fill your login and password in the host configuration (available under blue button) and try again.')
-                        else:
-                            message += '\n' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<small', '</small>')[1])
-                            message += '\n' + _('Please retry later.')
-                        SetIPTVPlayerLastHostError(message)
+                    message = _('Link protected with google recaptcha v2.')
+                    if True != self.loggedIn:
+                        message += '\n' + _('Please fill your login and password in the host configuration (available under blue button) and try again.')
                     else:
-                        videoUrl = videoUrl + '?token=' + token
-                        sts, data = self.getPage(videoUrl)
-                        if sts:
-                            videoUrl = self.cm.meta['url']
+                        message += '\n' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<small', '</small>')[1])
+                        message += '\n' + _('Please retry later.')
+                    SetIPTVPlayerLastHostError(message)
 
             if 1 == self.up.checkHostSupport(videoUrl):
                 urlTab = self.up.getVideoLinkExt(videoUrl)

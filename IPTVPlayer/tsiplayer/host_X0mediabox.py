@@ -6,7 +6,7 @@ from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClas
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.utils import IsPython3
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
+from Plugins.Extensions.IPTVPlayer.components.captcha_helper import CaptchaHelper
 from tsiplayer.libs.packer import cPacker
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC

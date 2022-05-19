@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2022.05.07.
+# Modified by Blindspot # 2022.05.19.
 # Fixed Parser for Evoload.io 
 ###################################################
 # LOCAL import
@@ -143,6 +143,8 @@ class urlparser:
 
     def setHostsMap(self):
         self.hostMap = {
+                       'daddylive.me':          self.pp.parserDADDYLIVE,
+                       'daddylive.club':        self.pp.parserDADDYLIVE,
                        '1fichier.com':          self.pp.parser1FICHIERCOM   ,
                        '1tv.ru':                self.pp.parser1TVRU         ,
                        '2021dogecoin.xyz':      self.pp.parserTXNEWSNETWORK ,
@@ -478,6 +480,7 @@ class urlparser:
                        'sbplay1.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.xyz':           self.pp.parserSTREAMSB    ,
+                       'sbfull.com':            self.pp.parserSTREAMSB,
                        'scs.pl':                self.pp.parserSCS           ,
                        'sendvid.com':           self.pp.parserSENDVIDCOM    ,
                        'seositer.com':          self.pp.parserYANDEX        ,
@@ -499,6 +502,7 @@ class urlparser:
                        'speedvid.net':          self.pp.parserSPEEDVIDNET    ,
                        'speedwatch.io':         self.pp.parserSPEEDWATCH    ,
                        'speedvideo.net':        self.pp.parserSPEEDVIDEONET  ,
+                       'videovard.sx':          self.pp.parserVIDEOVARDSX,
                        'sportstream365.com':    self.pp.parserSPORTSTREAM365 ,
                        'sprocked.com':          self.pp.parserSPROCKED      ,
                        'spruto.tv':             self.pp.parserSPRUTOTV       ,
@@ -530,6 +534,8 @@ class urlparser:
                        'streamplay.to':         self.pp.parserSTREAMPLAY    ,
                        'sbplay.org':            self.pp.parserSTREAMSB      ,
                        'streamsb.net':          self.pp.parserSTREAMSB      ,
+                       'tubesb.com':            self.pp.parserSTREAMSB,
+                       'viewsb.com':            self.pp.parserSTREAMSB,
                        'streamta.pe':           self.pp.parserSTREAMTAPE    ,
                        'streamtape.com':        self.pp.parserSTREAMTAPE    ,
                        'streamtape.net':        self.pp.parserSTREAMTAPE    ,
@@ -537,7 +543,7 @@ class urlparser:
                        'streamz.cc':            self.pp.parserSTREAMZ       ,
                        'streamz.vg':            self.pp.parserSTREAMZ       ,
                        'streamz.ws':            self.pp.parserSTREAMZ       ,
-                       'streamzz.to':            self.pp.parserSTREAMZ       ,
+                       'streamzz.to':           self.pp.parserSTREAMZ       ,
                        'streamwire.net':        self.pp.parserONLYSTREAM   ,
                        'superfastvideos.xyz':   self.pp.parserTXNEWSNETWORK ,
                        'superfilm.pl':          self.pp.parserSUPERFILMPL   ,
@@ -726,16 +732,17 @@ class urlparser:
                        'zstream.to':            self.pp.parserZSTREAMTO     ,
                        'nba-streams.online':    self.pp.parserSHOWSPORTXYZ,
                        'showsport.xyz':         self.pp.parserSHOWSPORTXYZ,
+                       'givemenbastreams.com':  self.pp.parserASSIAORG,
                        'assia.org':             self.pp.parserASSIAORG,
                        'assia2.com':            self.pp.parserASSIAORG,
                        'assia4.com':            self.pp.parserASSIAORG,
-                       'castfree.me':           self.pp.parserASSIAORG,
-                       'cricplay2.xyz':         self.pp.parserASSIAORG,
                        'freefeds.click':        self.pp.parserASSIAORG,
+                       'cricplay2.xyz':         self.pp.parserASSIAORG,
                        'givemenbastreams.com':  self.pp.parserASSIAORG,
+                       'mazystreams.xyz':       self.pp.parserASSIAORG,
+                       'noob4cast.com':         self.pp.parserCASTFREEME,
+                       'castfree.me':           self.pp.parserCASTFREEME,
                        'embedstream.me':        self.pp.parserEMBEDSTREAMME,
-                       'daddylive.me':          self.pp.parserDADDYLIVE,
-                       'daddylive.club':        self.pp.parserDADDYLIVE,
                        'teleriumtv.com':        self.pp.parserTELERIUMTVCOM,
                        'f1livegp.me':           self.pp.parserF1LIVEGPME,
                        'bestnhl.com':           self.pp.parserF1LIVEGPME,
@@ -12790,7 +12797,7 @@ class pageParser(CaptchaHelper):
             c2 = hexlify(x.encode('utf8')).decode('utf8')
             x = '{0}||{1}||{2}||streamsb'.format(makeid(12), c2, makeid(12))
             c3 = hexlify(x.encode('utf8')).decode('utf8')
-            return 'https://{0}/sourcesx38/{1}/{2}'.format(urlparser.getDomain(baseUrl), c1, c3)
+            return 'https://{0}/sources43/{1}/{2}'.format(urlparser.getDomain(baseUrl), c1, c3)
 
         eurl = get_embedurl(media_id)
         urlParams['header']['watchsb'] = 'streamsb'
@@ -15401,10 +15408,10 @@ class pageParser(CaptchaHelper):
             return False
         cUrl = self.cm.meta['url']
 
-        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
+        _url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
         HTTP_HEADER['Referer'] = cUrl
         urlParams = {'header': HTTP_HEADER}
-        sts, data = self.cm.getPage(url, urlParams)
+        sts, data = self.cm.getPage(_url, urlParams)
         if not sts:
             return False
 
@@ -15423,11 +15430,11 @@ class pageParser(CaptchaHelper):
 
                 url = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.mp4(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
                 if url != '':
-                    url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
+                    url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': _url})
                     urlTab.append({'name': 'mp4', 'url': url})
                 hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
                 if hlsUrl != '':
-                    hlsUrl = strwithmeta(hlsUrl, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
+                    hlsUrl = strwithmeta(hlsUrl, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': _url})
                     urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
 
         return urlTab
