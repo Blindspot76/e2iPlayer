@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """ cipher.app.filecrypt
 
     File encryption script.
@@ -25,9 +25,9 @@ def main():
     try:
         # use get opt to parse and validate command line
         optlist, args = getopt.getopt(sys.argv[1:], 'edk:i:o:')
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         sys.exit("Error: %s\n%s" % (err, usage))
-    print optlist, '\n------\n', args
+    print(optlist, '\n------\n', args)
     # make a dictionary and check for one occurance of each option
     optdict = {}
     for option in optlist:
@@ -55,7 +55,7 @@ def main():
     else:
         input = sys.stdin.read()
 
-    print "input (%d bytes): %s" % (len(input), b2a_pt(input))
+    print("input (%d bytes): %s" % (len(input), b2a_pt(input)))
     alg = Trolldoll(ivSize=160)
     alg.setPassphrase(passPhrase)
 
@@ -65,13 +65,13 @@ def main():
     elif optdict.has_key('-d'):
         try:
             output = alg.decrypt(input)
-        except DecryptNotBlockAlignedError, errMessage:
+        except(DecryptNotBlockAlignedError, errMessage):
             sys.exit("""Error: %s\n    Note this can be caused by inappropriate modification \n    of binary files (Win issue with CR/LFs).  Try -a mode. """ % errMessage)
         # should check for integrity failure
     else:
         sys.exit("Error: Must select encrypt or decrypt, pick either '-e' or '-d'\n%s" % usage)
 
-    print "output (%d bytes): %s" % (len(output), b2a_pt(output))
+    print("output (%d bytes): %s" % (len(output), b2a_pt(output)))
     # put output to file or stdout
     if optdict.has_key('-o'):
         outfile = open(optdict['-o'], 'wb')

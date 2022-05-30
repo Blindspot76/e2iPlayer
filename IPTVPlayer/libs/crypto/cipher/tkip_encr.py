@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """ crypto.cipher.tkip_encr
 
     TKIP encryption from IEEE 802.11 TGi
@@ -6,7 +6,7 @@
     TKIP uses WEP (ARC4 with crc32) and key mixing
     This is only the encryption and not the Michael integrity check!
 
-    Copyright (c) 2002 by Paul A. Lambert
+    Copyright © (c) 2002 by Paul A. Lambert
     Read LICENSE.txt for license information.
 
     November 2002
@@ -62,10 +62,10 @@ class TKIP_encr:
     def _makeARC4key(self, tscOctets, keyID=0):
         """ Make an ARC4 key from TKIP Sequence Counter Octets (little-endian) """
         if keyID != 0:
-            raise 'TKIP expects keyID of zero'
-        print "tscOctets in tkmixer=", b2a_p(tscOctets)
+            raise('TKIP expects keyID of zero')
+        print("tscOctets in tkmixer=", b2a_p(tscOctets))
         newKey = self.keyMixer.newKey(tscOctets)
-        print "newKey=", b2a_p(newKey)
+        print("newKey=", b2a_p(newKey))
         return newKey
 
     def encrypt(self, plainText, iv):
@@ -90,5 +90,5 @@ class TKIP_encr:
         self.arc4.setKey(self._makeARC4key(iv))
         plainText = self.arc4.decrypt(cipherText[self.encryptHeaderSize:])
         if plainText[-4:] != pack('<I', crc32(plainText[:-4])):  # check data integrity
-            raise IntegrityCheckError, 'WEP CRC Integrity Check Error'
+            raise(IntegrityCheckError, 'WEP CRC Integrity Check Error')
         return plainText[:-4]

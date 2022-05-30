@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """ crypto.cipher.trolldoll
 
     Modification to Icedoll to take advantage of the better error extension
@@ -13,7 +13,7 @@
 
     ALso ... currently just IV .... in test ..
 
-    Copyright (c) 2002 by Paul A. Lambert
+    Copyright © (c) 2002 by Paul A. Lambert
     Read LICENSE.txt for license information.
 """
 
@@ -80,6 +80,6 @@ class Trolldoll(Icedoll):
             self.hasIV = 1
         if more == None:    # on last call to encrypt append integrity check
             if not(self._verifyIC(plainText[-self.micSize:])):
-                raise IntegrityCheckError, 'Trolldoll MIC Failure, bad key or modified data'
+                raise(IntegrityCheckError, 'Trolldoll MIC Failure, bad key or modified data')
             plainText = plainText[:-self.micSize]  # trim off the integrity check
         return plainText

@@ -129,10 +129,13 @@ class DMHelper:
 
     @staticmethod
     def makeUnikalFileName(fileName, withTmpFileName=True, addDateToFileName=False):
-        baseName = os.path.basename(fileName).replace('\\', '')
-        
-        printDBG("DMHelper::makeUnikalFileName(%s, %s, %s) baseName: %s" % (fileName, withTmpFileName, addDateToFileName, baseName))
-        
+        # if this function is called
+        # no more than once per second
+        # date and time (with second)
+        # is sufficient to provide a unique name
+        from time import gmtime, strftime
+        date = strftime("%Y-%m-%d_%H:%M:%S_", gmtime())
+
         if not addDateToFileName:
             tries = 10
             for idx in range(tries):
@@ -140,27 +143,20 @@ class DMHelper:
                     uniqueID = str(idx + 1) + '. '
                 else:
                     uniqueID = ''
-                newFileName = os.path.dirname(fileName) + os.sep + uniqueID + baseName
+                newFileName = os.path.dirname(fileName) + os.sep + uniqueID + os.path.basename(fileName)
                 if fileExists(newFileName):
                     continue
                 if withTmpFileName:
-                    tmpFileName = os.path.dirname(fileName) + os.sep + "." + uniqueID + baseName
+                    tmpFileName = os.path.dirname(fileName) + os.sep + "." + uniqueID + os.path.basename(fileName)
                     if fileExists(tmpFileName):
                         continue
                     return newFileName, tmpFileName
                 else:
                     return newFileName
 
-        # if this function is called
-        # no more than once per second
-        # date and time (with second)
-        # is sufficient to provide a unique name
-        from time import gmtime, strftime
-        date = strftime("%Y-%m-%d_%H.%M.%S_", gmtime())
-
-        newFileName = os.path.dirname(fileName) + os.sep + date + baseName
+        newFileName = os.path.dirname(fileName) + os.sep + date.replace(':', '.') + os.path.basename(fileName)
         if withTmpFileName:
-            tmpFileName = os.path.dirname(fileName) + os.sep + "." + date + baseName
+            tmpFileName = os.path.dirname(fileName) + os.sep + "." + date.replace(':', '.') + os.path.basename(fileName)
             return newFileName, tmpFileName
         else:
             return newFileName
@@ -262,7 +258,6 @@ class DMHelper:
 
         #defaultHeader = ' --header "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0" '
         defaultHeader = ' --header "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36" '
-
         for key, value in downloaderParams.items():
             if value != '':
                 if key in DMHelper.HANDLED_HTTP_HEADER_PARAMS:
@@ -302,7 +297,6 @@ class DMHelper:
 
         #userAgent = ' -u "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0" '
         userAgent = ' -u "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36" '
-
         for key, value in downloaderParams.items():
             if value != '':
                 if key in DMHelper.HANDLED_HTTP_HEADER_PARAMS:

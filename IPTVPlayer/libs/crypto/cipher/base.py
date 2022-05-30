@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """ crypto.cipher.base
 
 
@@ -7,7 +7,7 @@
     class was written to make the actual algorithm code more readable and
     not for performance.
 
-    Copyright (c) 2002 by Paul A. Lambert
+    Copyright © (c) 2002 by Paul A. Lambert
     Read LICENSE.txt for license information.
 
     2002-04-25   changed block input
@@ -69,7 +69,7 @@ class BlockCipher:
         numBlocks, numExtraBytes = divmod(len(self.bytesToDecrypt), self.blockSize)
         if more == None:  # no more calls to decrypt, should have all the data
             if numExtraBytes != 0:
-                raise DecryptNotBlockAlignedError, 'Data not block aligned on decrypt'
+                raise(DecryptNotBlockAlignedError, 'Data not block aligned on decrypt')
 
         # hold back some bytes in case last decrypt has zero len
         if (more != None) and (numExtraBytes == 0) and (numBlocks > 0):
@@ -120,7 +120,7 @@ class padWithPadLen(Pad):
     def removePad(self, paddedBinaryString, blockSize):
         """ Remove padding from a binary string """
         if not(0 < len(paddedBinaryString)):
-            raise DecryptNotBlockAlignedError, 'Expected More Data'
+            raise(DecryptNotBlockAlignedError, 'Expected More Data')
         return paddedBinaryString[:-ord(paddedBinaryString[-1])]
 
 

@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2022.05.07.
+# Modified by Blindspot # 2022.05.30.
 # Fixed Parser for Evoload.io 
 ###################################################
 # LOCAL import
@@ -176,6 +176,7 @@ class urlparser:
                        'bojem3a.info':          self.pp.parserEXASHARECOM   ,
                        'bro.adca.st':           self.pp.parserBROADCAST      ,
                        'bro.adcast.tech':       self.pp.parserBROADCAST      ,
+                       'brolel.net':            self.pp.parserTXNEWSNETWORK ,
                        'buckler.link':          self.pp.parserBUCKLER       ,
                        'byetv.org':             self.pp.parserBYETVORG       ,
                        'casacinema.cc':         self.pp.parserCASACINEMACC   ,
@@ -234,6 +235,7 @@ class urlparser:
                        'easyload.io':           self.pp.parserEASYLOAD      ,
                        'easyvid.org':           self.pp.parserEASYVIDORG    ,
                        'easyvideo.me':          self.pp.parserEASYVIDEOME   ,
+                       'easysport2022.xyz':     self.pp.parserTXNEWSNETWORK ,
                        'ebd.cda.pl':            self.pp.parserCDA           ,
                        'educadegree.com':       self.pp.parserEDUCADEGREE,
                        'ekstraklasa.tv':        self.pp.parserEKSTRAKLASATV  ,
@@ -251,6 +253,7 @@ class urlparser:
                        'fastplay.cc':           self.pp.parserFASTPLAYCC     ,
                        'faststream.in':         self.pp.parserVIDSTREAM     ,
                        'fastvideo.in':          self.pp.parserFASTVIDEOIN   ,
+                       'favoritegames.xyz':     self.pp.parserTXNEWSNETWORK ,
                        'fcdn.stream':           self.pp.parserFEMBED,
                        'fembed.com':            self.pp.parserFEMBED,
                        'fembed-hd.com':         self.pp.parserFEMBED,
@@ -474,6 +477,8 @@ class urlparser:
                        'rutube.ru':             self.pp.parserRUTUBE        ,
                        'videovard.sx':          self.pp.parserVIDEOVARDSX   ,
                        'sawlive.tv':            self.pp.parserSAWLIVETV     ,
+                       'sbfast.com':            self.pp.parserSTREAMSB    ,
+                       'sbfull.com':            self.pp.parserSTREAMSB    ,
                        'sbplay.one':            self.pp.parserSTREAMSB    ,
                        'sbplay1.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.com':           self.pp.parserSTREAMSB    ,
@@ -597,6 +602,7 @@ class urlparser:
                        'upvid.co':              self.pp.parserWATCHUPVIDCO   ,
                        'upvid.mobi':            self.pp.parserUPFILEMOBI     ,
                        'upvideo.cc':            self.pp.parserONLYSTREAM   ,
+                       'upvideo.to':            self.pp.parserONLYSTREAM   ,
                        'userload.co':           self.pp.parserUSERLOADCO     ,
                        'userscloud.com':        self.pp.parserUSERSCLOUDCOM ,
                        'ustream.to':            self.pp.parserUSTREAMTV     ,
@@ -728,6 +734,7 @@ class urlparser:
                        'showsport.xyz':         self.pp.parserSHOWSPORTXYZ,
                        'assia.org':             self.pp.parserASSIAORG,
                        'assia2.com':            self.pp.parserASSIAORG,
+                       'assia22.com':           self.pp.parserASSIAORG,
                        'assia4.com':            self.pp.parserASSIAORG,
                        'castfree.me':           self.pp.parserASSIAORG,
                        'cricplay2.xyz':         self.pp.parserASSIAORG,
@@ -743,7 +750,13 @@ class urlparser:
                        'liveonscore.to':        self.pp.parserLIVEONSCORETV,
                        'weakstreams.com':       self.pp.parserLIVEONSCORETV,
                        'sportsonline.to':       self.pp.parserSPORTSONLINETO,
-                       
+                       'ufckhabib.com':         self.pp.parserSPORTSONLINETO,
+                       'castfree.me':           self.pp.parserCASTFREEME,
+                       'noob4cast.com':         self.pp.parserCASTFREEME,
+                       'hlsplayer.org':         self.pp.parserHLSPLAYER,
+                       'starlive.xyz':          self.pp.parserSTARLIVEXYZ,
+                       'jokerswidget.org':      self.pp.parserJOKERSWIDGETORG
+
                        
         } 
         return                 
@@ -12790,7 +12803,7 @@ class pageParser(CaptchaHelper):
             c2 = hexlify(x.encode('utf8')).decode('utf8')
             x = '{0}||{1}||{2}||streamsb'.format(makeid(12), c2, makeid(12))
             c3 = hexlify(x.encode('utf8')).decode('utf8')
-            return 'https://{0}/sourcesx38/{1}/{2}'.format(urlparser.getDomain(baseUrl), c1, c3)
+            return 'https://{0}/sourcesx43/{1}/{2}'.format(urlparser.getDomain(baseUrl), c1, c3)
 
         eurl = get_embedurl(media_id)
         urlParams['header']['watchsb'] = 'streamsb'
@@ -12813,7 +12826,7 @@ class pageParser(CaptchaHelper):
         #          https://mixdrop.co/e/1f13jq
         #          https://mixdrop.club/f/vn7de6q7t0j868/2/La_Missy_sbagliata_HD_2020_WEBDL_1080p.mp4
         
-        m = re.search("mixdrop\.(co|club|bz)/[ef]/(?P<id>.*?)($|/)", baseUrl)
+        m = re.search("mixdrop\.(co|club|ch)/[ef]/(?P<id>.*?)($|/)", baseUrl)
         
         if m:
             video_id = m.group('id')
@@ -15830,8 +15843,138 @@ class pageParser(CaptchaHelper):
                    url = self.parserMIXDROP(links[names.index(i)])
                if "https://embedsito.com" in links[names.index(i)]:
                    url = self.parserFEMBED(links[names.index(i)])
+               if "https://sbplay2.xyz" in links[names.index(i)]:
+                   url = self.parserSTREAMSB(links[names.index(i)])
                if url == []:
                    url = [{'url': None}]
                urlTab.append({'name': i, 'url': url[0]['url']})
         return urlTab
         
+
+    def parserHLSPLAYER(self, baseUrl):
+        printDBG("parserHLSPLAYER baseUrl[%r]" % baseUrl)
+
+        url = baseUrl.split('url=')[-1]
+        url = urllib.unquote(url)
+
+        urlTab = []
+        url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': baseUrl})
+        urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
+
+        return urlTab
+
+    def parserSTARLIVEXYZ(self, baseUrl):
+        printDBG("parserSTARLIVEXYZ baseUrl[%r]" % baseUrl)
+
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header': HTTP_HEADER}
+
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts:
+            return False
+        cUrl = self.cm.meta['url']
+        domain = urlparser.getDomain(cUrl)
+
+        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
+        if url.startswith('//'):
+            url = 'http:' + url
+        HTTP_HEADER['Referer'] = cUrl
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts:
+            return False
+
+        _url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
+        if _url:
+            if _url.startswith('//'):
+                _url = 'http:' + _url
+            HTTP_HEADER['Referer'] = url
+            urlParams = {'header': HTTP_HEADER}
+            sts, data = self.cm.getPage(_url, urlParams)
+            if not sts:
+                return False
+        else:
+            _url = url
+
+        urlTab = []
+
+        if "eval(function(p,a,c,k,e,d)" in data:
+            printDBG('Host resolveUrl packed')
+            scripts = re.findall(r"(eval\s?\(function\(p,a,c,k,e,d.*?)</script>", data, re.S)
+            for packed in scripts:
+                data2 = packed
+                printDBG('Host pack: [%s]' % data2)
+                try:
+                    data = unpackJSPlayerParams(data2, TEAMCASTPL_decryptPlayerParams, 0, True, True)
+                    printDBG('OK unpack: [%s]' % data)
+                except Exception:
+                    pass
+
+                url = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.mp4(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+                if url != '':
+                    url = strwithmeta(url, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': _url})
+                    urlTab.append({'name': 'mp4', 'url': url})
+                hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+                if hlsUrl != '':
+                    hlsUrl = strwithmeta(hlsUrl, {'Origin': "https://" + urlparser.getDomain(baseUrl), 'Referer': _url})
+                    urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
+
+        return urlTab
+
+    def parserJOKERSWIDGETORG(self, baseUrl):
+        printDBG("parserJOKERSWIDGETORG baseUrl[%s]" % baseUrl)
+
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer:
+            HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts:
+            return []
+
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<body', '>'), ('<div', '>'), False)[1]
+        jscode = self.cm.ph.getAllItemsBeetwenNodes(tmp, ('<script', '>'), ('</script', '>'), False)
+        jscode = '\n'.join(jscode)
+        jscode = 'var document={}; document.write=function(txt){print(txt);};' + jscode
+        url = self.cm.ph.getSearchGroups(tmp, '''src=['"]([^"^']+?)['"]''')[0]
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts:
+            return []
+        jscode = jscode + data
+
+        ret = js_execute(jscode)
+        if ret['sts'] and 0 == ret['code']:
+            tmp = ret['data'].strip()
+        url = self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
+        HTTP_HEADER['Referer'] = baseUrl
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts:
+            return []
+
+        HTTP_HEADER['Referer'] = url
+        urlParams = {'header': HTTP_HEADER}
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'player'), ('</iframe', '>'), False)[1]
+        url = self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=([^\s]+?)\s''', 1, True)[0]
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts:
+            return []
+
+        HTTP_HEADER['Referer'] = url
+        urlParams = {'header': HTTP_HEADER}
+        _url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=([^\s]+?)\s''', 1, True)[0]
+        url = self.cm.getFullUrl(_url, url)
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts:
+            return []
+
+        urlTab = []
+        videoUrl = self.cm.ph.getSearchGroups(data, '''source:\s?['"]([^"^']+?)['"]''')[0]
+        videoUrl = strwithmeta(videoUrl, {'Referer': url})
+        if videoUrl != '':
+            urlTab.extend(getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999))
+
+        return urlTab

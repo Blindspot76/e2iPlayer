@@ -27,7 +27,6 @@ hostchomikuj
 hostchristusvincit
 hostcimaclubcom
 hostcinemalibero
-hostcinemaxx
 hostcinemay
 hostcineto
 hostclassiccinemaonline
@@ -93,7 +92,6 @@ hostkinox
 hostkisscartoonme
 hostkkiste
 hostkreskoweczki
-hostkreskowkazone
 hostliveleak
 hostlocalmedia
 hostlosmovies

@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """ crypto.cipher.ccm
 
     CCM block cipher mode
@@ -8,7 +8,7 @@
     integrity check can optionally include unencrypted 'addAuthData'.
     CCM requires a nonce that MUST NEVER repeat for a given key.
 
-    Copyright (c) 2002 by Paul A. Lambert
+    Copyright © (c) 2002 by Paul A. Lambert
     Read LICENSE.txt for license information.
 """
 from crypto.cipher.base import BlockCipherWithIntegrity, noPadding
@@ -41,13 +41,13 @@ class CCM(BlockCipherWithIntegrity):
             >> try:
             >>     decryptedText = aes_ccm.decrypt(cipherText, nonce)
             >> except IntegrityCheckError:
-            >>     print 'failed integrity check'
+            >>     print('failed integrity check')
             or ...
             >> cipherText = aes_ccm.encrypt(plainText, nonce, addAuthData=header)
             >> try:
             >>     decryptedText = aes_ccm.decrypt(cipherText, nonce, addAuthData=header)
             >> except IntegrityCheckError:
-            >>     print 'failed integrity check'
+            >>     print('failed integrity check')
     """
 
     def __init__(self, blockCipherInstance, autoNonce=None, macSize=8, nonceSize=13):
@@ -68,12 +68,12 @@ class CCM(BlockCipherWithIntegrity):
 
         self.M = macSize        # Number of octets
         if not((3 < self.M < 17) and (macSize % 2 == 0)):
-            raise InitCryptoError, 'CCM, M (size of auth field) is out of bounds'
+            raise(InitCryptoError, 'CCM, M (size of auth field) is out of bounds')
 
         self.nonceSize = nonceSize
         self.L = self.baseCipher.blockSize - self.nonceSize - 1
         if not(1 < self.L < 9):
-            raise InitCryptoError, 'CCM, L (size of length field) is out of bounds'
+            raise(InitCryptoError, 'CCM, L (size of length field) is out of bounds')
         self.reset()
 
     def setKey(self, key):
@@ -102,16 +102,16 @@ class CCM(BlockCipherWithIntegrity):
         flagsByte = chr(Adata ^ Mfield ^ Lfield)
 
         if len(nonce) != self.nonceSize:
-            raise EncryptError, 'wrong sized nonce'
+            raise(EncryptError, 'wrong sized nonce')
 
         lenMessage = len(plainText)
-        if lenMessage >= 1L << (8 * self.L):
-            raise EncryptError, 'CCM plainText too long for given L field size'
+        if lenMessage >= 1 << (8 * self.L):
+            raise(EncryptError, 'CCM plainText too long for given L field size')
         packedLenMessage = pack('!Q', lenMessage)[-self.L:]  # pack and truncate to L bytes
 
         blockZero = flagsByte + nonce + packedLenMessage
         if len(blockZero) != self.baseCipher.blockSize:
-            raise EncryptError, 'CCM bad size of first block'
+            raise(EncryptError, 'CCM bad size of first block')
 
         authLengthField = self._encodeAuthLength(len(addAuthData))
         cbcInput = blockZero + authLengthField + addAuthData
@@ -129,7 +129,7 @@ class CCM(BlockCipherWithIntegrity):
         for i in range(numCbcBlocks):
             cbcBlock = cbcInput[i * self.blockSize:(i + 1) * self.blockSize]
             cbcMicValue = self.baseCipher.encrypt(xor(cbcMicValue, cbcBlock))
-        counter = 0L
+        counter = 0
         # the counter mode preload with counter starting at zero
         ctrModePl = chr(self.L - 1) + nonce + pack('>Q', counter)[-self.L:]
         ccmMIC = xor(self.baseCipher.encrypt(ctrModePl), cbcMicValue)[:self.M] # first M bytes of xor
@@ -137,7 +137,7 @@ class CCM(BlockCipherWithIntegrity):
         ct = ''
         numCtrBlocks, extra = divmod(len(plainText) + self.blockSize, self.blockSize)
         while counter < numCtrBlocks:
-            counter = counter + 1L
+            counter = counter + 1
             ctrModePl = chr(self.L - 1) + nonce + pack('>Q', counter)[-self.L:]
             ct = ct + xor(self.baseCipher.encrypt(ctrModePl), plainText[(counter - 1) * 16:counter * 16])
         ct = ct + ccmMIC
@@ -157,13 +157,13 @@ class CCM(BlockCipherWithIntegrity):
         flagsByte = chr(Adata ^ Mfield ^ Lfield)
 
         if len(nonce) != self.nonceSize:
-            raise DecryptError, 'wrong sized nonce'
+            raise(DecryptError, 'wrong sized nonce')
 
         lenMessage = len(cipherText) - self.M
-        if lenMessage >= 1L << (8 * self.L):
-            raise DecryptError, 'CCM cipherText too long for given L field size'
+        if lenMessage >= 1 << (8 * self.L):
+            raise(DecryptError, 'CCM cipherText too long for given L field size')
         if lenMessage < 0:
-            raise DecryptError, 'Too small of cipherText for MIC size'
+            raise(DecryptError, 'Too small of cipherText for MIC size')
         packedLenMessage = pack('!Q', lenMessage)[-self.L:]  # pack and truncate to L bytes
 
         pt = ''
@@ -178,7 +178,7 @@ class CCM(BlockCipherWithIntegrity):
         #------- CBC Mac Calculation
         blockZero = flagsByte + nonce + packedLenMessage
         if len(blockZero) != self.baseCipher.blockSize:
-            raise DecryptError, 'CCM bad size of first block'
+            raise(DecryptError, 'CCM bad size of first block')
 
         authLengthField = self._encodeAuthLength(len(addAuthData))
         cbcInput = blockZero + authLengthField + addAuthData
@@ -200,22 +200,22 @@ class CCM(BlockCipherWithIntegrity):
         ccmMIC = xor(self.baseCipher.encrypt(ctrModePl0), cbcMicValue)[:self.M] # first 8 bytes of xor
 
         if ccmMIC != cipherText[-self.M:]:
-            raise IntegrityCheckError, 'CCM Integrity check failed on decrypt'
+            raise(IntegrityCheckError, 'CCM Integrity check failed on decrypt')
 
         return pt
 
     def _encodeAuthLength(self, length):
         """ construct byte string representing length, returns 2 to 10 bytes """
         if length < 0:
-            raise EncryptError, 'CCM illegal length value'
+            raise(EncryptError, 'CCM illegal length value')
         elif 0 <= length < 0xFF00:
             byteString = pack('!H', length)         # pack into two bytes
-        elif 0xFF00 <= length < 0x100000000L:
+        elif 0xFF00 <= length < 0x100000000:
             byteString = pack('!HI', 0xFFFE, length) # pack into 0xFFFE + four bytes
-        elif 0x100000000L <= length < 0x10000000000000000L:
+        elif 0x100000000 <= length < 0x10000000000000000:
             byteString = pack('!HQ', 0xFFFF, length) # pack into 0xFFFF + eigth bytes
         else:
-            raise EncryptError, 'CCM length error'
+            raise(EncryptError, 'CCM length error')
         return byteString
 
     def _decodeAuthLength(self, byteString):
@@ -223,15 +223,15 @@ class CCM(BlockCipherWithIntegrity):
             Only the first 2 to 10 bytes of the byte string are examined """
         firstTwoOctets == unpack('!H', bytesString[0:2])   # two bytes used for length
         if firstTwoOctets == 0:
-            raise DecryptError, 'CCM auth length zero with auth bit set'
+            raise(DecryptError, 'CCM auth length zero with auth bit set')
         elif 0 < firstTwoOctets < 0xFEFF:
             messageLength == firstTwoOctets
         elif 0xFEFF < firstTwoOctets < 0xFFFE:
-            raise DecryptError, 'CCM auth length illegal values'
+            raise(DecryptError, 'CCM auth length illegal values')
         elif firstTwoOctets == 0xFFFE:
             messageLength = unpack('!I', byteString[2:6])  # four bytes used for length
         elif firstTwoOctets == 0xFFFF:
             messageLength = unpack('!Q', byteString[2:10]) # eight bytes used for length
         else:
-            raise DecryptError, 'CCM auth length error'
+            raise(DecryptError, 'CCM auth length error')
         return messageLength

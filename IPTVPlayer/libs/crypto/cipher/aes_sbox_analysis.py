@@ -1,12 +1,12 @@
 #! /usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """ crypto.cipher.aes_sbox_analysis
 
     AES Sbox Analysis - a simple analysis of the AES Sbox that determines
     the number and size of the permutation subgroups in the transformation.
     Could be extended to examine any Sbox ...
 
-    Copyright (c) 2002 by Paul A. Lambert
+    Copyright © (c) 2002 by Paul A. Lambert
     Read LICENSE.txt for license information.
 
     2002-12-05 Added validation of equation form of AES
@@ -88,11 +88,11 @@ def sgv(subbytes):
 
 def main():
     cycles = grpv(sbbytes)
-    print 'The AES sbox contains ',
-    print len(cycles),
-    print 'permutation subgroups'
-    print 'The AES sbox subgroups (start, length) are:'
-    print cycles
+    print('The AES sbox contains '),
+    print(len(cycles)),
+    print('permutation subgroups')
+    print('The AES sbox subgroups (start, length) are:')
+    print(cycles)
 
 
 # Make this test module runnable from the command prompt

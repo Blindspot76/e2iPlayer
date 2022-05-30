@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2022.03.20. 
+# Blindspot - 2022.05.30. 
 ###################################################
-HOST_VERSION = "1.8"
+HOST_VERSION = "2.0"
 ###################################################
 # LOCAL import
 ###################################################
@@ -126,12 +126,27 @@ class Dmdamedia(CBaseHostClass):
     
     def listMainMenu(self, cItem):   
         printDBG('Dmdamedia.listMainMenu')
-        MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Filmek'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/film', 'page': '1'},
+        MAIN_CAT_TAB = [{'category':'list_filters',            'title': _('Kategóriák'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/'},
+                        {'category':'list_items',            'title': _('Filmek'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/film', 'page': '1'},
                         {'category':'list_items',            'title': _('Sorozatok'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/', 'page': '1'},
                         {'category':'list_items',            'title': _('Friss'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/friss', 'page': '1'},
                         {'category':'search',          'title': _('Keresés'), 'search_item':True},
                         {'category':'search_history',  'title': _('Keresési előzmények')}]
         self.listsTab(MAIN_CAT_TAB, cItem) 
+    
+    def listFilters(self, cItem):
+        sts, data = self.getPage(cItem['url'])
+        if not sts:
+            return
+        cat = self.cm.ph.getDataBeetwenMarkers(data, '<div id="catlist" class="catmenu">', '</div>', False)[1]
+        cats = self.cm.ph.getAllItemsBeetwenMarkers(cat, '<a', '/a>', False)
+        for i in cats:
+            title = self.cm.ph.getDataBeetwenMarkers(i, '">', '<', False)[1]
+            url = self.cm.ph.getDataBeetwenMarkers(i, 'href="', '">', False)[1]
+            if "https://dmdamedia.hu" not in url:
+                url = "https://dmdamedia.hu" + url
+            params = {'category':'list_items','title':title, 'icon': None , 'url': url, 'page': '1'}
+            self.addDir(params)
     
     def listItems(self, cItem):
         printDBG('Dmdamedia.listItems')
@@ -225,14 +240,16 @@ class Dmdamedia(CBaseHostClass):
                     i = i.replace('">', '')
                     title = self.cm.ph.getDataBeetwenMarkers(u,'">','</a>', False) [1] + ".évad"
                     newurl = url.replace("/", "") + i
-                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': newurl, 'desc':cItem['desc']}
+                    if "https:dmdamedia.hu" in newurl:
+                        newurl = newurl.replace("https:", "https://")
+                    sts, data = self.getPage(newurl)
+                    desc = self.cm.ph.getDataBeetwenMarkers(data, '<p>', '</p>', False)[1]
+                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': newurl, 'desc':desc}
                     self.addDir(params)
     
     def exploreItemsE(self, cItem, title, icon):
         printDBG('Dmdamedia.exploreItems - Epizódok')
         url = cItem['url']
-        if "https:dmdamedia.hu" in url:
-            url = url.replace("https:", "https://")
         sts, data = self.getPage(url)
         if not sts:
             return
@@ -252,8 +269,12 @@ class Dmdamedia(CBaseHostClass):
                     if "https://dmdamedia.hu" in f or "https://dmdamedia.eu" in f or "http://dmdamedia.eu" in f or "http://dmdamedia.hu" in f:
                          newurl = f
                     else:
-                       newurl = "https://dmdamedia.hu" + f 
-                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': newurl, 'desc': cItem['desc']}
+                       newurl = "https://dmdamedia.hu" + f
+                    sts, data = self.getPage(newurl)
+                    desc = self.cm.ph.getDataBeetwenMarkers(data, '<p style="text-align:left;margin:20px;">', '</p>', False)[1]
+                    if not desc:
+                        desc = cItem['desc']
+                    params = {'category':'explore_item', 'title': title,  'icon': icon, 'url': newurl, 'desc': desc}
                     self.addDir(params)
     
     def exploreItemsEL(self, cItem, title, icon):
@@ -314,6 +335,8 @@ class Dmdamedia(CBaseHostClass):
             self.listMainMenu({'name':'category'})
         elif category == 'list_items':
             self.listItems(self.currItem)
+        elif category == 'list_filters':
+            self.listFilters(self.currItem)
         elif category == 'explore_item' and "dmdamedia.eu" in url:
             self.exploreItemsF(self.currItem, title, icon)
         elif category == 'explore_item' and "évad" in title:
@@ -366,7 +389,7 @@ class Dmdamedia(CBaseHostClass):
         sts, data = self.getPage(url)           
         if not sts:
             return
-        movies = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="wrap">','</a></div>')
+        movies = self.cm.ph.getAllItemsBeetwenMarkers(data,'<div class="sorozatok">','</a></div>')
         point = searchPattern.split()
         for p in point:
             printDBG(p)

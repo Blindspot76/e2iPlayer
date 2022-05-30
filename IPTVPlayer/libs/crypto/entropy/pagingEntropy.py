@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """ crypto.entropy.pagingEntropy
 
     Uses variations in disk access time to generator entropy.  A long string is
@@ -16,7 +16,7 @@ import struct
 class PagingEntropyCollector:
     """ collect entropy from memory paging """
 
-    def __init__(self, memSize=500000000L):            #? how should this be picked?
+    def __init__(self, memSize=500000000):            #? how should this be picked?
         """ Initialize paging entropy collector,
             memSize must be larger than allocated memory """
         self.size = memSize
@@ -72,4 +72,4 @@ if __name__ == "__main__":
     e = PagingEntropyCollector()
     for i in range(20):
         e.rand.seed(1)        # make each sample set the same to allow examination of statistics
-        print b2a_hex(e.randomBytes(16))
+        print(b2a_hex(e.randomBytes(16)))
