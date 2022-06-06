@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.04.11. Blindspot
+# 2021.06.06. Blindspot
 ###################################################
-HOST_VERSION = "1.2"
+HOST_VERSION = "1.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -188,7 +188,8 @@ class OnlineStream(CBaseHostClass):
         if '<a class="ajax_link" href="' not in str(data):
             params = {'title': cItem['title'], 'icon': cItem['icon'] , 'url': cItem['url'], 'desc': cItem['desc'], 'type': None}
             sts, data = self.cm.getPage(cItem['url'])
-            if 'Audió infó' in data and 'Videó infó' not in data:
+            type = self.cm.ph.getDataBeetwenMarkers(data, '<title>', '</title>', False)[1]
+            if "Online rádió" in type:
                 self.addAudio(params)
             elif 'MJPEG' in data:
                params.update({'desc':cItem['desc'] + "\n" + "Az OK gomb lenyomásával a kép automatikusan frissül!"})
@@ -208,7 +209,8 @@ class OnlineStream(CBaseHostClass):
             title = title.replace('&nbsp;', '')
             printDBG("title " + title)
             params = {'title': title, 'icon': cItem['icon'] , 'url': url,'desc': cItem['desc']}
-            if 'Audió infó' in dat and 'Videó infó' not in dat:
+            type = self.cm.ph.getDataBeetwenMarkers(dat, '<title>', '</title>', False)[1]
+            if "Online rádió" in type:
                 self.addAudio(params)
             else:
                self.addVideo(params)
