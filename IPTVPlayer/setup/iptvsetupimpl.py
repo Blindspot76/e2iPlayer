@@ -113,7 +113,7 @@ class IPTVSetupImpl:
         self.cmdwrapPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/cmdwrap'), "/usr/bin/cmdwrap"]
 
         # duk
-        self.dukVersion = 6 # "2.1.99 [experimental]" # real version
+        self.dukVersion = 5 
         self.dukPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/duk'), "/usr/bin/duk"]
 
         self.binaryInstalledSuccessfully = False
