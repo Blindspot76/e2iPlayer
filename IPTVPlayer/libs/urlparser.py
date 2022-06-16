@@ -1,6 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2022.05.30.
-# Fixed Parser for Evoload.io 
+# Modified by Blindspot # 2022.06.15.
 ###################################################
 # LOCAL import
 ###################################################
@@ -719,7 +718,7 @@ class urlparser:
                        'xage.pl':               self.pp.parserXAGEPL        ,
                        'xvidstage.com':         self.pp.parserXVIDSTAGECOM   ,
                        'yocast.tv':             self.pp.parserYOCASTTV      ,
-                       'youdbox.com':           self.pp.parserONLYSTREAM   ,
+                       'yodbox.com':            self.pp.parserONLYSTREAM   ,
                        'yourvideohost.com':     self.pp.parserYOURVIDEOHOST ,
                        'youtu.be':              self.pp.parserYOUTUBE       ,
                        'youtube.com':           self.pp.parserYOUTUBE       ,
