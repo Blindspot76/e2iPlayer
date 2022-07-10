@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
 #                 Saracen Knight                  #
-#             saracen.knight@mail.ru              #
 ###################################################
+#      Modified by Blindspot - 2022.07.09.        #
 ###################################################
 # LOCAL import
 ###################################################
@@ -271,15 +271,15 @@ class Cb01(CBaseHostClass):
  
         #video link
         urlTab = []
-        temp = re.findall('''div role="tabpanel" class="tab-pane fade"(.*?)</div>''', data, re.S)
-        printDBG("<<<<<<<< temp "+str(temp))
+        links = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="mirrors-list__list mirrors-list__list_stream">', '</ul>', False)[1]
+        links = self.cm.ph.getAllItemsBeetwenMarkers(links, '<li>', '</li>', False)
 
-        for tt in temp:
-            printDBG("tt <<<<<<  "+str(tt))
-            url = "https:"+self.cm.ph.getSearchGroups(tt, '''src=['"]([^"^']+?)['"]''', 1, True)[0]
-            printDBG("url <<<<<<  "+str(url))
-            name = re.findall('''id="(.*?)"''', tt, re.S)[0]
-            printDBG("name <<<<<<  "+str(name))
+        for t in links:
+            url = self.cm.ph.getDataBeetwenMarkers(t, '<a href="', '"', False)[1]
+            if "https:" not in url:
+                url = "https:" + url
+            name = self.cm.ph.getDataBeetwenMarkers(t, '<img src="', '</a>')[1]
+            name = self.cm.ph.getDataBeetwenMarkers(name, '">', '</a>', False)[1]
             url = strwithmeta(url, {'Referer':cItem['url']})
             urlTab.append({'name':name, 'url':url, 'need_resolve':1})
 

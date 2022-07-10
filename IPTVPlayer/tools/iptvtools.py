@@ -1779,3 +1779,28 @@ def MergeDicts(*dict_args):
     for dictionary in dict_args:
         result.update(dictionary)
     return result
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        s.connect(('8.8.8.8', 80))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+def is_port_in_use(pIP, pPORT):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    res = sock.connect_ex((pIP, pPORT))
+    sock.close()
+    return res == 0
+
+def isOPKGinstall():
+    if os.path.exists('/var/lib/opkg/info/enigma2-plugin-extensions--j00zeks-e2iplayer-mod-zadmario.control') or \
+       os.path.exists('/var/lib/opkg/info/enigma2-plugin-extensions-e2iplayer.control'):
+        return True
+    else:
+        return False
