@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2021-01-26 Blindspot (Modified Celeburdi's version)
+# 2022-07-15 Blindspot (Modified Celeburdi's version)
 ###################################################
-HOST_VERSION = "2.7"
+HOST_VERSION = "2.8"
 ###################################################
 # LOCAL import
 ###################################################
@@ -350,8 +350,7 @@ class MindiGoHU(CBaseHostClass):
             "eJzTT08t0c0vSM2zT87PyUlNLsnMz7MFAFVWB/c="))
         self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
-        self.M3_STREAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
-            "eJzTLy4pSk3MtS9JLEpPLbEFAC3gBb8="))
+        self.M3_STREAM_URL = "https://archivum.mtva.hu/api/m3/v3/stream?target="
 
         self.HBBTV_HEADER = dict(self.HEADER)
         self.HBBTV_HEADER.update( {"User-Agent": "Mozilla/5.0 (SMART-TV; Linux; Tizen 2.3) AppleWebkit/538.1 (KHTML, like Gecko) SamsungBrowser/1.0 TV Safari/538.1"} )
@@ -869,6 +868,7 @@ class MindiGoHU(CBaseHostClass):
                 sts, data = self.getPage(url)
                 if not sts: return []
                 data = json_loads(data)["url"]
+                data = data.replace('\/', '/').replace("HLS.smil", "nodrm.smil")
                 uri = strwithmeta(data,{'User-Agent':self.HEADER ['User-Agent']} )
                 return getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
                 

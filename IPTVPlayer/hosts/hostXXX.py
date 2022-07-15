@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2022.07.06.
-# Added new host: FreeOnes
+# Modified by Blindspot - 2022.07.15.
+# Fixed WatchPornX
 ###################################################
 # LOCAL import
 ###################################################
@@ -171,7 +171,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2022.07.06.1"
+    XXXversion = "2022.07.15.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -324,7 +324,7 @@ class Host:
            valTab.append(CDisplayListItem('THUMBZILLA',     'http://www.thumbzilla.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.thumbzilla.com/'],'THUMBZILLA', 'https://ei.phncdn.com/www-static/thumbzilla/images/pc/logo.png?cache=2022042804', None)) 
            valTab.append(CDisplayListItem('YUVUTU',     'http://www.yuvutu.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.yuvutu.com/categories/'],'YUVUTU', 'http://www.yuvutu.com/themes/yuvutu_v2/images/yuvutu_logo.png', None)) 
            valTab.append(CDisplayListItem('PORNICOM',     'http://pornicom.com', CDisplayListItem.TYPE_CATEGORY, ['http://pornicom.com/categories/'],'PORNICOM', 'http://pornicom.com/images/logo.png', None)) 
-           #valTab.append(CDisplayListItem('ALOHATUBE',     'https://www.alohatube.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.alohatube.com/'],'ALOHATUBE', 'https://pbs.twimg.com/profile_images/858949887827689472/uyuD2kqI_400x400.jpg', None)) 
+           valTab.append(CDisplayListItem('ALOHATUBE',     'https://www.alohatube.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.alohatube.com/'],'ALOHATUBE', 'https://pbs.twimg.com/profile_images/858949887827689472/uyuD2kqI_400x400.jpg', None)) 
            valTab.append(CDisplayListItem('PERFECTGIRLS',     'https://www.perfectgirls.xxx/', CDisplayListItem.TYPE_CATEGORY, ['https://www.perfectgirls.xxx/'],'PERFECTGIRLS', 'https://m.perfectgirls.net/images/no-sprite/logo.png', None)) 
            valTab.append(CDisplayListItem('TUBEPORNCLASSIC',     'http://tubepornclassic.com/', CDisplayListItem.TYPE_CATEGORY, ['http://tubepornclassic.com/categories/'],'TUBEPORNCLASSIC', 'https://tubepornclassic.com/static/images/favicons/android-icon-192x192.png', None)) 
            valTab.append(CDisplayListItem('KOLOPORNO',     'https://www.koloporno.com/', CDisplayListItem.TYPE_CATEGORY, ['https://www.koloporno.com/kategoriach/'],'KOLOPORNO', 'https://pbs.twimg.com/profile_images/638608521072934912/sqy78GQm.png', None)) 
@@ -354,7 +354,7 @@ class Host:
            valTab.append(CDisplayListItem('STREAMPORN',     'https://streamporn.pw', CDisplayListItem.TYPE_CATEGORY, ['https://streamporn.pw'],'streamporn', 'https://static-ca-cdn.eporner.com/gallery/5K/Oo/wxT1T22Oo5K/501600-beautiful-island-in-the-stream.jpg', None)) 
            valTab.append(CDisplayListItem('PORNVIDEOS 4K',     'http://pornvideos4k.com/en/', CDisplayListItem.TYPE_CATEGORY, ['http://pornvideos4k.com/en/'],'pornvideos4k', 'https://www.pornvideos4k.net/img/logo_desktop_v4@2x.png', None)) 
            valTab.append(CDisplayListItem('MYDIRTYHOBBY',     'https://www.mydirtyhobby.to', CDisplayListItem.TYPE_CATEGORY, ['https://www.mydirtyhobby.to'],'MYDIRTYHOBBY', 'https://www.camadvisers.com/wp-content/uploads/2021/02/mydirtyhobby.png', None)) 
-           valTab.append(CDisplayListItem('XXXSTREAMS',     'http://xxxstreams.org/', CDisplayListItem.TYPE_CATEGORY, ['http://xxxstreams.org/'],'xxxstreams', 'https://tse2.mm.bing.net/th?id=OIP.pqy2ErzrtHKd4GvMT_kQtAHaJP&pid=15.1', None)) 
+           #valTab.append(CDisplayListItem('XXXSTREAMS',     'http://xxxstreams.org/', CDisplayListItem.TYPE_CATEGORY, ['http://xxxstreams.org/'],'xxxstreams', 'https://tse2.mm.bing.net/th?id=OIP.pqy2ErzrtHKd4GvMT_kQtAHaJP&pid=15.1', None)) 
            valTab.append(CDisplayListItem('PANDAMOVIE',     'https://pandamovie.info', CDisplayListItem.TYPE_CATEGORY, ['https://pandamovie.info'],'123PANDAMOVIE', 'https://pandamovie.info/wp-content/uploads/2021/03/pandamovie-new-clolor.png', None)) 
            valTab.append(CDisplayListItem('DANSMOVIES',     'http://dansmovies.com', CDisplayListItem.TYPE_CATEGORY, ['http://dansmovies.com/'],'DANSMOVIES', 'http://cdn1.photos.dansmovies.com/templates/dansmovies/images/logo.png', None)) 
            valTab.append(CDisplayListItem('PORNREWIND',     'https://www.pornrewind.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.pornrewind.com/categories/'],'PORNREWIND', 'https://www.pornrewind.com/static/images/logo-light-pink.png', None)) 
@@ -6953,17 +6953,17 @@ class Host:
               phTitle = self.cm.ph.getSearchGroups(item, '''">([^"^']+?)[<]''', 1, True)[0] 
               if phUrl.startswith('//'): phUrl = 'https:' + phUrl + '/' 
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl 
-              valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [phUrl],'watchpornx-clips', '', None)) 
+              valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [phUrl],'watchpornx-clips', 'https://k5x5n5g8.ssl.hwcdn.net/content/150501/kassi-presenting-kassi-03.jpg', None)) 
            valTab.sort(key=lambda poz: poz.name)
-           valTab.insert(0,CDisplayListItem("--- Pornstars ---","Pornstars",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-years',    '',"Pornstars"))
-           valTab.insert(0,CDisplayListItem("--- Years ---","Years",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-years',    '',"Years"))
-           valTab.insert(0,CDisplayListItem("--- Studios ---","Studios",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-years',    '',"Studios"))
-           valTab.insert(0,CDisplayListItem("--- Clips & Scenes ---","Clips & Scenes",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+'/scenes'],             'watchpornx-clips',    '',self.MAIN_URL))
+           valTab.insert(0,CDisplayListItem("--- Pornstars ---","Pornstars",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-years',    'https://m.media-amazon.com/images/I/61ttgOOwQpL._SL1024_.jpg',"Pornstars"))
+           valTab.insert(0,CDisplayListItem("--- Years ---","Years",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-years',    'https://sytekmarketing.com/img/porn-star-the-body.jpg',"Years"))
+           valTab.insert(0,CDisplayListItem("--- Studios ---","Studios",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-years',    'https://cdn2-thumbs.worldsex.com/albums/20/19844/9063118b66ff5ef1250d8af4c6f7a0a1b5e12cbb_001_620x.jpg',"Studios"))
+           valTab.insert(0,CDisplayListItem("--- Clips & Scenes ---","Clips & Scenes",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+'/scenes'],             'watchpornx-clips',    'https://xphoto.name/uploads/posts/2022-01/1641946445_2-xphoto-name-p-famous-porn-actress-2.jpg',self.MAIN_URL))
            #valTab.insert(0,CDisplayListItem("--- Featured ---","Featured",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+'/category/featured-movies'],             'watchpornx-clips',    '',self.MAIN_URL))
-           valTab.insert(0,CDisplayListItem("--- New ---","New",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-clips',    '', None))
+           valTab.insert(0,CDisplayListItem("--- New ---","New",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'watchpornx-clips',    'https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/701/p-1-how-porn-stars-stay-fit-1517319321.jpg', None))
            self.SEARCH_proc='watchpornx-search'
-           valTab.insert(0,CDisplayListItem(_('Search history'), _('Search history'), CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
-           valTab.insert(0,CDisplayListItem(_('Search'),  _('Search'),                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
+           valTab.insert(0,CDisplayListItem(_('Search history'), _('Search history'), CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', 'https://img2.thejournal.ie/inline/2398415/original/?width=630&version=2398415', None)) 
+           valTab.insert(0,CDisplayListItem(_('Search'),  _('Search'),                       CDisplayListItem.TYPE_SEARCH,   [''], '',        'https://www.hyperpoolgroup.co.za/wp-content/uploads/2018/07/Product-Search.jpg', None)) 
            return valTab
         if 'watchpornx-search' == name:
            printDBG( 'Host listsItems begin name='+name )
@@ -6982,14 +6982,14 @@ class Host:
            for item in data:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTitle = self.cm.ph.getSearchGroups(item, '''Title">([^>]+?)<''', 1, True)[0]
-              phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phImage = self.cm.ph.getSearchGroups(item, '''lazy-src=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTime = self.cm.ph.getSearchGroups(item, '''rel="tag">([^>]+?)<''', 1, True)[0]
               if phImage.startswith('//'): phImage = 'http:' + phImage
               if phUrl.startswith('//'): phUrl = 'http:' + phUrl + '/' 
               if not 'Ubiqfile' in phTitle:
                  valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle)+'\n'+phTime,CDisplayListItem.TYPE_CATEGORY, [phUrl],'watchpornx-serwer', phImage, phTitle)) 
            if next_page:
-              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, '', None))                
+              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))                
            return valTab
         if 'watchpornx-serwer' == name:
            printDBG( 'Host listsItems begin name='+name )
@@ -6999,7 +6999,7 @@ class Host:
            if not sts: return ''
            catUrl = self.currList[Index].possibleTypesOfSearch
            phImage = self.cm.ph.getSearchGroups(data, '''"og:image" content=['"]([^"^']+?)['"]''', 1, True)[0] 
-           data = self.cm.ph.getDataBeetwenMarkers(data, 'petsdivcontainer">', 'pandamoviebannertop1"', False)[1]
+           data = self.cm.ph.getDataBeetwenMarkers(data, 'petsdivcontainer">', '<article class="TPost A Single">', False)[1]
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'Rtable1-cell"><a', 'class="Rtable1')
            printDBG( 'Adatok: '+str(data) )
            if "Netu" in data[0]:

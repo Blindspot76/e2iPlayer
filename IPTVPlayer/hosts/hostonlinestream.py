@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2021.06.06. Blindspot
+# 2022.07.15. Blindspot
 ###################################################
-HOST_VERSION = "1.3"
+HOST_VERSION = "1.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -72,12 +72,10 @@ class OnlineStream(CBaseHostClass):
                 return
             dat = self.cm.ph.getDataBeetwenMarkers(data, "https://", "m3u8")[1]
         if cItem['title'] == 'M3':
-            url = "https://archivum.mtva.hu/m3/stream?target=live"
+            url = "https://archivum.mtva.hu/api/m3/v3/stream?target=live"
             sts, data = self.cm.getPage(url)
-            if not sts:
-                return
             dat = self.cm.ph.getDataBeetwenMarkers(data, '"url":"', '","', False)[1]
-            dat = dat.replace('\/', '/')
+            dat = dat.replace('\/', '/').replace("HLS.smil", "nodrm.smil")
         if self._isPicture(dat):
             dat = dat.replace("mjpg", "jpg")
             dat = dat.replace("video", "image")
