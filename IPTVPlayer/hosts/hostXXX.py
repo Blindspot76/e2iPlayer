@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2022.07.25.
-# Added new host: WatchMyGf
+# Modified by Blindspot - 2022.07.27.
+# Fixed HDPorno, Motherless
 ###################################################
 # LOCAL import
 ###################################################
@@ -171,7 +171,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2022.07.25.1"
+    XXXversion = "2022.07.27.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -299,7 +299,7 @@ class Host:
            valTab.append(CDisplayListItem('TUBE8',          'www.tube8.com',      CDisplayListItem.TYPE_CATEGORY, ['http://www.tube8.com/categories.html'], 'tube8',   'http://cdn1.static.tube8.phncdn.com/images/t8logo.png', None)) 
            valTab.append(CDisplayListItem('YOUPORN',        'wwww.youporn.com',   CDisplayListItem.TYPE_CATEGORY, ['https://www.youporn.com/categories/'],'youporn', 'https://fs.ypncdn.com/cb/bundles/youpornwebfront/images/l_youporn_black.png?v=9b34af679da9f8f8279fb875c7bcea555a784ec3', None)) 
            valTab.append(CDisplayListItem('PORNHUB',        'www.pornhub.com',    CDisplayListItem.TYPE_CATEGORY, ['https://www.pornhub.com/categories'],    'pornhub', 'https://mk0onemorecupofd9ppb.kinstacdn.com/wp-content/uploads/2018/11/Make-Money-Pornhub.jpg', None)) 
-           valTab.append(CDisplayListItem('HDPORN',         'www.hdporn.net',     CDisplayListItem.TYPE_CATEGORY, ['http://www.hdporn.net/channels/'],      'hdporn',  'http://www.hdporn.com/gfx/logo.jpg', None)) 
+           valTab.append(CDisplayListItem('HDPORN',         'www.hdporn.net',     CDisplayListItem.TYPE_CATEGORY, ['http://www.hdporn.net'],      'hdporn',  'http://www.hdporn.com/gfx/logo.jpg', None)) 
            valTab.append(CDisplayListItem('REDTUBE',        'www.redtube.com',    CDisplayListItem.TYPE_CATEGORY, ['http://www.redtube.com/categories'],      'redtube', 'https://pornox.hu/contents/content_sources/15/s1_redtube.jpg', None)) 
            valTab.append(CDisplayListItem('HENTAIGASM',     'hentaigasm.com',     CDisplayListItem.TYPE_CATEGORY, ['http://hentaigasm.com'],                'hentaigasm','http://hentaigasm.com/wp-content/themes/detube/images/logo.png', None)) 
            valTab.append(CDisplayListItem('XVIDEOS',        'www.xvideos.com',    CDisplayListItem.TYPE_CATEGORY, ['http://www.xvideos.com'],               'xvideos', 'http://emblemsbf.com/img/31442.jpg', None)) 
@@ -1395,16 +1395,17 @@ class Host:
            sts, data = self.get_Page(url)
            if not sts: return
            printDBG( 'HD Porn adatok: '+data )
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'class="content">', '</div>')
+           data = self.cm.ph.getDataBeetwenMarkers(data, 'ul id="channel_box">', '</ul>', False)[1]
+           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li>', '</a>')
+           phImage = 'https://cdni.pornpics.com/460/1/256/72714917/72714917_004_404a.jpg'
            for item in data:
-              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&') 
-              phImage = self.cm.ph.getSearchGroups(item, '''<img\ssrc=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phTitle = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&') 
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
               phUrl = self.cm.getFullUrl(phUrl, self.MAIN_URL)
               valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'hdporn-clips', phImage, None)) 
            valTab.sort(key=lambda poz: poz.name)
-           valTab.insert(0,CDisplayListItem("--- Top Rated ---","Top Rated",           CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+"/top-rated/"]  , 'hdporn-clips','', None))
-           valTab.insert(0,CDisplayListItem("--- Home ---","Home",           CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL]  , 'hdporn-clips','', None))
+           valTab.insert(0,CDisplayListItem("--- Top Rated ---","Top Rated",           CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+"/top-rated/"]  , 'hdporn-clips','https://cdni.pornpics.com/1280/7/487/89451786/89451786_015_f08f.jpg', None))
+           valTab.insert(0,CDisplayListItem("--- Home ---","Home",           CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL]  , 'hdporn-clips','https://cdni.pornpics.com/1280/7/514/55629529/55629529_044_dae9.jpg', None))
            return valTab
         if 'hdporn-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
@@ -1427,7 +1428,7 @@ class Host:
               next = re.findall("</a><a href='(.*?)'>", next[0], re.S)
               if len(next)>0:
                  #next = self.cm.getFullUrl(next[0], self.MAIN_URL)
-                 valTab.append(CDisplayListItem('Next', next[0].replace('.html',''), CDisplayListItem.TYPE_CATEGORY, [self.cm.getFullUrl(next[0], url)], name, '', None))                
+                 valTab.append(CDisplayListItem('Next', next[0].replace('.html',''), CDisplayListItem.TYPE_CATEGORY, [self.cm.getFullUrl(next[0], url)], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))                
               return valTab
 
         if 'pornrabbit' == name:
@@ -2791,7 +2792,7 @@ class Host:
                  valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None))
            if next:
               next = self.MAIN_URL + next
-              valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))    
+              valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))    
            return valTab
 
         if 'WATCHMYGF' == name:
@@ -2819,7 +2820,7 @@ class Host:
            if next:
               if next.startswith('/'): 
                  next = self.MAIN_URL + next
-              valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))
+              valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))
            return valTab
         
         if 'WATCHMYGF-search' == name:
@@ -2849,7 +2850,7 @@ class Host:
            if next:
               if next.startswith('/'): 
                  next = self.MAIN_URL + next
-              valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))    
+              valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))    
            return valTab
 
         if 'FILMYPORNO' == name:
@@ -3025,7 +3026,7 @@ class Host:
                  url = 'https' + url
               next = url + next
               printDBG( 'Kovi: '+next )
-              valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))   
+              valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))   
            return valTab
 
         if 'THUMBZILLA' == name:
@@ -3267,7 +3268,7 @@ class Host:
                  valTab.append(CDisplayListItem(phTitle,'['+Time+']   '+phTitle,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next_page: 
               number = next_page.split('/')[-2]
-              valTab.append(CDisplayListItem('Next', 'Next '+number, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))
+              valTab.append(CDisplayListItem('Next', 'Next '+number, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))
            return valTab
 
         if 'PERFECTGIRLS' == name:
@@ -3527,10 +3528,10 @@ class Host:
            printDBG( 'Host listsItems data: '+data )
            next_page = self.cm.ph.getDataBeetwenMarkers(data, '</span><a href="', '" class="pop"', False)[1]
            if next_page.startswith('/'): next_page = self.MAIN_URL + next_page
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'data-frames', '"uploader">')
+           data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'thumb-container video', '"uploader">')
            for item in data:
-              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0]
-              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phTitle = self.cm.ph.getSearchGroups(item, '''title=["]([^;]+?)["]''', 1, True)[0]
+              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"] title''', 1, True)[0] 
               phImage = self.cm.ph.getSearchGroups(item, '''" src=['"]([^"^']+?)['"]''', 1, True)[0]
               Time = self.cm.ph.getSearchGroups(item, '''size">([^"^']+?)<''', 1, True)[0] 
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
@@ -4311,7 +4312,7 @@ class Host:
               valTab.append(CDisplayListItem(phTitle,'['+phTime+']  '+phTitle,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
               if next.startswith('/'): next = self.MAIN_URL + next
-              valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))                
+              valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))                
            return valTab
         
         if 'zbporn-clips' == name:
@@ -4332,7 +4333,7 @@ class Host:
               valTab.append(CDisplayListItem(phTitle,'['+phTime+']  '+phTitle,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
               if next.startswith('/'): next = self.MAIN_URL + next
-              valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))                
+              valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))                
            return valTab
 
         if 'pornoxo' == name:
@@ -4547,7 +4548,7 @@ class Host:
               valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next_page:
               if next_page.startswith('/'): next_page = self.MAIN_URL + next_page
-              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))                
+              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))                
            return valTab
 
         if 'txxx' == name:
@@ -5037,7 +5038,7 @@ class Host:
               printDBG( 'Videolista: '+ phUrl )
               valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next_page:
-              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))                
+              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))                
            return valTab
 
         
@@ -5165,7 +5166,7 @@ class Host:
               valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None))
            if next2:
               next_page = 'http://pornvideos4k.com' + next2
-              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))
+              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))
            return valTab
         
         if 'fux' == name:
@@ -5639,7 +5640,7 @@ class Host:
               if phTitle:
                  valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']   '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None))
            if next_page:
-              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))                
+              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))                
            return valTab
         
 
@@ -6254,7 +6255,7 @@ class Host:
            valTab.insert(0,CDisplayListItem(_('Search'),  _('Search'),                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
            if next:
               number = next.split('=')[-1]
-              valTab.append(CDisplayListItem('More Categories', 'More Categories, Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))
+              valTab.append(CDisplayListItem('More Categories', 'More Categories, Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))
            return valTab
            
         if 'porndroid-search' == name:
@@ -6283,7 +6284,7 @@ class Host:
               valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
            if next:
               number = next.split('=')[-1]
-              valTab.append(CDisplayListItem('Next ', 'Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', 'next'))
+              valTab.append(CDisplayListItem('Next ', 'Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', 'next'))
            return valTab
            
         if 'porndroid-channels' == name:
@@ -6304,7 +6305,7 @@ class Host:
                 valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [phUrl],'porndroid-clips', phImage, None))
             if next_page: 
                 number = next_page.split('=')[-1]
-                valTab.append(CDisplayListItem('More Channels', 'Next Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))
+                valTab.append(CDisplayListItem('More Channels', 'Next Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))
             return valTab
             
         if 'porndroid-pornstars' == name:
@@ -6325,7 +6326,7 @@ class Host:
                 valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [phUrl],'porndroid-clips', phImage, None))
             if next_page: 
                 number = next_page.split('=')[-1]
-                valTab.append(CDisplayListItem('More Pornstars', 'Next Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))
+                valTab.append(CDisplayListItem('More Pornstars', 'Next Page: '+number, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))
             return valTab   
            
         if 'lovehomeporn' == name:
@@ -6993,7 +6994,7 @@ class Host:
               if not 'Ubiqfile' in phTitle:
                  valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle)+'\n'+phTime,CDisplayListItem.TYPE_CATEGORY, [phUrl],'watchpornx-serwer', phImage, phTitle)) 
            if next_page:
-              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', None))                
+              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', None))                
            return valTab
         if 'watchpornx-serwer' == name:
            printDBG( 'Host listsItems begin name='+name )
@@ -7608,7 +7609,7 @@ class Host:
               printDBG( 'Kész link: '+str(phUrl) )
               valTab.append(CDisplayListItem(decodeHtml(phTitle), decodeHtml(phTitle), CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
-              valTab.append(CDisplayListItem('Next Page', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', 'Next'))  
+              valTab.append(CDisplayListItem('Next Page', next, CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', 'Next'))  
            return valTab
 
         if 'freeones' == name:
@@ -7670,7 +7671,7 @@ class Host:
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+'] '+decodeHtml(phTitle), CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
-              valTab.append(CDisplayListItem('Next Page', 'Next Page', CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', 'Next'))  
+              valTab.append(CDisplayListItem('Next Page', 'Next Page', CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', 'Next'))  
            return valTab 
         
         if 'freeones-channels' == name:
@@ -7699,7 +7700,7 @@ class Host:
               valTab.append(CDisplayListItem(decodeHtml(phTitle), decodeHtml(phTitle), CDisplayListItem.TYPE_CATEGORY, [phUrl],'freeones-clips', phImage, None))
            if next:
               next = self.MAIN_URL + next
-              valTab.append(CDisplayListItem('Next Page', 'Next Page', CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', 'Next'))  
+              valTab.append(CDisplayListItem('Next Page', 'Next Page', CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', 'Next'))  
            return valTab 
    
         if 'lustysextube' == name:
@@ -7760,7 +7761,7 @@ class Host:
                  valTab.append(CDisplayListItem(decodeHtml(phTitle), decodeHtml(phTitle) ,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
               printDBG( 'Kövi: '+ str(next))
-              valTab.append(CDisplayListItem('Next Page', 'Next Page', CDisplayListItem.TYPE_CATEGORY, [next], name, 'https://www.clipartmax.com/png/small/109-1090359_next-page-button-f-cliffs-of-moher.png', 'Next'))  
+              valTab.append(CDisplayListItem('Next Page', 'Next Page', CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', 'Next'))  
            return valTab 
 
         if 'familyporn' == name:

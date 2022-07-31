@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-07-15 Blindspot (Modified Celeburdi's version)
+# 2022-07-31 Blindspot (Modified Celeburdi's version)
 ###################################################
-HOST_VERSION = "2.8"
+HOST_VERSION = "2.9"
 ###################################################
 # LOCAL import
 ###################################################
@@ -867,7 +867,7 @@ class MindiGoHU(CBaseHostClass):
      
                 sts, data = self.getPage(url)
                 if not sts: return []
-                data = json_loads(data)["url"]
+                data = self.cm.ph.getDataBeetwenMarkers(data, '"url":"', '"', False)[1]
                 data = data.replace('\/', '/').replace("HLS.smil", "nodrm.smil")
                 uri = strwithmeta(data,{'User-Agent':self.HEADER ['User-Agent']} )
                 return getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)

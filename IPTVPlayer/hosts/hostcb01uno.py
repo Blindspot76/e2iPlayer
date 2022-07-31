@@ -19,21 +19,21 @@ except Exception:
 
 
 def gettytul():
-    return 'https://cb01.clothing/'
+    return 'https://cb01.kaufen/'
 
 
 class Cb01(CBaseHostClass):
 
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history': 'cb01.design', 'cookie': 'cb01.design.cookie'})
+        CBaseHostClass.__init__(self, {'history': 'cb01.kaufen', 'cookie': 'cb01.kaufen.cookie'})
 
         self.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
-        self.MAIN_URL = 'https://cb01.clothing/'
-        self.DEFAULT_ICON_URL = 'https://cb01.clothing/wp-content/uploads/2019/03/logocb2-1.jpg'
+        self.MAIN_URL = 'https://cb01.kaufen/'
+        self.DEFAULT_ICON_URL = 'https://i0.wp.com/cb01.uno/wp-content/uploads/2021/01/logo-cb01-uno-film-streaming.jpg'
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
@@ -58,7 +58,7 @@ class Cb01(CBaseHostClass):
     def listMainMenu(self, cItem):
         printDBG("cb01uno.listMainMenu")
         params = dict(cItem)
-        params.update({'name': 'category', 'category': 'list_items', 'title': _('Film'), 'url': self.MAIN_URL})
+        params.update({'name': 'category', 'category': 'list_items', 'title': _('Home-Film'), 'url': self.MAIN_URL})
         self.addDir(params)
 
         sts, data = self.getPage(self.getMainUrl())
@@ -70,7 +70,7 @@ class Cb01(CBaseHostClass):
         self.setMainUrl(self.cm.meta['url'])
         tabs = []
 
-        groups = self.cm.ph.getAllItemsBeetwenNodes(data, ('<li', '>', 'mega-menu-megamenu'), '</li></ul>', False)
+        groups = self.cm.ph.getAllItemsBeetwenNodes(data, ('<li', '>', 'mega-menu-item mega-menu-item-type-custom'), '</li></ul>', False)
 
         for group in groups:
             printDBG("-----------------------")
@@ -98,11 +98,11 @@ class Cb01(CBaseHostClass):
 
         if len(tabs):
             params = dict(cItem)
-            params.update({'category': 'sub_items', 'title': _('Categories Film'), 'sub_items': tabs})
+            params.update({'category': 'sub_items', 'title': _('Categories'), 'sub_items': tabs})
             self.addDir(params)
 
         # Search
-        MAIN_CAT_TAB = [{'category': 'search', 'title': _('Search SerieTv'), 'search_item': True},
+        MAIN_CAT_TAB = [{'category': 'search', 'title': _('Search'), 'search_item': True},
                         {'category': 'search_history', 'title': _('Search history')}]
 
         self.listsTab(MAIN_CAT_TAB, cItem)
@@ -223,7 +223,7 @@ class Cb01(CBaseHostClass):
         urlTab = []
 
         #links = re.findall("href=['\"]?([^ '\"]+?)['\"]? target=\"?_blank\"? rel=\"[^\"]+\">(.*?)</a>", data)
-        #example: <a href="http://swzz.xyz/link/479Pq/" target="_blank" rel="noopener noreferrer">Akvideo</a>
+        #example: <a href="https://stayonline.pro/l/x4xMR/" target="_blank" rel="noopener noreferrer nofollow">Mixdrop</a>
         links = re.findall("href=['\"]?([^ '\"]+?)['\"]? target=\"?_blank\"? rel=\"[^\"]+\">(.*?)</a>|<strong>(.*?)</strong>", data)
         categ = ''
 
