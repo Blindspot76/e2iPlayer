@@ -83,6 +83,7 @@
 "hosthitboxtv": "https://www.smashcast.tv/",
 "hosthoofootcom": "http://hoofoot.com/",
 "hosticefilmsinfo": "https://wwv.icefilms-info.com/",
+"hostidokep": "https://www.idokep.hu",
 "hostiitvpl": "http://iitvx.pl/",
 "hostinteriatv": "http://interia.tv/",
 "hostipla": "https://ipla.tv/",

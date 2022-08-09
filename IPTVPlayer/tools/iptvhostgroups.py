@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-07-10 by Blindspot - modified iptvhostgroups
+# 2022-08-09 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -61,8 +61,9 @@ class IPTVHostsGroups:
         HOST_AND_GROUPS = {
         'technika' : [ 'hungarian', 'documentary'] ,
         'updatehosts' : [ 'hungarian'] ,
+        'idokep' : [ 'hungarian', 'live'] ,
         'webhuplayer' : [ 'hungarian', 'moviesandseries', 'english'] , 
-        'mediayou' : [ 'hungarian'] ,  
+        'mediayou' : [ 'hungarian' , 'music'] , 
         'eurosportplayer' : [ 'hungarian', 'live', 'sport'] ,
         'filmezz' : [ 'hungarian', 'moviesandseries'] ,
         'nonstopmozi' : [ 'hungarian', 'moviesandseries'] ,
