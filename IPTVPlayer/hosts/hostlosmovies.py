@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 2021.12.05. by Blindspot
+# 2022.08.21. by Blindspot
 ###################################################
 # LOCAL import
 ###################################################
@@ -38,7 +38,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://losmovies.app'
+    return 'https://losmovies.online'
 
 class LosMovies(CBaseHostClass):
  
@@ -46,11 +46,11 @@ class LosMovies(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'LosMovies.tv', 'cookie':'LosMovies.cookie'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'http://losmovies.app/images/losmovies_logo.png'
+        self.DEFAULT_ICON_URL = 'https://losmovies.online/images/losmovies_logo.png'
         self.HEADER = self.cm.getDefaultHeader(browser='chrome')
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'http://losmovies.app'
+        self.MAIN_URL = 'https://losmovies.online'
         self.cacheEpisodes = {}
         self.cacheLinks = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -246,7 +246,7 @@ class LosMovies(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("LosMovies.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = "http://losmovies.cam/display-results?type=movies&q=" + urllib.quote_plus(searchPattern)
+        cItem['url'] = "https://losmovies.online/display-results?type=movies&q=" + urllib.quote_plus(searchPattern)
         self.listItems(cItem, 'list_seasons')
         
     def getLinksForVideo(self, cItem, eItem=None):

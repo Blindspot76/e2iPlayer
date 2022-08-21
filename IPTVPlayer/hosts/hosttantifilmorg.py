@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 ###################################################
+# 2022.08.21. by Blindspot
+###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -22,7 +24,7 @@ except Exception:
 
 
 def gettytul():
-    return 'https://www.tantifilm.rodeo/'
+    return 'https://www.tantifilm.run/'
 
 
 class TantiFilmOrg(CBaseHostClass):
@@ -37,7 +39,7 @@ class TantiFilmOrg(CBaseHostClass):
         self.cm.HEADER = self.HEADER # default header
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
-        self.MAIN_URL = 'https://www.tantifilm.rodeo/'
+        self.MAIN_URL = 'https://www.tantifilm.run/'
         self.DEFAULT_ICON_URL = 'https://raw.githubusercontent.com/Zanzibar82/images/master/posters/tantifilm.png'
 
         self.MAIN_CAT_TAB = [{'category': 'list_categories', 'title': _('Categories'), 'url': self.MAIN_URL},
@@ -117,8 +119,8 @@ class TantiFilmOrg(CBaseHostClass):
             if title.upper() == 'HOME':
                 continue # not items on home page
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            if self.cm.getBaseUrl(self.getMainUrl(), True) != self.cm.getBaseUrl(url, True) or '/supporto/' in url:
-                continue
+            if 'supporto' in url:
+                break
             params = dict(cItem)
             if 'elenco-saghe' not in url:
                 params.update({'category': nextCategory, 'title': title, 'url': url})
@@ -209,7 +211,7 @@ class TantiFilmOrg(CBaseHostClass):
                 tmp = self.cm.ph.rgetDataBeetwenMarkers2(data, '</body>', '<h1 class="page-title">', withMarkers=False)[1]
             if tmp == '':
                 tmp = data
-            data = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<div class="mediaWrap', '</span>', withMarkers=True)
+            data = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<div class="mediaWrap', '</ul>', withMarkers=True)
         for item in data:
             idx = item.find('</h2>')
             if idx > 0:
@@ -378,19 +380,17 @@ class TantiFilmOrg(CBaseHostClass):
         urlTab = []
         if type == 'movie':
             tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="wpwm-movie-links">', '<div class="film-left">', False)[1]
-            tmp = tmp.split('</ul>')
-            printDBG(tmp)
-            for item in tmp:
-                url = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            url = self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            if url.startswith('//'):
+                url = "https:" + url
+            sts, data = self.getPage(url)
+            links = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class=', '</li>')
+            for i in links:
+                url = self.cm.ph.getDataBeetwenMarkers(i, 'data-link="', '"', False)[1]
                 if url.startswith('//'):
                     url = "https:" + url
-                if not self.cm.isValidUrl(url):
-                    continue
-                id = self.cm.ph.getSearchGroups(item, '''id=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
-                title = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''<a[^>]+?href=['"]\#%s['"][^>]*?>''' % re.escape(id)), re.compile('</a>'))[1]
-                title = self.cleanHtmlStr(title)
-                if title == '':
-                    title = self.up.getDomain(url)
+                title = self.cm.ph.getDataBeetwenMarkers(i, '">', '</li>', False)[1]
+                title = title.strip()
                 url_params = {'name': title, 'url': strwithmeta(url, {'url': cItem['url']}), 'need_resolve': 1}
                 printDBG(str(url_params))
                 urlTab.append(url_params)

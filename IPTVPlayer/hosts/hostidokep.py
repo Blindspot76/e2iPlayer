@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2022.08.08. Blindspot
+# 2022.08.15. Blindspot
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -285,8 +285,9 @@ class Idokep(CBaseHostClass):
                     url = 'https://www.idokep.eu/terkep/hu970/hoterkep3.jpg'
                     params = {'title':title, 'icon': url , 'url': url}
                     self.addPicture(params)
-                params = {'category':'list_items','title':title, 'icon': None , 'url': url, 'picture': picture}
-                self.addDir(params)
+                else:
+                   params = {'category':'list_items','title':title, 'icon': None , 'url': url, 'picture': picture}
+                   self.addDir(params)
         elif cItem['title'] == "Felhőkép":
             menu = self.cm.ph.getDataBeetwenMarkers(data, 'Felhőkép</a>', '</ul>', False)[1]
             list = self.cm.ph.getAllItemsBeetwenMarkers(menu, '<li>', '</li>', False)

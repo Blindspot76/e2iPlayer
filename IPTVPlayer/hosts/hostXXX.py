@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2022.07.27.
-# Fixed HDPorno, Motherless
+# Modified by Blindspot - 2022.08.11.
+# Fixed XVideos
 ###################################################
 # LOCAL import
 ###################################################
@@ -171,7 +171,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2022.07.27.1"
+    XXXversion = "2022.08.11.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -983,6 +983,9 @@ class Host:
                     break
               if not phTitle: phTitle = 'VIDEO'
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"](/video[^"^']+?)['"]''', 1, True)[0] 
+              if not phUrl:
+                 phUrl = self.cm.ph.getSearchGroups(item, '''href=['"](/search-video[^"^']+?)['"]''', 1, True)[0] 
+              #printDBG( 'Video oldala: '+phUrl )
               phImage = self.cm.ph.getSearchGroups(item, '''data-src=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTime = self.cm.ph.getSearchGroups(item, '''duration">([^>]+?)<''', 1, True)[0] 
               valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime.strip()+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', self.MAIN_URL+phUrl, 1)], 0, phImage, None)) 
@@ -10360,6 +10363,7 @@ class Host:
            return ''
 
         if parser == 'http://www.xvideos.com':
+           printDBG( 'Adatok: '+data )
            videoUrl = re.search("setVideoUrlHigh\('(.*?)'", data, re.S)
            if videoUrl: return decodeUrl(videoUrl.group(1))
            videoUrl = re.search('flv_url=(.*?)&', data, re.S)
