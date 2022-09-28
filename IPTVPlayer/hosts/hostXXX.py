@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2022.09.15.
-# Added New Host: FullPorner
+# Modified by Blindspot - 2022.09.27.
+# Fixed Love Home Porn
 ###################################################
 # LOCAL import
 ###################################################
@@ -171,7 +171,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2022.09.15.1"
+    XXXversion = "2022.09.27.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -6327,7 +6327,7 @@ class Host:
            self.page = 0
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a class="tag2', '</li>')
            for item in data:
-              phTitle = self._cleanHtmlStr(item).strip()
+              phTitle = self._cleanHtmlStr(item).strip().capitalize()
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0]
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phUrl:
@@ -6353,6 +6353,7 @@ class Host:
            if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
            next = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', 'Next', False)[1]
+           data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="thumbs-items', 'pagination', False)[1]
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
            for item in data:
               phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0].replace('\n','').strip()
@@ -8690,7 +8691,6 @@ class Host:
            MainUrl = self.cm.ph.getSearchGroups(data, '''src=["']([^"^']+?)["] sandbox''', 1, True)[0] 
            if MainUrl.startswith('//'): MainUrl = 'https:' + MainUrl
            sts, data = self.get_Page(MainUrl)
-           printDBG( 'Video Oldal: '+data )
            if not sts: return '' 
            videoUrl = self.cm.ph.getSearchGroups(data, '''720p HD</a> : <a href=['"]([^"]+?)['"] style''', 1, True)[0] 
            if not videoUrl:
@@ -8700,7 +8700,6 @@ class Host:
            if not videoUrl:
               videoUrl = self.cm.ph.getSearchGroups(data, '''source src=.?['"]([^"]+?)['"] ''', 1, True)[0].replace('\\','')
            if videoUrl.startswith('//'): videoUrl = 'https:' + videoUrl
-           printDBG( 'Video Linkje: '+videoUrl )
            return videoUrl
 
         if parser == 'https://www.camsoda.com/':
