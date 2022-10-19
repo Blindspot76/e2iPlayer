@@ -4,7 +4,7 @@
 #
 #  $Id$
 #
-# 2021-05-17 - Modified by Blindspot
+# 2022-10-18 - Modified by Blindspot
 ###################################################
 
 from time import sleep as time_sleep
@@ -712,12 +712,12 @@ class E2iPlayerWidget(Screen):
         if ret:
             if ret[1] == "info": #information about plugin
                 TextMSG  = _("E2iPlayer Magyar Változat")+"\n\n"
-                TextMSG += _("E-mail: ") + "\nblindspot76@gmail.com\n\n"
+                TextMSG += _("E-mail: ") + "\nblindspot76@freemail.hu\n\n"
                 TextMSG += _("www: ") + "\nhttps://github.com/blindspot76/e2iplayer" + '\nhttp://www.netboard.hu/viewtopic.php?topic=18425\n\n\n'
                 TextMSG += _("Készítették: ") 
-                developersTab = [{'nick':'Alec',},
-                                 {'nick':'Celeburdi',    },
-                                 {'nick':'Blindspot',   },
+                developersTab = [{'nick':'Blindspot',},
+                                 {'nick':'WhiteWolf',    },
+                                 {'nick':'Mario',   },
                                  ]
                 # present alphabetically, the order does not mean validity
                 sortedList = sorted(developersTab, key=lambda k: k['nick'].upper())
