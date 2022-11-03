@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-08-09 by Blindspot - modified iptvhostgroups
+# 2022-11-03 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -59,6 +59,7 @@ class IPTVHostsGroups:
         # hosts
         self.PREDEFINED_HOSTS = {}
         HOST_AND_GROUPS = {
+        'tv2play' : [ 'hungarian', 'moviesandseries'] ,
         'technika' : [ 'hungarian', 'documentary'] ,
         'updatehosts' : [ 'hungarian'] ,
         'idokep' : [ 'hungarian', 'live'] ,
