@@ -1,3 +1,5 @@
+#2022.11.08.01
+-SerienStream.to javítva
 #2022.11.03.02
 -HU telepítő frissítve
 #2022.11.03.01

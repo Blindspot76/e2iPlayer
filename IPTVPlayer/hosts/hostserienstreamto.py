@@ -53,8 +53,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://serien.sx/'
-
+    return 'https://serienstream.to/'
 
 class SerienStreamTo(CBaseHostClass, CaptchaHelper):
 
@@ -67,7 +66,7 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
-        self.MAIN_URL = 'https://serien.sx/'
+        self.MAIN_URL = 'https://s.to/'
         self.DEFAULT_ICON_URL = 'https://serienstream.sx/public/img/facebook.jpg'
 
         self.MAIN_CAT_TAB = [{'category': 'all_series', 'title': 'Alle Serien', 'url': self.getFullUrl('/serien-alphabet')},
