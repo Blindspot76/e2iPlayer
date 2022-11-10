@@ -1,10 +1,12 @@
-# Modified 2021.10.24.
+#!/usr/bin/env python
+# Modified by Blindspot 2022.11.10
 # -*- coding: utf-8 -*-
-import urllib
-import urllib2
 import re
 import time
-from urlparse import urlparse, urlunparse
+from Plugins.Extensions.IPTVPlayer.p2p3.UrlLib import urllib_urlencode, urllib_unquote_plus
+from Plugins.Extensions.IPTVPlayer.p2p3.UrlParse import urlparse, urlunparse
+from Plugins.Extensions.IPTVPlayer.p2p3.manipulateStrings import iterDictItems
+
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import *
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import _unquote
@@ -16,6 +18,7 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute_ext, is_js_cached
 
+from Plugins.Extensions.IPTVPlayer.p2p3.manipulateStrings import ensure_str
 
 class CYTSignAlgoExtractor:
     # MAX RECURSION Depth for security
@@ -142,7 +145,7 @@ class CYTSignAlgoExtractor:
                 code.insert(0, fun)
 
             objects = self._getAllObjectsWithMethods(mainFunction)
-            for objName, methods in objects.iteritems():
+            for objName, methods in iterDictItems(objects):
                 obj = self._findObject(objName, methods)
                 code.insert(0, obj)
 
@@ -401,80 +404,37 @@ class YoutubeIE(object):
 
         return video_id
 
+    _YT_INITIAL_DATA_RE = r'(?:window\s*\[\s*["\']ytInitialData["\']\s*\]|ytInitialData)\s*=\s*({.+?})\s*;'
+    _YT_INITIAL_PLAYER_RESPONSE_RE = r'ytInitialPlayerResponse\s*=\s*({.+?})\s*;'
+    _YT_INITIAL_BOUNDARY_RE = r'(?:var\s+meta|</script|\n)'
+
+    def _extract_yt_initial_variable(self, webpage, regex, video_id, name):
+        return json_loads(self._search_regex(
+            (r'%s\s*%s' % (regex, self._YT_INITIAL_BOUNDARY_RE),
+             regex), webpage, name, default='{}'))
+
     def _get_automatic_captions(self, video_id, webpage=None):
         sub_tracks = []
         if None == webpage:
             url = 'http://www.youtube.com/watch?v=%s&hl=%s&has_verified=1' % (video_id, GetDefaultLang())
-            sts, data = self.cm.getPage(url)
-            if not sts:
-                return sub_tracks
-
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, ';ytplayer.config =', '};', False)
-        if not sts:
-            return sub_tracks
+            sts, webpage = self.cm.getPage(url)
+            player_response = self._extract_yt_initial_variable(
+                webpage, self._YT_INITIAL_PLAYER_RESPONSE_RE,
+                video_id, 'initial player response')
+        else:
+            player_response = webpage
         try:
-            player_config = json_loads(data.strip() + '}')
-            args = player_config['args']
-            caption_url = args.get('ttsurl')
-            if caption_url:
-                timestamp = args['timestamp']
-                # We get the available subtitles
-                list_params = urllib.urlencode({
-                    'type': 'list',
-                    'tlangs': 1,
-                    'asrs': 1,
-                })
-                list_url = caption_url + '&' + list_params
-                caption_list = self.cm.getPage(list_url)
-                printDBG(caption_list)
-                return sub_lang_list
-
-                original_lang_node = caption_list.find('track')
-                if original_lang_node is None:
-                    return []
-                original_lang = original_lang_node.attrib['lang_code']
-                caption_kind = original_lang_node.attrib.get('kind', '')
-
-                sub_lang_list = {}
-                for lang_node in caption_list.findall('target'):
-                    sub_lang = lang_node.attrib['lang_code']
-                    sub_formats = []
-                    for ext in self._SUBTITLE_FORMATS:
-                        params = urllib.urlencode({
-                            'lang': original_lang,
-                            'tlang': sub_lang,
-                            'fmt': ext,
-                            'ts': timestamp,
-                            'kind': caption_kind,
-                        })
-                        sub_formats.append({
-                            'url': caption_url + '&' + params,
-                            'ext': ext,
-                        })
-                    sub_lang_list[sub_lang] = sub_formats
-                return sub_lang_list
-
-            # Some videos don't provide ttsurl but rather caption_tracks and
-            # caption_translation_languages (e.g. 20LmZk1hakA)
-            caption_tracks = args['caption_tracks']
-            caption_translation_languages = args['caption_translation_languages']
-            caption_url = compat_parse_qs(caption_tracks.split(',')[0])['u'][0]
-            parsed_caption_url = urlparse(caption_url)
-            caption_qs = compat_parse_qs(parsed_caption_url.query)
-
-            sub_lang_list = {}
-            for lang in caption_translation_languages.split(','):
-                lang_qs = compat_parse_qs(urllib.unquote_plus(lang))
-                sub_lang = lang_qs.get('lc', [None])[0]
-                if not sub_lang:
-                    continue
-                caption_qs.update({
-                    'tlang': [sub_lang],
-                    'fmt': ['vtt'],
-                })
-                sub_url = urlunparse(parsed_caption_url._replace(
-                    query=urllib.urlencode(caption_qs, True)))
-                sub_tracks.append({'title': lang_qs['n'][0].encode('utf-8'), 'url': sub_url, 'lang': sub_lang.encode('utf-8'), 'ytid': len(sub_tracks), 'format': 'vtt'})
+            player_captions = player_response['captions']['playerCaptionsTracklistRenderer']['captionTracks']
+            for lang in player_captions:
+                printDBG("_get_automatic_captions %s" % lang)
+                sub_url = urllib_unquote_plus(lang['baseUrl'])
+                sub_format = self.cm.ph.getSearchGroups(sub_url + '&', '[\?&]fmt=([^\?^&]+)[\?&]')[0]
+                if sub_format != '':
+                    sub_url = sub_url.replace(sub_format, 'vtt')
+                else:
+                    sub_url = sub_url + '&fmt=vtt'
+                sub_lang = lang['languageCode']
+                sub_tracks.append({'title': sub_lang.encode('utf-8'), 'url': sub_url, 'lang': sub_lang.encode('utf-8'), 'ytid': len(sub_tracks), 'format': 'vtt'})
         except Exception:
             printExc()
         return sub_tracks
@@ -505,21 +465,12 @@ class YoutubeIE(object):
 
                 title = (name + ' ' + lang_translated).strip()
                 params = {'lang': lang_code, 'v': video_id, 'fmt': 'vtt', 'name': name}
-                url = 'https://www.youtube.com/api/timedtext?' + urllib.urlencode(params)
+                url = 'https://www.youtube.com/api/timedtext?' + urllib_urlencode(params)
                 sub_tracks.append({'title': title, 'url': url, 'lang': lang_code, 'ytid': id, 'format': 'vtt'})
         except Exception:
             printExc()
         printDBG(sub_tracks)
         return sub_tracks
-
-    _YT_INITIAL_DATA_RE = r'(?:window\s*\[\s*["\']ytInitialData["\']\s*\]|ytInitialData)\s*=\s*({.+?})\s*;'
-    _YT_INITIAL_PLAYER_RESPONSE_RE = r'ytInitialPlayerResponse\s*=\s*({.+?})\s*;'
-    _YT_INITIAL_BOUNDARY_RE = r'(?:var\s+meta|</script|\n)'
-
-    def _extract_yt_initial_variable(self, webpage, regex, video_id, name):
-        return json_loads(self._search_regex(
-            (r'%s\s*%s' % (regex, self._YT_INITIAL_BOUNDARY_RE),
-             regex), webpage, name, default='{}'))
 
     def _real_extract(self, url, allowVP9=False, allowAgeGate=False):
         # Extract original video URL from URL with redirection, like age verification, using next_url parameter
@@ -560,7 +511,7 @@ class YoutubeIE(object):
                     player_response = self._extract_yt_initial_variable(
                         video_webpage, self._YT_INITIAL_PLAYER_RESPONSE_RE,
                         video_id, 'initial player response')
-        
+
         if not sts:
             raise ExtractorError('Unable to download video webpage')
 
@@ -594,7 +545,7 @@ class YoutubeIE(object):
                 if 'url' in url_data:
                     url_item = {'url': url_data['url']}
                 else:
-                    cipher = url_data.get('cipher', '') + url_data.get('signatureCipher', '')
+                    cipher = ensure_str(url_data.get('cipher', '')) + ensure_str(url_data.get('signatureCipher', ''))
                     printDBG(cipher)
 
                     cipher = cipher.split('&')
@@ -671,7 +622,7 @@ class YoutubeIE(object):
         if isGoogleDoc:
             cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
 
-        sub_tracks = self._get_subtitles(video_id)
+        sub_tracks = self._get_automatic_captions(video_id, )
         results = []
         for format_param, url_item in video_url_list:
             # Extension
