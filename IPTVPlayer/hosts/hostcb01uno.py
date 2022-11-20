@@ -19,20 +19,20 @@ except Exception:
 
 
 def gettytul():
-    return 'https://cb01.kaufen/'
+    return 'https://cb01.delivery/'
 
 
 class Cb01(CBaseHostClass):
 
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history': 'cb01.kaufen', 'cookie': 'cb01.kaufen.cookie'})
+        CBaseHostClass.__init__(self, {'history': 'cb01.school', 'cookie': 'cb01.school.cookie'})
 
         self.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
-        self.MAIN_URL = 'https://cb01.kaufen/'
+        self.MAIN_URL = 'https://cb01.delivery/'
         self.DEFAULT_ICON_URL = 'https://i0.wp.com/cb01.uno/wp-content/uploads/2021/01/logo-cb01-uno-film-streaming.jpg'
 
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}

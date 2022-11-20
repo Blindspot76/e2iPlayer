@@ -31,7 +31,7 @@ from Components.config import config
 #config.plugins.iptvplayer.SciezkaCache = ConfigText(default = "/hdd/IPTVCache")
 
 class IconMenager:
-    HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36', 'Accept': '*/*', 'Accept-Encoding': 'gzip, deflate'}
+    HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36', 'Accept': '*/*', 'Accept-Encoding': 'gzip, deflate'}
 
     def __init__(self, updateFun=None, downloadNew=True):
         printDBG("IconMenager.__init__")
