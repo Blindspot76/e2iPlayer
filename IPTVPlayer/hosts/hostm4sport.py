@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2022-02-13 by Blindspot - M4 SPORT
+# 2022-11-26 by Blindspot - M4 SPORT
 ###################################################
-HOST_VERSION = "1.7"
+HOST_VERSION = "1.8"
 ###################################################
 # LOCAL import
 ###################################################
@@ -90,7 +90,6 @@ class m4sport(CBaseHostClass):
         
     def listMainMenu(self, cItem):
         try:
-            if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
             n_bx = self.malvadst('1', '11', 'm4_boxutca')
             if n_bx != '' and self.aid:
@@ -423,18 +422,7 @@ class m4sport(CBaseHostClass):
             return bv
         except:
             return '-'
-            
-    def ebbtit(self):
-        try:
-            if '' == self.btps.strip() or '' == self.brdr.strip():
-                msg = 'A Set-top-Box típusát és a használt rendszer (image) nevét egyszer meg kell adni!\n\nA kompatibilitás és a megfelelő használat miatt kellenek ezek az adatok a programnak.\nKérlek, a helyes működéshez a valóságnak megfelelően írd be azokat.\n\nA "HU Telepítő" keretrendszerben tudod ezt megtenni.\n\nKilépek és megyek azt beállítani?'
-                ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
-                return False
-            else:
-                return True
-        except Exception:
-            return False
-        
+    
     def listSearchResult(self, cItem, searchPattern, searchType):
         try:
             printDBG("listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
