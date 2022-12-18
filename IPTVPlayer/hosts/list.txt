@@ -55,7 +55,6 @@ hostfilmancc
 hostfilmativa
 hostfilmehdnet
 hostfilmeonlineto
-hostfilmezz
 hostfilmoviplex
 hostfilmpalast
 hostfilmpapa
