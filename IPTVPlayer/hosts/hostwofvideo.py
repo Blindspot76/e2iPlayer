@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2023.01.06. Blindspot
+# 2023.01.08. Blindspot
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -40,9 +40,12 @@ class WOFvideo(CBaseHostClass):
             return
         encodedurl = self.cm.ph.getDataBeetwenMarkers(data,'<li data-video-source="',',', False) [1]
         url = self.cm.ph.getDataBeetwenMarkers(encodedurl,'encrypt:',"'", False) [1]
-        url = url.encode('ascii')
-        url = base64.b64decode(url)
-        url = url.decode("ascii")
+        if not url:
+            url = self.cm.ph.getDataBeetwenMarkers(encodedurl,"source:'","'", False) [1]
+        else:
+            url = url.encode('ascii')
+            url = base64.b64decode(url)
+            url = url.decode("ascii")
         videoUrls = []
         uri = urlparser.decorateParamsFromUrl(url)
         protocol = uri.meta.get('iptv_proto', '')
