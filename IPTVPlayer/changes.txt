@@ -1,5 +1,7 @@
+#2023.01.10.01
+-WofVideo frissítve (1.2)
 #2023.01.08.01
--WofVideo frissítve 
+-WofVideo frissítve (1.1)
 #2023.01.07.01
 -WofVideo hozzáadva (Béta)
 -XXX host frissítve

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2023.01.08. Blindspot
+# 2023.01.09. WhiteWolf
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -85,6 +85,7 @@ class WOFvideo(CBaseHostClass):
         sts, odata = self.getPage(cItem['url'])
         if not sts:
             return
+        stop = 0
         film = self.cm.ph.getDataBeetwenMarkers(odata, '<div id="movies-a" class="aa-tb hdd on">', '<nav class="navigation pagination">', False)[1]
         films = self.cm.ph.getAllItemsBeetwenMarkers(film, '<article class="post dfx fcl movies">', '</article>', False)
         for i in films:
@@ -98,15 +99,21 @@ class WOFvideo(CBaseHostClass):
                 predesc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="description">', '/p', False)[1]
                 desc = desc + "\n" + self.cm.ph.getDataBeetwenMarkers(predesc, '<p>', '<', False)[1]
                 url = self.cm.ph.getDataBeetwenMarkers(data, 'target="_blank" rel="noopener" href="', '"', False)[1]
-                sts, data = self.getPage(url)
-                url = self.cm.ph.getDataBeetwenMarkers(data, "<iframe src='", "'", False)[1]
-                url = url.replace("#", "")
-                url = url.replace("038;", "")
+                if url:
+                    sts, data = self.getPage(url)
+                    url = self.cm.ph.getDataBeetwenMarkers(data, "<iframe src='", "'", False)[1]
+                    url = url.replace("#", "")
+                    url = url.replace("038;", "")
+                else:
+                    stop = 1
             params = {'category':'seasons','title':title, 'icon': icon , 'url': url, 'desc': desc}
-            if 'series' in url:
-                self.addDir(params)
+            if not stop:
+                if 'series' in url:
+                    self.addDir(params)
+                else:
+                    self.addVideo(params)
             else:
-                self.addVideo(params)
+                stop = 0
         if '<div class="nav-links">' in odata:
             next = self.cm.ph.getDataBeetwenMarkers(odata, '<div class="nav-links">', '</nav>', False)[1]
             next = self.cm.ph.getSearchGroups(next, '''href=['"]([^"^']+?)['"].+NEXT''', 1, True)[0]
