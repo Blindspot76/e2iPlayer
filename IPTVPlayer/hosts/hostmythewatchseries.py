@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Modified by Blindspot 2022-08-21
+# Modified by Blindspot  -  2023.01.18.
 ###################################################
 # LOCAL import
 ###################################################
@@ -17,7 +17,7 @@ import urllib
 
 
 def gettytul():
-    return 'https://www5.gowatchseries.co/'
+    return 'https://gowatchseries.ch//'
 
 class MyTheWatchseries(CBaseHostClass):
  
@@ -30,14 +30,14 @@ class MyTheWatchseries(CBaseHostClass):
         
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'https://www5.gowatchseries.co/img/icon/logo.png'
+        self.DEFAULT_ICON_URL = 'https://gowatchseries.ch/img/icon/logo.png'
         self.MAIN_URL = None
         self.cacheLinks = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         
     def selectDomain(self):
-        self.MAIN_URL = 'https://www5.gowatchseries.co/'
+        self.MAIN_URL = 'https://gowatchseries.ch//'
         params = dict(self.defaultParams)
         params['with_metadata'] = True
         sts, data = self.getPage(self.getMainUrl(), params)
@@ -60,12 +60,12 @@ class MyTheWatchseries(CBaseHostClass):
         printDBG("MyTheWatchseries.listMain")
         if self.MAIN_URL == None:
             self.selectDomain()
-        MAIN_CAT_TAB = [{'category':'list_filters',     'title': _("LIST"),                       'url':self.getFullUrl('/list')},
+        MAIN_CAT_TAB = [{'category':'list_filters',     'title': _("TV SHOWS"),                       'url':self.getFullUrl('/list')},
                         {'category':'list_items',       'title': _("MOVIES"),                     'url':self.getFullUrl('/movies')},
                         {'category':'list_items',       'title': _("CINEMA MOVIES"),              'url':self.getFullUrl('/cinema-movies')},
                         {'category':'list_items',       'title': _("THIS WEEK'S SERIES POPULAR"), 'url':self.getFullUrl('/recommended-series')},
                         {'category':'list_items',       'title': _("REQUESTED"),                  'url':self.getFullUrl('/rquested')},
-                        {'category':'list_items',       'title': _("NEW RELEASE LIST"),           'url':self.getFullUrl('/new-release')},
+                        {'category':'list_items',       'title': _("NEW RELEASE"),           'url':self.getFullUrl('/new-release')},
                         
                         #{'category':'list_categories', 'title': _('CATEGORIES'),  'url':self.getMainUrl()}, 
                         
@@ -291,7 +291,7 @@ class MyTheWatchseries(CBaseHostClass):
             sts, data = self.getPage(cItem['url'], self.defaultParams)
             if not sts: return []
             
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'muti_link', '</ul>')[1]
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'anime_muti_link', '</ul>')[1]
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
             for item in data:
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''data-video=['"]([^'^"]+?)['"]''')[0])
