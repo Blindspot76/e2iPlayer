@@ -227,6 +227,10 @@ class MoziCsillag(CBaseHostClass):
         videoUrls = []
         sts, data = self.cm.getPage(cItem['url'])
         url = self.cm.meta['url']
+        if "waaw" in cItem['title']:
+            sts, data = self.getPage(url)
+            id = self.cm.ph.getDataBeetwenMarkers(data, "'MTQ5-", "')", False)[1]
+            url = 'https://waaw.to/watch_video.php?v=' + id
         uri = urlparser.decorateParamsFromUrl(url)
         protocol = uri.meta.get('iptv_proto', '')
         

@@ -39,7 +39,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://xrysoi.tv/'
+    return 'https://xrysoi.pro/'
 
 
 class XrysoiSE(CBaseHostClass):
@@ -47,7 +47,7 @@ class XrysoiSE(CBaseHostClass):
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest'})
 
-    MAIN_URL = 'https://xrysoi.tv/'
+    MAIN_URL = 'https://xrysoi.pro/'
     SEARCH_SUFFIX = '?s='
 
     MAIN_CAT_TAB = [{'category': 'movies', 'mode': 'movies', 'title': 'Ταινιες', 'url': '', 'icon': ''},
@@ -143,11 +143,11 @@ class XrysoiSE(CBaseHostClass):
         else:
             nextPage = False
 
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class=', 'class="filmborder">', False)[1]
-        data = data.split('class="moviefilm">')
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class=', 'class=filmborder>', False)[1]
+        data = data.split('class=moviefilm>')
         for item in data:
-            url = self._getFullUrl(self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0])
-            icon = self._getFullUrl(self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0])
+            url = self._getFullUrl(self.cm.ph.getSearchGroups(item, 'href=([^"]+?)>')[0])
+            icon = self._getFullUrl(self.cm.ph.getSearchGroups(item, 'src=([^"]+?)>')[0])
             title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0])
             #if 'search' == cItem.get('mode'):
             #    if '-collection' in url: continue
@@ -166,8 +166,8 @@ class XrysoiSE(CBaseHostClass):
         if not sts:
             return
 
-        desc = self.cleanHtmlStr(self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:description"[^>]*?content="([^"]+?)"')[0])
-        title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:title"[^>]*?content="([^"]+?)"')[0])
+        desc = self.cleanHtmlStr(self.cm.ph.getSearchGroups(data, '<meta[^>]*?property=og:description[^>]*?content="([^"]+?)"')[0])
+        title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(data, '<meta[^>]*?property=og:title[^>]*?content="([^"]+?)"')[0])
         if '' == title:
             title = cItem['title']
 
@@ -175,7 +175,7 @@ class XrysoiSE(CBaseHostClass):
         trailerMarker = '/trailer'
         sts, trailer = self.cm.ph.getDataBeetwenMarkers(data, trailerMarker, '</iframe>', False, False)
         if sts:
-            trailer = self.cm.ph.getSearchGroups(trailer, '<iframe[^>]+?src="([^"]+?)"', 1, ignoreCase=True)[0]
+            trailer = self.cm.ph.getSearchGroups(trailer, '<iframe[^>]+?src=([^"]+?) w', 1, ignoreCase=True)[0]
             if trailer.startswith('//'):
                 trailer = 'http:' + trailer
             if trailer.startswith('http'):
@@ -204,7 +204,7 @@ class XrysoiSE(CBaseHostClass):
         episodes = []
         if '-collection' in cItem['url']:
             mode = 'collect_item'
-            spTab = [re.compile('<b>'), re.compile('<div[\s]+class="separator"[\s]+style="text-align\:[\s]+center;">'), re.compile('<div[\s]+style="text-align\:[\s]+center;">')]
+            spTab = [re.compile('<b>'), re.compile('<div[\s]+class=separator[\s]+style="text-align\:[\s]+center;">'), re.compile('<div[\s]+style="text-align\:[\s]+center;">')]
             for sp in spTab:
                 if None != sp.search(linksData):
                     break
@@ -218,7 +218,7 @@ class XrysoiSE(CBaseHostClass):
                 if itemTitle < 0:
                     continue
                 itemTitle = self.cleanHtmlStr(item[:itemTitle])
-                linksData = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>').findall(item)
+                linksData = re.compile('<a[^>]*?href=([^"]+?) target[^>]*?>').findall(item)
                 links = []
                 for itemUrl in linksData:
                     if 1 != self.up.checkHostSupport(itemUrl):
@@ -245,7 +245,7 @@ class XrysoiSE(CBaseHostClass):
                 seasonID = self.cm.ph.getSearchGroups(seasonID, '([0-9]+?)[^0-9]')[0]
                 if '' == seasonID:
                     continue
-                episodesData = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(item)
+                episodesData = re.compile('<a[^>]*?href=([^"]+?) target[^>]*?>([^<]+?)</a>').findall(item)
                 for eItem in episodesData:
                     eUrl = eItem[0]
                     eID = eItem[1].strip()
@@ -276,7 +276,7 @@ class XrysoiSE(CBaseHostClass):
 
     def getLinksForMovie(self, data):
         urlTab = []
-        linksData = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]*?)<').findall(data)
+        linksData = re.compile('<a[^>]*?href=([^"]+?) target[^>]*?>([^<]*?)<').findall(data)
         for item in linksData:
             url = item[0]
             title = item[1]
