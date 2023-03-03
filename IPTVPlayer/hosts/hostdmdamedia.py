@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2022.05.30. 
+# Blindspot - 2023.03.01. 
 ###################################################
-HOST_VERSION = "2.0"
+HOST_VERSION = "2.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -52,49 +52,8 @@ class Dmdamedia(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])        
         if not sts:
             return
-        share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="beagyazas">','" FRAMEBORDER', False) [1]
-        share = share.replace('<iframe src="', '')
-        if share != '':
-            if 'https:' not in share:
-                share = 'https:'+share
-        else:
-           share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="beagyazas">','" allowfullscreen', False) [1]
-           if '<iframe width="640" height="360" frameborder="0" src="' in share:
-               share = share.replace('<iframe width="640" height="360" frameborder="0" src="', '')
-           share = share.replace('<iframe width="640" height="360" src="', '')
-           if share != '':
-               if 'https:' not in share:
-                   share = 'https:'+share
-           else:
-              share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="beagyazas">','" scrolling=', False) [1]
-              share = share.replace('<iframe src="', '')
-              if share != '':
-                  if 'https:' not in share:
-                      share = 'https:'+share
-              else:
-                 share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="filmbeagyazas">','" FRAMEBORDER', False) [1]
-                 share = share.replace('<iframe src="', '')
-                 if share != '':
-                     if 'https:' not in share:
-                         share = 'https:'+share
-                 else:
-                    share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="filmbeagyazas">','" allowfullscreen', False) [1]
-                    share = share.replace('<iframe width="640" height="360" src="', '')
-                    if share != '':
-                        if 'https:' not in share:
-                            share = 'https:'+share
-                    else:
-                       share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="filmbeagyazas">','" scrolling=', False) [1]
-                       share = share.replace('<iframe src="', '')
-                       if 'https:' not in share:
-                           share = 'https:'+share
-        video = self.cm.ph.getDataBeetwenMarkers(data, '<div class="video">', '</iframe>', False) [1]
-        share = self.cm.ph.getDataBeetwenMarkers(video, '<iframe src="', '"', False) [1]
-        if 'https:' not in share:
-            share = 'https:'+share
-        share = " ".join(share.split())
-        printDBG(share)
-        share = share.replace(' ', '')
+        share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="beagyazas">','</iframe>', False) [1]
+        share = self.cm.ph.getDataBeetwenMarkers(share,'src="','"', False) [1]
         
         printDBG("Dmdamedia.getLinksForVideo url[%s]" % share)
         videoUrls = []

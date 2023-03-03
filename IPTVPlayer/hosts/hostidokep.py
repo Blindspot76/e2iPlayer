@@ -90,7 +90,7 @@ class Idokep(CBaseHostClass):
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="ik album-image-container col-6 col-sm-3 col-md-2 col-lg-2">', '</a>', False)
         for i in data:
             title = self.cm.ph.getDataBeetwenMarkers(i, '<div class="ik image-title">', '</div>', False)[1]
-            icon = self.cm.ph.getDataBeetwenMarkers(i, '<img src="', '"', False)[1]
+            icon = self.cm.ph.getDataBeetwenMarkers(i, '" src="', '"', False)[1]
             icon = "https://idokep.hu" + icon
             url = self.cm.ph.getDataBeetwenMarkers(i, '<a href="', '"', False)[1]
             url = "https://idokep.hu" + url
@@ -102,9 +102,10 @@ class Idokep(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts:
             return
-        url = self.cm.ph.getDataBeetwenMarkers(data, '<picture>', '</picture>', False)[1]
-        url = self.cm.ph.getDataBeetwenMarkers(url, " src='", "'", False)[1]
-        url = "https://idokep.hu" + url
+        url = self.cm.ph.getDataBeetwenMarkers(data, '<source srcset="', '"', False)[1]
+        if ".webp" in url:
+            url = url.replace(".webp", "")
+        url = "https://www.idokep.hu" + url
         params = {'title':cItem['title'], 'icon': cItem['icon'], 'url': url}
         self.addPicture(params)
     
@@ -121,7 +122,7 @@ class Idokep(CBaseHostClass):
                 title = title[0] + ' ' + title[1]
             else:
                title = title[0]
-            icon = self.cm.ph.getDataBeetwenMarkers(i, '<img src="', '"', False)[1]
+            icon = self.cm.ph.getDataBeetwenMarkers(i, '" src="', '"', False)[1]
             icon = "https://idokep.hu" + icon
             url = self.cm.ph.getDataBeetwenMarkers(i, '<a href="', '"', False)[1]
             url = "https://idokep.hu" + url
