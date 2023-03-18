@@ -175,6 +175,7 @@
 "hosturllist": "Urllists player",
 "hostustreamtv": "https://video.ibm.com/",
 "hostvidcorncom": "https://vidcorn.tv/",
+"hostvidea": "https://videa.hu/",
 "hostvimeo": "https://vimeo.com/",
 "hostvizjerpl": "https://vizjer.pl/",
 "hostvodpl": "https://vod.pl/",

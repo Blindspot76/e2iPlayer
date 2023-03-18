@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2023.03.01. 
+# Blindspot - 2023.03.18. 
 ###################################################
-HOST_VERSION = "2.1"
+HOST_VERSION = "2.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -54,7 +54,8 @@ class Dmdamedia(CBaseHostClass):
             return
         share = self.cm.ph.getDataBeetwenMarkers(data,'<div class="beagyazas">','</iframe>', False) [1]
         share = self.cm.ph.getDataBeetwenMarkers(share,'src="','"', False) [1]
-        
+        if "https:" not in share:
+            share = "https:" + share
         printDBG("Dmdamedia.getLinksForVideo url[%s]" % share)
         videoUrls = []
         uri = urlparser.decorateParamsFromUrl(share)
@@ -85,10 +86,10 @@ class Dmdamedia(CBaseHostClass):
     
     def listMainMenu(self, cItem):   
         printDBG('Dmdamedia.listMainMenu')
-        MAIN_CAT_TAB = [{'category':'list_filters',            'title': _('Kategóriák'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/'},
-                        {'category':'list_items',            'title': _('Filmek'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/film', 'page': '1'},
-                        {'category':'list_items',            'title': _('Sorozatok'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/', 'page': '1'},
-                        {'category':'list_items',            'title': _('Friss'), 'desc':'Figyelem: A Videa és Playtube megosztók pillanatnyilag nem támogatottak.', 'url': 'https://dmdamedia.hu/friss', 'page': '1'},
+        MAIN_CAT_TAB = [{'category':'list_filters',            'title': _('Kategóriák'), 'desc':'Hibajelentés előtt célszerű a weboldalon is ellenőrizni az adott filmet.', 'url': 'https://dmdamedia.hu/'},
+                        {'category':'list_items',            'title': _('Filmek'), 'desc':'Hibajelentés előtt célszerű a weboldalon is ellenőrizni az adott filmet.', 'url': 'https://dmdamedia.hu/film', 'page': '1'},
+                        {'category':'list_items',            'title': _('Sorozatok'), 'desc':'Hibajelentés előtt célszerű a weboldalon is ellenőrizni az adott filmet.', 'url': 'https://dmdamedia.hu/', 'page': '1'},
+                        {'category':'list_items',            'title': _('Friss'), 'desc':'Hibajelentés előtt célszerű a weboldalon is ellenőrizni az adott filmet.', 'url': 'https://dmdamedia.hu/friss', 'page': '1'},
                         {'category':'search',          'title': _('Keresés'), 'search_item':True},
                         {'category':'search_history',  'title': _('Keresési előzmények')}]
         self.listsTab(MAIN_CAT_TAB, cItem) 

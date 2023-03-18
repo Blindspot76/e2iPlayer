@@ -1,3 +1,7 @@
+#2023.03.18.01
+-Videa támogatás hozzáadva (DMDAMedia)
+-Videa host ismét elérhető
+-XXX host frissítve
 #2023.03.03.01
 -Időkép javítva
 -DMDAMedia javítva

@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2023.03.03.
-# Added New Host: PornID, Some fixes
+# Modified by Blindspot - 2023.03.12.
+# Fixed FreeOnes
 ###################################################
 # LOCAL import
 ###################################################
@@ -166,7 +166,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2023.03.03.1"
+    XXXversion = "2023.03.12.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -8200,10 +8200,10 @@ class Host:
            next = self.cm.ph.getSearchGroups(next2, '''href=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
            if next:
               next = self.MAIN_URL + next 
-           data = self.cm.ph.getDataBeetwenMarkers(data, 'grid-video', 'id="fxgp-explore-meta"', False)[1]
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a  class=" teaser__link"', '<div class="rating-container">')
+           data = data.split('<div data-test="teaser-video"')
+           if len(data): del data[0]
            for item in data:
-              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
+              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^'^#]+?)["]''', 1, True)[0]
               phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&').title()
               phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTime = self.cm.ph.getSearchGroups(item, '''title="duration([^>]+?)"''', 1, True)[0]
@@ -8226,7 +8226,6 @@ class Host:
            next1 = self.cm.ph.getDataBeetwenMarkers(data, '</page-selector>', '/svg', False)[1]
            next2 = self.cm.ph.getDataBeetwenMarkers(next1, '</div>', '>Next ', False)[1]
            next = self.cm.ph.getSearchGroups(next2, '''href=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
-           data = self.cm.ph.getDataBeetwenMarkers(data, 'mode--grid', '<nav class="pagination', False)[1]
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a  class=" teaser__link"', '<div class="rating-container">')
            printDBG( 'Csatornák Adatai: '+str(data))
            for item in data:
