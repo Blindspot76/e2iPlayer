@@ -1,3 +1,5 @@
+#2023.03.19.01
+-Kisebb javítások
 #2023.03.18.01
 -Videa támogatás hozzáadva (DMDAMedia)
 -Videa host ismét elérhető
