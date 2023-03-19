@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2023.03.18.
+# Modified by Blindspot # 2023.03.19.
 ###################################################
 # LOCAL import
 ###################################################
@@ -3179,8 +3179,7 @@ class pageParser(CaptchaHelper):
     def parserYOUTUBE(self, url):
         sts, datal = self.cm.getPage(url)
         videoUrls = []
-        if "channel" and "live" in url or "user" and "live" in url:
-            url = url.replace("live", "")
+        if "@" and "streams" in url:
             sts, datal = self.cm.getPage(url)
             data1 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '{"videoRenderer":{"videoId":"', '","thumbnail":{"thumbnails":', False)
             if not data1:
@@ -3206,7 +3205,7 @@ class pageParser(CaptchaHelper):
 				   pass
             return videoUrls
            
-        if "channel" in url or "user" in url:
+        if "@" in url:
             url = "https://youtube.com/watch?v=" + self.cm.ph.getDataBeetwenMarkers(datal, 'gridVideoRenderer":{"videoId":"', '","thumbnail":', False) [1]
         def __getLinkQuality( itemLink ):
             val = itemLink['format'].split('x', 1)[0].split('p', 1)[0]
