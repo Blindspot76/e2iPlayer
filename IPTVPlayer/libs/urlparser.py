@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2023.03.19.
+# Modified by Blindspot # 2023.03.26.
 ###################################################
 # LOCAL import
 ###################################################
@@ -488,6 +488,7 @@ class urlparser:
                        'sbplay1.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.xyz':           self.pp.parserSTREAMSB    ,
+                       'scatch176duplicities.com':      self.pp.parserVOE   ,
                        'scs.pl':                self.pp.parserSCS           ,
                        'sendvid.com':           self.pp.parserSENDVIDCOM    ,
                        'seositer.com':          self.pp.parserYANDEX        ,
@@ -10539,6 +10540,13 @@ class pageParser(CaptchaHelper):
             sources.append({'name':names[videos.index(i)], 'url': "https:" + final})
         return sources
     ####ENDVIDEA####
+    
+    def parserVOE(self, url):
+        printDBG("parserVOE baseUrl[%s]\n" % url)
+        sts, data = self.cm.getPage(url)
+        vid = self.cm.ph.getDataBeetwenMarkers(data, "'mp4': '", "',", False)[1]
+        return vid
+    
     def parserAFLAMYZCOM(self, baseUrl):
         printDBG("parserAFLAMYZCOM baseUrl[%s]\n" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
