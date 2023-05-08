@@ -1,3 +1,7 @@
+#2023.05.08.01
+-Changelog javítva.
+#2023.04.29.01
+-Youtube Lejátszás javítva.
 #2023.03.26.01
 -Voe.SX tárhelytámogatás javítva
 #2023.03.19.02
