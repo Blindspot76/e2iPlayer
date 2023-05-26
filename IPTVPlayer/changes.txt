@@ -1,3 +1,5 @@
+#2023.05.26.01
+-Voe tárhelytámogatás javítva 
 #2023.05.08.01
 -Changelog javítva.
 #2023.04.29.01
