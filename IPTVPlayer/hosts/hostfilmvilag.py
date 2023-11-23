@@ -213,9 +213,13 @@ class FilmVilag(CBaseHostClass):
     
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FilmVilag.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        url = 'http://katalogus.eoldal.hu/'
+        url = 'https://katalog.estranky.cz/'
         s = searchPattern.replace(" ", "+")
-        sts, data = self.getPage(url, self.defaultParams, {'uid':664389, 'key': s})
+        header = self.HTTP_HEADER
+        header['Origin'] = 'https://onlinefilmvilag2.eu'
+        header['Referer'] = 'https://onlinefilmvilag2.eu/'
+        params = {'header':header, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        sts, data = self.getPage(url, params, {'uid':1504382, 'key': s})
         if not sts:
             return
         results = self.cm.ph.getDataBeetwenMarkers(data, '<ul>', '</ul>', False) [1]
@@ -223,17 +227,16 @@ class FilmVilag(CBaseHostClass):
         results = self.cm.ph.getAllItemsBeetwenMarkers(results, 'a href="', '">', False)
         printDBG(results)
         for n in results:
-            if results.index(n) != 0:
-                sts, data = self.getPage(n)
-                result = self.cm.ph.getDataBeetwenMarkers(data, '<div class="article">', '<div class="article-cont-clear clear">', False) [1]
-                printDBG(result)
-                title = self.cm.ph.getDataBeetwenMarkers(result, 'span class="span-a-title">','</span>', False) [1]
-                printDBG(title)
-                icon = self.cm.ph.getDataBeetwenMarkers(result, 'height="169" src="','"', False) [1]
-                url = self.cm.ph.getDataBeetwenMarkers(result, '" src="','"', False) [1]
-                desc = self.getdesc(title, n)
-                params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
-                self.addVideo(params)
+            sts, data = self.getPage(n)
+            result = self.cm.ph.getDataBeetwenMarkers(data, '<div class="article">', '<div class="article-cont-clear clear">', False) [1]
+            printDBG(result)
+            title = self.cm.ph.getDataBeetwenMarkers(result, 'span class="span-a-title">','</span>', False) [1]
+            printDBG(title)
+            icon = self.cm.ph.getDataBeetwenMarkers(result, 'height="169" src="','"', False) [1]
+            url = self.cm.ph.getDataBeetwenMarkers(result, '" src="','"', False) [1]
+            desc = self.getdesc(n)
+            params = {'title':title, 'icon': icon , 'url': url, 'desc': desc}
+            self.addVideo(params)
 
 class IPTVHost(CHostBase):
 
