@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2024.01.16.
+# Modified by Blindspot # 2022.02.14.
 ###################################################
 # LOCAL import
 ###################################################
@@ -54,8 +54,7 @@ import string
 import codecs
 import base64
 import math
-import struct
-import requests
+
 from xml.etree import cElementTree
 from random import random, randint, randrange, choice as random_choice
 from urlparse import urlparse, urlunparse, parse_qs, parse_qsl
@@ -488,7 +487,6 @@ class urlparser:
                        'sbplay1.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.com':           self.pp.parserSTREAMSB    ,
                        'sbplay2.xyz':           self.pp.parserSTREAMSB    ,
-                       'availedsmallest.com':      self.pp.parserVOE   ,
                        'scs.pl':                self.pp.parserSCS           ,
                        'sendvid.com':           self.pp.parserSENDVIDCOM    ,
                        'seositer.com':          self.pp.parserYANDEX        ,
@@ -695,6 +693,7 @@ class urlparser:
                        'vk.com':                self.pp.parserVK            ,
                        'vodlocker.com':         self.pp.parserVODLOCKER     ,
                        'vod-share.com':         self.pp.parserVODSHARECOM   ,
+                       'voe.sx':                self.pp.parserMATCHATONLINE,
                        'voodaith7e.com':        self.pp.parserYOUWATCH      ,
                        'vshare.eu':             self.pp.parserVSHAREEU      ,
                        'vshare.io':             self.pp.parserVSHAREIO       ,
@@ -3179,7 +3178,8 @@ class pageParser(CaptchaHelper):
     def parserYOUTUBE(self, url):
         sts, datal = self.cm.getPage(url)
         videoUrls = []
-        if "@" and "streams" in url:
+        if "channel" and "live" in url or "user" and "live" in url:
+            url = url.replace("live", "")
             sts, datal = self.cm.getPage(url)
             data1 = self.cm.ph.getAllItemsBeetwenMarkers(datal, '{"videoRenderer":{"videoId":"', '","thumbnail":{"thumbnails":', False)
             if not data1:
@@ -3205,7 +3205,7 @@ class pageParser(CaptchaHelper):
 				   pass
             return videoUrls
            
-        if "@" in url:
+        if "channel" in url or "user" in url:
             url = "https://youtube.com/watch?v=" + self.cm.ph.getDataBeetwenMarkers(datal, 'gridVideoRenderer":{"videoId":"', '","thumbnail":', False) [1]
         def __getLinkQuality( itemLink ):
             val = itemLink['format'].split('x', 1)[0].split('p', 1)[0]
@@ -10461,85 +10461,51 @@ class pageParser(CaptchaHelper):
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         return False
-    ####STARTVIDEA####
-    def parserVIDEAHU(self, url):
-        printDBG("parserVIDEAHU url[%s]\n" % url)
-        def rc4(cipher_text, key):
-            def compat_ord(c):
-                return c if isinstance(c, int) else ord(c)
-                
-            res = b''
-
-            key_len = len(key)
-            S = list(range(256))
-
-            j = 0
-            for i in range(256):
-                j = (j + S[i] + ord(key[i % key_len])) % 256
-                S[i], S[j] = S[j], S[i]
-
-            i = 0
-            j = 0
-            for m in range(len(cipher_text)):
-                i = (i + 1) % 256
-                j = (j + S[i]) % 256
-                S[i], S[j] = S[j], S[i]
-                k = S[(S[i] + S[j]) % 256]
-                res += struct.pack('B', k ^ compat_ord(cipher_text[m]))
-
-            try:
-                return res.decode()
-            except:
-                return res
-
-        STATIC_SECRET = 'xHb0ZvME5q8CBcoQi6AngerDu3FGO9fkUlwPmLVY_RTzj2hJIS4NasXWKy1td7p'
-        sts, video_page = self.cm.getPage(url)
-        if '/player' in url:
-            player_url = url
-            player_page = video_page
-        else:
-            player_url = re.search(r'<iframe.*?src="(/player\?[^"]+)"', video_page).group(1)
-            player_url = urlparse.urljoin(url, player_url)
-            sts, player_page = self.cm.getPage(player_url)
-        nonce = re.search(r'_xt\s*=\s*"([^"]+)"', player_page).group(1)
-        l = nonce[:32]
-        s = nonce[32:]
-        result = ''
-        for i in range(0, 32):
-            result += s[i - (STATIC_SECRET.index(l[i]) - 31)]
-        query = parse_qs(urlparse(player_url).query)
-        random_seed = ''
-        for i in range(8):
-            random_seed += random_choice(string.ascii_letters + string.digits)
-        _s = random_seed
-        _t = result[:16]
-        if 'f' in query or 'v' in query:
-            _param = 'f=%s' % query['f'][0] if 'f' in query else 'v=%s' % query['v'][0]
-        sts, videaXml = self.cm.getPage('https://videa.hu/player/xml?platform=desktop&%s&_s=%s&_t=%s' % (_param, _s, _t))
-        header = requests.head('https://videa.hu/player/xml?platform=desktop&%s&_s=%s&_t=%s' % (_param, _s, _t))
-        if not videaXml.startswith('<?xml'):
-            key = result[16:] + random_seed + header.headers['x-videa-xs']
-            videaXml = rc4(base64.b64decode(videaXml), key)
-        printDBG(videaXml)
-        sources = []
-        all = self.cm.ph.getDataBeetwenMarkers(videaXml, "<video_sources>", "</video_sources>", False)[1]
-        videos = self.cm.ph.getAllItemsBeetwenMarkers(all, '<video_source', '</video_source>')
-        names = self.cm.ph.getAllItemsBeetwenMarkers(all, 'name="', '"', False)
-        hashes = self.cm.ph.getDataBeetwenMarkers(videaXml, '<hash_values>', '</hash_values>', False)[1]
-        hashes = self.cm.ph.getAllItemsBeetwenMarkers(hashes, "<hash_value_", "</")
-        for i in videos:
-            url = self.cm.ph.getDataBeetwenMarkers(i, '">', '</', False)[1]
-            hash = self.cm.ph.getDataBeetwenMarkers(hashes[videos.index(i)], ">", "<", False)[1]
-            expire = self.cm.ph.getDataBeetwenMarkers(i, 'exp="', '"', False)[1]
-            printDBG(url)
-            printDBG(hash)
-            printDBG(expire)
-            final = "%s?md5=%s&expires=%s" % (url, hash, expire)
-            printDBG(final)
-            sources.append({'name':names[videos.index(i)], 'url': "https:" + final})
-        return sources
-    ####ENDVIDEA####
         
+    def parserVIDEAHU(self, baseUrl):
+        printDBG("parserVIDEAHU baseUrl[%s]\n" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0', 'Referer':referer}
+        params = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return []
+        
+        f = self.cm.ph.getSearchGroups(data, '''"/player\?f=([0-9\.]+?)&''')[0]
+        if f == '': return []
+        
+        sts, data = self.cm.getPage('http://videa.hu/videaplayer_get_xml.php?f={0}&start=0&enablesnapshot=0&platform=desktop&referrer={1}'.format(f, urllib.quote(baseUrl)))
+        if not sts: return []
+        
+        urlTab = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video_sources', '</video_sources>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<video_source', '</video_source>')
+        for item in data:
+            printDBG(item)
+            url  = self.cm.ph.getDataBeetwenMarkers(item, '>', '<', False)[1].strip()
+            if url.startswith('//'):
+                url = 'http:' + url
+            if not url.startswith('http'):
+                continue
+                
+            printDBG('>>>>>>>>>>>>> ' + url)
+            
+            if 'video/mp4' in item:
+                width  = self.cm.ph.getSearchGroups(item, '''width=['"]([^"^']+?)['"]''')[0]
+                height = self.cm.ph.getSearchGroups(item, '''height=['"]([^"^']+?)['"]''')[0]
+                name   = self.cm.ph.getSearchGroups(item, '''name=['"]([^"^']+?)['"]''')[0]
+                url    = urlparser.decorateUrl(url, {'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
+                urlTab.append({'name':'{0} - {1}x{2}'.format(name, width, height), 'url':url})
+            elif 'mpegurl' in item:
+                url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                tmpTab = getDirectM3U8Playlist(url, checkExt=False, checkContent=True)
+                urlTab.extend(tmpTab)
+        urlTab.reverse()
+        return urlTab
+    
     def parserAFLAMYZCOM(self, baseUrl):
         printDBG("parserAFLAMYZCOM baseUrl[%s]\n" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
