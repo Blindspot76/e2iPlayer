@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2023.05.26.
+# Modified by Blindspot # 2024.01.16.
 ###################################################
 # LOCAL import
 ###################################################
@@ -695,7 +695,6 @@ class urlparser:
                        'vk.com':                self.pp.parserVK            ,
                        'vodlocker.com':         self.pp.parserVODLOCKER     ,
                        'vod-share.com':         self.pp.parserVODSHARECOM   ,
-                       'voe.sx':                self.pp.parserMATCHATONLINE,
                        'voodaith7e.com':        self.pp.parserYOUWATCH      ,
                        'vshare.eu':             self.pp.parserVSHAREEU      ,
                        'vshare.io':             self.pp.parserVSHAREIO       ,
@@ -10540,15 +10539,7 @@ class pageParser(CaptchaHelper):
             sources.append({'name':names[videos.index(i)], 'url': "https:" + final})
         return sources
     ####ENDVIDEA####
-    
-    def parserVOE(self, url):
-        printDBG("parserVOE baseUrl[%s]\n" % url)
-        sts, data = self.cm.getPage(url)
-        vid = self.cm.ph.getDataBeetwenMarkers(data, "'mp4': '", "',", False)[1]
-        if not vid:
-            vid = self.cm.ph.getDataBeetwenMarkers(data, "'hls': '", "',", False)[1]
-        return vid
-    
+        
     def parserAFLAMYZCOM(self, baseUrl):
         printDBG("parserAFLAMYZCOM baseUrl[%s]\n" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
