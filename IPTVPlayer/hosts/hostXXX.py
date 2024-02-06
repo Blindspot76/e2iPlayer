@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot - 2024.02.04.
-# Added new hosts: MustJav, FullXCinema
+# Modified by Blindspot - 2024.02.06.
+# Added Resolution Selector for HQPorner
 ###################################################
 # LOCAL import
 ###################################################
@@ -166,7 +166,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2024.02.04.1"
+    XXXversion = "2024.02.06.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -7657,7 +7657,7 @@ class Host:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"].+image''', 1, True)[0]
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phImage.startswith('/'): phImage = 'https:' + phImage
-              printDBG( 'Képek: '+phImage )
+              #printDBG( 'Képek: '+phImage )
               if phUrl and phTitle:
                  valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'hqporner-clips', phImage, None)) 
            valTab.sort(key=lambda poz: poz.name)
@@ -7679,7 +7679,7 @@ class Host:
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.getPage(url, 'hqporner.cookie', 'hqporner.com', self.defaultParams)
            if not sts: return valTab
-           printDBG( 'Host listsItems data: '+data )
+           #printDBG( 'Host listsItems data: '+data )
            next = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', '>Next', False)[1]
            data = data.split('<div class="6u">')
            if len(data): del data[0]
@@ -7694,7 +7694,7 @@ class Host:
                  phImage = urlparser.decorateUrl(phImage, {'Referer': self.MAIN_URL})
               except: pass
               if phTitle:
-                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
+                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [ phUrl], 'hqporner-serwer', phImage, phImage))  
            if next:
               next = re.compile('href=[\"|\'](.*?)[\"|\']').findall(next)[-1]
               next = next.replace('&amp;','&')
@@ -7702,6 +7702,40 @@ class Host:
               valTab.append(CDisplayListItem('Next ', 'Page: '+next.split('=')[-1].replace('.html','').replace('page',''), CDisplayListItem.TYPE_CATEGORY, [next], name, 'http://www.clker.com/cliparts/n/H/d/S/N/j/green-next-page-button-hi.png', 'next'))
            return valTab
 
+        if 'hqporner-serwer' == name:
+           printDBG( 'Host listsItems begin name='+name )
+           catUrl = self.currList[Index].possibleTypesOfSearch
+           COOKIEFILE = os_path.join(GetCookieDir(), 'hqporner.cookie')
+           self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.getPage(url, 'hqporner.cookie', 'hqporner.com', self.defaultParams)
+           printDBG( 'Host listsItems data: '+str(data) )
+           data2 = self.cm.ph.getDataBeetwenMarkers(data, "url: '/blocks/altplayer.php?i=", "'", False)[1]
+           printDBG( 'Linkek oldala: '+data2 )
+           if "http:" not in data2:
+               data2 = "http:" + data2
+           sts, data3 = self.getPage(data2, 'hqporner.cookie', 'hqporner.com', self.defaultParams)
+           #printDBG( 'Lekért adatok: '+data3 )
+           data4 = self.cm.ph.getDataBeetwenMarkers(data3, '/></video>"); }else{ $("#jw")', 'if(hasAdblock)', False)[1]
+           #printDBG( 'Szűkített adat: '+data4 )
+           phImage = self.cm.ph.getSearchGroups(data4, '''poster=.['"]([^"^']+?)['"]''', 1, True)[0].replace('jpg\\','jpg')
+           phImage = 'https:' + phImage
+           #printDBG( 'Borítókép: '+phImage )
+           data5 = self.cm.ph.getDataBeetwenMarkers(data3, 'download it', '/span>', False)[1]
+           #printDBG('Letöltőlinkek: '+data5)
+           urls = data5.split('a href')           
+           if len(urls): 
+              del urls[0]
+           #printDBG( 'Lekért elemek: '+str(urls) )
+           for item in urls:
+              phUrl = self.cm.ph.getSearchGroups(item, '''=['"]([^"^']+?)['"].style''', 1, True)[0]
+              phTitle = self.cm.ph.getSearchGroups(item, '''ddd'[>]([^"^']+?)[<]/a''', 1, True)[0]
+              if phTitle:
+                 phTitle = 'Resolution: ' + phTitle
+                 if "https:" not in phUrl:
+                     phUrl = "https:" + phUrl
+              valTab.append(CDisplayListItem(decodeHtml(phTitle), phUrl,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, decodeHtml(phImage), None)) 
+           return valTab
+        
         if 'spankbang' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'https://spankbang.com' 
@@ -9095,14 +9129,14 @@ class Host:
         if self.MAIN_URL == 'http://netflixporno.net':                return 'xxxlist.txt'
         if self.MAIN_URL == 'https://watchpornx.com':                 return 'xxxlist.txt'
         if self.MAIN_URL == 'https://ebuxxx.net':                     return 'xxxlist.txt'
-        
+        if self.MAIN_URL == '':                     return 'xxxlist.txt'
 # A TO DO ...
         if url.startswith('http://www.slutsxmovies.com/embed/'): return 'http://www.nuvid.com'
         if url.startswith('http://www.cumyvideos.com/embed/'):   return 'http://www.nuvid.com'
-        #if url.startswith('http://www.x3xtube.com'):         return 'file: '
-        if url.startswith('http://www.nuvid.com'):           return 'http://www.nuvid.com'
+        if url.startswith('http://www.nuvid.com'):              return 'http://www.nuvid.com'
+        #if url.startswith('http://www.x3xtube.com'):        return 'file: '
         if url.startswith('http://hornygorilla.com'):        return 'file: '
-        #if url.startswith('http://www.vikiporn.com'):        return '1file: "'
+        #if url.startswith('http://www.vikiporn.com'):       return 'file: "'
         if url.startswith('http://www.fetishshrine.com'):    return 'file: '
         if url.startswith('http://www.sunporno.com'):        return 'http://www.sunporno.com'
         if url.startswith('http://theclassicporn.com'):      return "video_url: '"
@@ -9190,6 +9224,7 @@ class Host:
 # Test mjpg
         if url.endswith('.mjpg'):                            return 'mjpg_stream'
         if url.endswith('.cgi'):                             return 'mjpg_stream'
+        if self.MAIN_URL == 'https://hqporner.com':          return self.MAIN_URL
         if self.MAIN_URL == 'https://zbporn.com':            return 'https://zbporn.com'
         if self.MAIN_URL == 'https://www.alphaporno.com':    return self.MAIN_URL
         if self.MAIN_URL == 'https://crocotube.com/':        return self.MAIN_URL
@@ -9281,7 +9316,6 @@ class Host:
         if self.MAIN_URL == 'https://www.eroprofile.com':    return self.MAIN_URL
         if self.MAIN_URL == 'http://www.absoluporn.com':     return self.MAIN_URL 
         if self.MAIN_URL == 'http://anybunny.com':           return self.MAIN_URL  
-        if self.MAIN_URL == 'https://hqporner.com':          return self.MAIN_URL 
         if self.MAIN_URL == 'https://www.naked.com':         return self.MAIN_URL  
         if self.MAIN_URL == 'https://www.cumlouder.com':     return self.MAIN_URL
         if self.MAIN_URL == 'http://www.porn00.org':         return self.MAIN_URL
@@ -9738,6 +9772,7 @@ class Host:
 
         if parser == 'xxxlist.txt':
            videoUrls = self.getLinksForVideo(url)
+           printDBG('VideoAdatok: '+str(videoUrls) )
            if videoUrls:
               for item in videoUrls:
                  Url = item['url']
@@ -10847,34 +10882,12 @@ class Host:
            return videoUrl
 
         if parser == 'https://hqporner.com':
-           COOKIEFILE = os_path.join(GetCookieDir(), 'hqporner.cookie')
-           self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-           sts, data = self.getPage(url, 'hqporner.cookie', 'hqporner.com', self.defaultParams)
-           videoUrl = self.cm.ph.getDataBeetwenMarkers(data, "url: '/blocks/altplayer.php?i=", "'", False)[1]
-           printDBG( 'Linkek oldala: '+videoUrl )
-           if "http:" not in videoUrl:
-               videoUrl = "http:" + videoUrl
-           sts, data = self.getPage(videoUrl, 'hqporner.cookie', 'hqporner.com', self.defaultParams)
-           urls = self.cm.ph.getAllItemsBeetwenMarkers(data, "<a href='", "'", False)
-           printDBG( 'Videók: '+str(urls) )
-           urls = str(urls)
-           videoUrl = self.cm.ph.getSearchGroups(urls, '''1080.+['"]([^"^']+?)['"]''')[0]
-           if not videoUrl:
-              videoUrl = self.cm.ph.getSearchGroups(urls, '''720.+?['"]([^"^']+?)[m]p4''')[0]
-              videoUrl = videoUrl + "mp4"
-           if not videoUrl:
-              videoUrl = self.cm.ph.getSearchGroups(urls, '''360.+?['"]([^"^']+?)[m]p4''')[0]
-              videoUrl = videoUrl + "mp4"
-           if not videoUrl:
-              videoUrl = self.cm.ph.getSearchGroups(urls, '''([^"^']+?)[m]p4''')[0]
-              videoUrl = videoUrl + "mp4"
-           printDBG( 'Kiválasztva: '+str(videoUrl) )
-           if "http:" not in videoUrl:
-               videoUrl = "http:" + videoUrl
+           #printDBG( 'Selected Resolution: '+url )
+           videoUrl = urlparser.decorateUrl(url, {'Referer': url})
            if videoUrl:
               return videoUrl
            return ''
-
+        
         if parser == 'https://www.naked.com':
            COOKIEFILE = os_path.join(GetCookieDir(), 'naked.cookie')
            UA = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36"
