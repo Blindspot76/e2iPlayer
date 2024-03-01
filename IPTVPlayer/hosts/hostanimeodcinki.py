@@ -11,16 +11,20 @@ from hashlib import md5
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.evp import EVP_BytesToKey
 ###################################################
-
+from Plugins.Extensions.IPTVPlayer.p2p3.manipulateStrings import ensure_str, ensure_binary
 ###################################################
 # FOREIGN import
 ###################################################
-import urllib
+from Plugins.Extensions.IPTVPlayer.p2p3.UrlLib import urllib_quote, urllib_quote_plus
 try:
     import json
 except Exception:
     import simplejson as json
 ###################################################
+
+def GetConfigList():
+    optionList = []
+    return optionList
 
 
 def gettytul():
@@ -191,10 +195,10 @@ class AnimeOdcinkiPL(CBaseHostClass):
         for key in self.filtersTab:
             iKey = 'f_' + key
             if iKey in cItem:
-                getParams.append('%s=%s' % (urllib.quote(key), urllib.quote(cItem[iKey])))
+                getParams.append('%s=%s' % (urllib_quote(key), urllib_quote(cItem[iKey])))
 
         if 'f_search' in cItem:
-            getParams.append('s=%s' % (urllib.quote_plus(cItem['f_search'])))
+            getParams.append('s=%s' % (urllib_quote_plus(cItem['f_search'])))
 
         baseUrl = cItem['url']
         if page > 1:
@@ -251,21 +255,21 @@ class AnimeOdcinkiPL(CBaseHostClass):
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("AnimeOdcinkiPL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG("hostanimeodcinki.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
         cItem['url'] = self.MAIN_URL
         cItem['f_search'] = searchPattern
         self.listSearchItems(cItem, 'list_episodes')
 
     def _encryptPlayerUrl(self, data):
-        printDBG("_encryptPlayerUrl data[%s]" % data)
+        printDBG("hostanimeodcinki._encryptPlayerUrl data=%s" % data)
         decrypted = ''
         try:
             salt = a2b_hex(data["v"])
-            key, iv = EVP_BytesToKey(md5, "s05z9Gpd=syG^7{", salt, 32, 16, 1)
+            key, iv = EVP_BytesToKey(md5, ensure_binary("s05z9Gpd=syG^7{"), ensure_binary(salt), 32, 16, 1)
 
             if iv != a2b_hex(data.get('b', '')):
-                prinDBG("_encryptPlayerUrl IV mismatched")
+                printDBG("hostanimeodcinki._encryptPlayerUrl IV mismatched")
 
             if 0:
                 from Crypto.Cipher import AES
@@ -277,14 +281,14 @@ class AnimeOdcinkiPL(CBaseHostClass):
                 alg = AES_CBC(key, keySize=kSize)
                 decrypted = alg.decrypt(a2b_base64(data["a"]), iv=iv)
                 decrypted = decrypted.split('\x00')[0]
-            decrypted = "%s" % json.loads(decrypted).encode('utf-8')
+            decrypted = "%s" % ensure_str(json.loads(decrypted))
         except Exception:
             printExc()
             decrypted = ''
         return decrypted
 
     def getLinksForVideo(self, cItem):
-        printDBG("AnimeOdcinkiPL.getLinksForVideo [%s]" % cItem)
+        printDBG("hostanimeodcinki.getLinksForVideo [%s]" % cItem)
         urlTab = []
 
         urlTab = self.cacheLinks.get(cItem['url'], [])
@@ -318,8 +322,8 @@ class AnimeOdcinkiPL(CBaseHostClass):
         urlTab = []
 
         # mark requested link as used one
-        if len(self.cacheLinks.keys()):
-            key = self.cacheLinks.keys()[0]
+        if len(list(self.cacheLinks.keys())):
+            key = list(self.cacheLinks.keys())[0]
             for idx in range(len(self.cacheLinks[key])):
                 if videoUrl in self.cacheLinks[key][idx]['url']:
                     if not self.cacheLinks[key][idx]['name'].startswith('*'):

@@ -268,7 +268,7 @@ class CParsingHelper:
 
 
 class common:
-    HOST = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+    HOST = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     HEADER = None
     ph = CParsingHelper
 
@@ -1144,7 +1144,7 @@ class common:
         outParams, postData = self.getParamsFromUrlWithMeta(url)
         addParams.update(outParams)
         if 'header' not in addParams and 'host' not in addParams:
-            host = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+            host = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             header = {'User-Agent': host, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
             addParams['header'] = header
         addParams['return_data'] = False

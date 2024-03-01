@@ -6,18 +6,21 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, rm
 ###################################################
-
+from Plugins.Extensions.IPTVPlayer.p2p3.UrlParse import urlparse
+from Plugins.Extensions.IPTVPlayer.p2p3.UrlLib import urllib_quote_plus
 ###################################################
 # FOREIGN import
 ###################################################
 import re
-import urllib
-from urlparse import urlparse
 try:
     import json
 except Exception:
     import simplejson as json
 ###################################################
+
+def GetConfigList():
+    optionList = []
+    return optionList
 
 
 def gettytul():
@@ -292,7 +295,7 @@ class TainieskaiSeiresTv(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("TainieskaiSeiresTv.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = self.getFullUrl('/?s=') + urllib.quote_plus(searchPattern)
+        cItem['url'] = self.getFullUrl('/?s=') + urllib_quote_plus(searchPattern)
         cItem['category'] = 'list_items'
         self.listItems(cItem, 'list_section_items', 'explore_item')
 

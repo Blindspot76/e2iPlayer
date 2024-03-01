@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
@@ -7,15 +7,19 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
-
+from Plugins.Extensions.IPTVPlayer.p2p3.UrlLib import urllib_quote_plus
+from Plugins.Extensions.IPTVPlayer.p2p3.manipulateStrings import ensure_binary
 ###################################################
 # FOREIGN import
 ###################################################
-import urllib
 import time
 from binascii import hexlify
 from hashlib import md5
 ###################################################
+
+def GetConfigList():
+    optionList = []
+    return optionList
 
 
 def gettytul():
@@ -47,7 +51,7 @@ class AndrijaIAndjelka(CBaseHostClass):
             timestamp = int(time.time())
             if timestamp > self.timestam:
                 timestamp += 180
-                hash = hexlify(md5(str(timestamp)).digest())
+                hash = hexlify(md5(ensure_binary(str(timestamp))).digest())
                 addParams['cookie_items']['token'] = '%s,%s' % (timestamp, hash)
 
         addParams['cloudflare_params'] = {'cookie_file': self.COOKIE_FILE, 'User-Agent': self.USER_AGENT}
@@ -136,7 +140,7 @@ class AndrijaIAndjelka(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AndrijaIAndjelka.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = self.getFullUrl('/?s=') + urllib.quote_plus(searchPattern)
+        cItem['url'] = self.getFullUrl('/?s=') + urllib_quote_plus(searchPattern)
         cItem['category'] = 'list_items'
         self.listItems(cItem)
 
