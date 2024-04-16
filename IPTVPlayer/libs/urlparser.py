@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2024.01.18.
+# Modified by Blindspot # 2024.03.31.
 ###################################################
 # LOCAL import
 ###################################################
@@ -230,7 +230,9 @@ class urlparser:
                        'dood.sh':               self.pp.parserDOOD          ,
                        'dood.pm':               self.pp.parserDOOD          ,
                        'dood.wf':               self.pp.parserDOOD          ,
+                       'dood.ws':               self.pp.parserDOOD          ,
                        'doodstream.com':        self.pp.parserDOOD          ,
+                       'd000d.com':             self.pp.parserDOOD          ,
                        'dotstream.tv':          self.pp.parserDOTSTREAMTV   ,
                        'droonws.xyz':           self.pp.parserTXNEWSNETWORK , 
                        'dwn.so':                self.pp.parserDWN           ,
@@ -14366,8 +14368,10 @@ class pageParser(CaptchaHelper):
 
         #$.get('/pass_md5/3526522-87-9-1595176733-d1cadb0bad545cdcc61809e26c0ccf93/p3yuk59uqm525k1zc9boovu4'
         #function makePlay(){for(var a="",t="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",n=t.length,o=0;10>o;o++)a+=t.charAt(Math.floor(Math.random()*n));return a+"?token=p3yuk59uqm525k1zc9boovu4&expiry="+Date.now();};
-        pass_md5_url = self.cm.ph.getSearchGroups(data, "\$\.get\('(/pass_md5[^']+?)'")[0]
-        makePlay = self.cm.ph.getSearchGroups(data, "(function makePlay\(\)\{.*?\};)")[0]
+        pass_md5_url = self.cm.ph.getSearchGroups(data, '''; \$.get.['"](.+?)['"],''', 1, True)[0]
+        printDBG(pass_md5_url)
+        makePlay = self.cm.ph.getSearchGroups(data, '''(function makePlay\(\) \{.+?\};)''', 1, True)[0]
+        printDBG(makePlay)
         if pass_md5_url and makePlay:
             pass_md5_url = self.cm.getFullUrl(pass_md5_url, self.cm.getBaseUrl(baseUrl))
             sts, new_url = self.cm.getPage(pass_md5_url, httpParams)
