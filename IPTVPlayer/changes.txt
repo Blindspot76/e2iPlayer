@@ -1,3 +1,5 @@
+#2024.04.23.02
+TV2 Play bővítve (Minőség-választó)
 #2024.04.23.01
 VOE.SX linkek támogatása javítva (MoziCsillag)
 #2024.04.16.01
