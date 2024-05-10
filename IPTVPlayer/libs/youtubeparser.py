@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Modified by Blindspot - 2022.11.10
 ###################################################
 # LOCAL import
 ###################################################
@@ -99,7 +98,7 @@ class YouTubeParser():
                         videoId = self.cm.ph.getSearchGroups(data, '''['"]REDIRECT_TO_VIDEO['"]\s*\,\s*['"]([^'^"]+?)['"]''')[0]
                     if videoId != '':
                         url = 'https://www.youtube.com/watch?v=' + videoId
-            linksList = YoutubeIE()._real_extract(url, allowVP9=allowVP9, allowAgeGate=allowAgeGate)
+            linksList = YoutubeIE()._real_extract(url, allowVP9=None, allowAgeGate=None)
         except Exception:
             printExc()
             if dashSepareteList:
@@ -399,7 +398,7 @@ class YouTubeParser():
                     printExc()
                     return {}
 
-            if '/channel/' in url:
+            if '/channel/' in url or '/@' in url:
                 return {'type': 'category', 'category': 'channel', 'title': title, 'url': ensure_str(url), 'icon': icon, 'time': '', 'desc': ''}
             else:
                 return {'type': 'feed', 'category': cat, 'title': title, 'url': ensure_str(url), 'icon': icon, 'time': '', 'desc': ''}
