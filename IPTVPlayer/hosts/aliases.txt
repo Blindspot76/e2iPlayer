@@ -183,7 +183,6 @@
 "hostwatchcartoononline": "https://www.wcoforever.com/",
 "hostwatchwrestling": "http://watchwrestlingup.live/",
 "hostwatchwrestlinguno": "http://watchwrestling.la/",
-"hostwebhuplayer": "WebHu Player",
 "hostwebstream": "\"Web\" streams player",
 "hostwgrane": "http://wgrane.pl/",
 "hostwolnelekturypl": "http://wolnelektury.pl/",
