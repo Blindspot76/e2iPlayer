@@ -1,3 +1,5 @@
+#2024.08.17.01
+MoziCsillag javítva
 #2024.08.16.02
 PannonRTV hozzáadva (Beta)
 #2024.08.16.01
