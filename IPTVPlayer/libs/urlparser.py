@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2024.07.11.
+# Modified by Blindspot # 2024.10.26.
 ###################################################
 # LOCAL import
 ###################################################
@@ -3231,11 +3231,14 @@ class pageParser(CaptchaHelper):
                 dash    = False
                 age     = False
         if '"is_viewed_live","value":"True"' in datal:
-            data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '"},"heartbeatParams":', False) [1]	
+            data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '","serverAbrStreamingUrl', False) [1]
+            printDBG( 'MANIFESTURL: '+data )
             sts, data = self.cm.getPage(data)
+            printDBG( 'Elágazás előtti data'+data )
             if not sts:
                 data = self.cm.ph.getDataBeetwenMarkers(datal, '"hlsManifestUrl":"', '","probeUrl"', False) [1]
                 sts, data = self.cm.getPage(data)
+                printDBG( 'Elágazás utáni data'+data )
             data = data.split()
             url = data[-1]
             videoUrls = []
