@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Modified by Blindspot 14-10-2024
 import re
 import time
 from Plugins.Extensions.IPTVPlayer.p2p3.UrlLib import urllib_urlencode, urllib_unquote_plus
@@ -506,7 +505,6 @@ class YoutubeIE(object):
                 http_params = {'header': {'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip', 'Content-Type': 'application/json', 'Origin': 'https://www.youtube.com', 'X-YouTube-Client-Name': '3', 'X-YouTube-Client-Version': '19.29.37'}}
                 http_params['raw_post_data'] = True
                 post_data = "{'videoId': '%s', 'params': 'Q0FFU0FnZ0M=', 'context': {'client': {'hl': '%s', 'clientVersion': '19.29.37', 'clientName': 'ANDROID', 'androidSdkVersion': 30, 'osName': 'Android', 'osVersion': '11',}}}" % (video_id, GetDefaultLang())
-                printDBG( 'Added post data: ' + post_data )
                 sts, video_webpage = self.cm.getPage(url, http_params, post_data)
                 if sts:
                     if allowAgeGate and 'LOGIN_REQUIRED' in video_webpage:

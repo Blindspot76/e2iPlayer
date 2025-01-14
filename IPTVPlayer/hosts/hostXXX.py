@@ -11886,7 +11886,8 @@ class Host:
            return urllib2.unquote(videoUrl)
 
         if parser == 'https://www.pornoxo.com':
-           videoUrl = self.cm.ph.getSearchGroups(data, '''src":['"]([^"^']+?)['"],"desc":"720''')[0].replace('\/','/')
+           videoUrl = re.search('src":"([^"]+)","d', data).replace('\/','/')
+           #videoUrl = self.cm.ph.getSearchGroups(data, '''src":['"]([^"^']+?)['"]''')[0].replace('\/','/')
            printDBG( 'Link a videóhoz: '+videoUrl )
            return urllib2.unquote(videoUrl)
             

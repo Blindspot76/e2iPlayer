@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2022-01-12
+# Blindspot - 2024-12-21
 ###################################################
 # LOCAL import
 ###################################################
@@ -12,7 +12,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
 from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
-
+from Plugins.Extensions.IPTVPlayer.p2p3.UrlLib import urllib_quote_plus
 ###################################################
 # FOREIGN import
 ###################################################
@@ -52,6 +52,8 @@ def GetConfigList():
     # checking should be moved to setup
     if IsExecutable('ffmpeg'):
         optionList.append(getConfigListEntry(_("Allow dash format:"), config.plugins.iptvplayer.ytShowDash))
+        if config.plugins.iptvplayer.ytShowDash.value != 'false':
+            optionList.append(getConfigListEntry(_("Allow VP9 codec:"), config.plugins.iptvplayer.ytVP9))
     return optionList
 ###################################################
 ###################################################
@@ -94,13 +96,6 @@ class Youtube(CBaseHostClass):
                               #("Program",            "show"    ),
                               #("traylist",           "traylist"),
         self.ytp = YouTubeParser()
-        self.HTTP_HEADER = {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36',
-                            'X-YouTube-Client-Name': '1',
-                            'X-YouTube-Client-Version': '2.20211019.01.00',
-                            'X-Requested-With': 'XMLHttpRequest'
-                            }
-        self.http_params = {'header': self.HTTP_HEADER, 'return_data': True}
         self.currFileHost = None
 
     def _getCategory(self, url):
@@ -111,7 +106,7 @@ class Youtube(CBaseHostClass):
             category = 'playlists'
         elif None != re.search('/watch\?v=[^\&]+?\&list=', url):
             category = 'traylist'
-        elif 'user/' in url or ('channel/' in url and not url.endswith('/live')):
+        elif 'user/' in url or (('channel/' in url or '/c/' in url or '/@' in url) and not url.endswith('/live')):
             category = 'channel'
         else:
             category = 'video'
@@ -179,7 +174,7 @@ class Youtube(CBaseHostClass):
     def listItems(self, cItem):
         printDBG('Youtube.listItems cItem[%s]' % (cItem))
         category = cItem.get("category", '')
-        url = strwithmeta(cItem.get("url", ''))
+        url = cItem.get("url", '')
         page = cItem.get("page", '1')
 
         if "playlists" == category:
@@ -192,7 +187,7 @@ class Youtube(CBaseHostClass):
     def listFeeds(self, cItem):
         printDBG('Youtube.listFeeds cItem[%s]' % (cItem))
         if cItem['category'] == "feeds_video":
-            sts, data = self.cm.getPage(cItem['url'], self.http_params)
+            sts, data = self.cm.getPage(cItem['url'])
             data2 = self.cm.ph.getAllItemsBeetwenMarkers(data, "videoRenderer", "watchEndpoint")
             for item in data2:
                 url = "https://www.youtube.com/watch?v=" + self.cm.ph.getDataBeetwenMarkers(item, 'videoId":"', '","thumbnail":', False) [1]
@@ -218,12 +213,28 @@ class Youtube(CBaseHostClass):
            url = "https://www.youtube.com/feed/trending?bp=4gIKGgh0cmFpbGVycw%3D%3D"
            params = {'category':'feeds_video','title':title, 'url': url}
            self.addDir(params)
+           title = _("Live")
+           url = "https://www.youtube.com/channel/UC4R8DWoMoI7CAwX8_LjQHig"
+           params = {'category': 'feeds_video', 'title': title, 'url': url}
+           self.addDir(params)
+           title = _("News")
+           url = "https://www.youtube.com/channel/UCYfdidRxbB8Qhf0Nx7ioOYw"
+           params = {'category': 'feeds_video', 'title': title, 'url': url}
+           self.addDir(params)
+           title = _("Sport")
+           url = "https://www.youtube.com/channel/UCEgdi0XIXXZ-qJOFPf4JSKw"
+           params = {'category': 'feeds_video', 'title': title, 'url': url}
+           self.addDir(params)
+
+    def listSubItems(self, cItem):
+        printDBG("Youtube.listSubItems")
+        self.currList = cItem['sub_items']
 
     def getVideos(self, cItem):
         printDBG('Youtube.getVideos cItem[%s]' % (cItem))
 
         category = cItem.get("category", '')
-        url = cItem.get("url", '')
+        url = strwithmeta(cItem.get("url", ''))
         page = cItem.get("page", '1')
 
         if "channel" == category:
@@ -232,9 +243,21 @@ class Youtube(CBaseHostClass):
                     url = url + '?flow=list&view=0&sort=dd'
                 else:
                     url = url + '/videos?flow=list&view=0&sort=dd'
-            self.currList = self.ytp.getVideosFromChannelList(url, category, page, cItem)
+                tmp = self.ytp.getVideosFromChannelList(url, category, page, cItem)
+                if len(tmp) > 0:
+                    params = {'good_for_fav': False, 'category': 'sub_items', 'title': _('Videos'), 'sub_items': tmp}
+                    self.addDir(params)
+                url = url.replace('videos', 'streams')
+                tmp = self.ytp.getVideosFromChannelList(url, category, page, cItem)
+                if len(tmp) > 0:
+                    params = {'good_for_fav': False, 'category': 'sub_items', 'title': _('Live streams'), 'sub_items': tmp}
+                    self.addDir(params)
+            else:
+                self.currList = self.ytp.getVideosFromChannelList(url, category, page, cItem)
+
         elif "playlist" == category:
-            self.currList = self.ytp.getVideosFromPlaylist(url, category, page, cItem)
+            self.currList = self.ytp.getVideosApiPlaylist(url, category, page, cItem)
+
         elif "traylist" == category:
             self.currList = self.ytp.getVideosFromTraylist(url, category, page, cItem)
         else:
@@ -313,6 +336,8 @@ class Youtube(CBaseHostClass):
             self.listFeeds(self.currItem)
         elif category == 'playlists':
             self.listItems(self.currItem)
+        elif category == 'sub_items':
+            self.listSubItems(self.currItem)
         #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
