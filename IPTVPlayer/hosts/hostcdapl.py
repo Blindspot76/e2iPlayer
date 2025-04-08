@@ -6,7 +6,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
 from Plugins.Extensions.IPTVPlayer.components.captcha_helper import CaptchaHelper
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, GetCookieDir, ReadTextFile, WriteTextFile
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetCookieDir, MergeDicts, printDBG, printExc, readCFG, ReadTextFile, rm, WriteTextFile
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
@@ -32,8 +32,11 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.cda_searchsort = ConfigSelection(default="best", choices=[("best", "Najtrafniejsze"), ("date", "Najnowsze"), ("rate", "Najlepiej oceniane"), ("alf", "Alfabetycznie")])
-config.plugins.iptvplayer.cda_login = ConfigText(default="", fixed_size=False)
-config.plugins.iptvplayer.cda_password = ConfigText(default="", fixed_size=False)
+config.plugins.iptvplayer.cda_login = ConfigText(default=readCFG('cda_login'), fixed_size=False)
+config.plugins.iptvplayer.cda_password = ConfigText('', fixed_size=False)
+config.plugins.iptvplayer.cda_acc_token = ConfigText('', fixed_size=False)
+config.plugins.iptvplayer.cda_refr_token = ConfigText('', fixed_size=False)
+config.plugins.iptvplayer.cda_login_id = ConfigText('', fixed_size=False)
 
 
 def GetConfigList():
@@ -46,7 +49,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://cda.pl/'
+    return 'cda.pl'
 
 
 class cda(CBaseHostClass, CaptchaHelper):
@@ -466,7 +469,7 @@ class cda(CBaseHostClass, CaptchaHelper):
             freshSession = False
             if sts and '/logout' in data:
                 printDBG("Check hash")
-                hash = hexlify(md5(ensure_binary('%s@***@%s' % (self.login, self.password))).digest() )
+                hash = hexlify(md5(ensure_binary('%s@***@%s' % (self.login, self.password))).digest())
                 prevHash = ReadTextFile(loginCookie)[1].strip()
 
                 printDBG("$hash[%s] $prevHash[%s]" % (hash, prevHash))
