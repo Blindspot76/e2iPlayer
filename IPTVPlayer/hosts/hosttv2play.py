@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2024.04.23. Blindspot
+# 2025.04.17. Blindspot
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -18,9 +18,13 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 # FOREIGN import
 ###################################################
 import re
-import datetime
+import time
 import urlparse
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, ConfigInteger, getConfigListEntry
+try:
+    from urllib import quote
+except:
+    from urllib.parse import quote
 ###################################################
 # E2 GUI COMPONENTS
 ###################################################
@@ -56,7 +60,9 @@ class TV2Play(CBaseHostClass):
     
     def getLinksForVideo(self, cItem):
         printDBG("TV2Play.getLinksForVideo")
-        sts, r = self.getPage("%s/search/%s" % ("https://tv2play.hu/api", cItem['slug']))
+        sts, r = self.getPage("%s/search/%s" % ("https://tv2play.hu/api", cItem['slug']), {'with_metadata': True})
+        if r.meta['status_code'] == 404:
+            sts, r = self.getPage(cItem['url'], {'with_metadata': True})
         data = json_loads(r)
         playerId = data["playerId"]
         title = data["title"]
@@ -114,8 +120,8 @@ class TV2Play(CBaseHostClass):
     def listMainMenu(self, cItem):   
         printDBG('TV2Play.listMainMenu')
         MAIN_CAT_TAB = [{'category':'list_filters',            'title': _('Műsorok'), 'page': 0},
-                        {'category':'search',          'title': _('Keresés'), 'search_item':True, 'desc': 'A kereső fejlesztés alatt áll.'},
-                        {'category':'search_history',  'title': _('Keresési előzmények'), 'desc': 'A kereső fejlesztés alatt áll.'}]
+                        {'category':'search',          'title': _('Keresés'), 'search_item':True},
+                        {'category':'search_history',  'title': _('Keresési előzmények')}]
         self.listsTab(MAIN_CAT_TAB, cItem) 
     
     def exploreItems(self, cItem):
@@ -213,7 +219,10 @@ class TV2Play(CBaseHostClass):
         pageoffset = cItem['page']
         length = 0
         items = []
-        url = 'https://tv2-bud.gravityrd-services.com/grrec-tv2-war/JSServlet4?rd=0,TV2_W_CONTENT_LISTING,800,[*platform:web;*domain:tv2play;*currentContent:SHOW;*country:HU;*userAge:16;*pagingOffset:%d],[displayType;channel;title;itemId;duration;isExtra;ageLimit;showId;genre;availableFrom;director;isExclusive;lead;url;contentType;seriesTitle;availableUntil;showSlug;videoType;series;availableEpisode;imageUrl;totalEpisode;category;playerId;currentSeasonNumber;currentEpisodeNumber;part;isPremium]' % pageoffset               
+        if 'url' not in cItem:
+            url = "https://tv2-prod.d-saas.com/grrec-tv2-prod-war/JSServlet4?&rn=&cid=&ts=%d&rd=0,TV2_W_CONTENT_LISTING,800,[*platform:web;*domain:tv2play;*currentContent:SHOW;*country:HU;*userAge:18;*pagingOffset:%d],[displayType;channel;title;itemId;duration;isExtra;ageLimit;showId;genre;availableFrom;director;isExclusive;lead;url;contentType;seriesTitle;availableUntil;showSlug;videoType;series;availableEpisode;imageUrl;totalEpisode;category;playerId;currentSeasonNumber;currentEpisodeNumber;part;isPremium]" % (int(time.time()), pageoffset) 
+        else:
+            url = cItem['url'] % (int(time.time()), pageoffset) 
         sts, data = self.getPage(url)
         data = re.search(r'(.*)var data = (.*)};(.*)', data, re.S)
         data = json_loads('%s}' % data.group(2))
@@ -231,8 +240,20 @@ class TV2Play(CBaseHostClass):
                         icon = i["imageUrl"]
                     else:
                         icon = None
-                    params = {'category': 'list_items', 'title': urlparse.unquote(i['title']), 'url': "https://tv2play.hu/api/search/"+i['url'], 'icon': icon, 'desc': urlparse.unquote(i['lead'])}
-                    self.addDir(params)
+                    if 'SEARCH_RESULT' in url:
+                        if i['contentType'] == 'VIDEO':
+                            vidurl = "https://tv2play.hu/api/search/"+i['url']
+                            sts, vidata = self.getPage(vidurl)
+                            vidata = json_loads(vidata)
+                            slug = vidata['slug']
+                            params= {'title': urlparse.unquote(i['title']), 'slug': slug, 'icon': icon, 'desc': urlparse.unquote(i['lead']), 'url': "https://tv2play.hu/api/search/"+i['url']}
+                            self.addVideo(params)
+                        elif i['contentType'] != 'ARTICLE':
+                            params = {'category': 'list_items', 'title': urlparse.unquote(i['title']), 'url': "https://tv2play.hu/api/search/"+i['url'], 'icon': icon, 'desc': urlparse.unquote(i['lead'])}
+                            self.addDir(params)
+                    elif i['contentType'] != 'ARTICLE':
+                        params = {'category': 'list_items', 'title': urlparse.unquote(i['title']), 'url': "https://tv2play.hu/api/search/"+i['url'], 'icon': icon, 'desc': urlparse.unquote(i['lead'])}
+                        self.addDir(params)
             except:
                pass
         if cItem['page'] != length:
@@ -266,7 +287,7 @@ class TV2Play(CBaseHostClass):
             self.apiRibbons(self.currItem)
         elif category == 'search':
             cItem = dict(self.currItem)
-            cItem.update({'search_item':False, 'name':'category'}) 
+            cItem.update({'search_item':False, 'name':'category', 'page': 0}) 
             self.listSearchResult(cItem, searchPattern, searchType)			
         elif category == "search_history":
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
@@ -278,6 +299,11 @@ class TV2Play(CBaseHostClass):
     
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("TV2Play.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        searchPattern = quote(searchPattern).replace("%", "%%")
+        searchURL = "https://tv2-prod.d-saas.com/grrec-tv2-prod-war/JSServlet4?rn=&cid=&ts=%d&rd=0,TV2_W_SEARCH_RESULT,80,[*platform:web;*domain:tv2play;*query:#SEARCHSTRING#;*country:HU;*userAge:18;*pagingOffset:%d],[displayType;channel;title;itemId;duration;isExtra;ageLimit;showId;genre;availableFrom;director;isExclusive;lead;url;contentType;seriesTitle;availableUntil;showSlug;videoType;series;availableEpisode;imageUrl;totalEpisode;category;playerId;currentSeasonNumber;currentEpisodeNumber;part;isPremium]".replace("#SEARCHSTRING#", searchPattern)
+        cItem['url'] = searchURL
+        self.listFilters(cItem)
+        
 
 class IPTVHost(CHostBase):
 
