@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2023.11.26. Blindspot
+# 2025.05.20. Blindspot
 ###################################################
-HOST_VERSION = "1.6"
+HOST_VERSION = "1.7"
 ###################################################
 # LOCAL import
 ###################################################
@@ -46,10 +46,12 @@ class FilmVilag(CBaseHostClass):
             sts, data = self.getPage(cItem['url'])                        
             if not sts:
                 return
-            url = self.cm.ph.getDataBeetwenMarkers(data,'<p><iframe','</iframe>', False) [1]
-            url = self.cm.ph.getDataBeetwenMarkers(url,'" src="','"', False) [1]
+            url = re.findall('iframe.+src=["]([^>]+?)["].+/iframe', data, re.S)
+            if url:
+               url = url [-1]
             if "https:" not in url:
                 url = "https:" + url
+            printDBG('LEKÉRT LINK: '+url)
         else:
            url = cItem['url']
            if "https:" not in url:
