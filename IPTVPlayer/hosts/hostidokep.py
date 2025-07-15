@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# 2022.11.24. Blindspot
+# 2025.07.04. Blindspot
 ###################################################
-HOST_VERSION = "1.2"
+HOST_VERSION = "1.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -275,10 +275,7 @@ class Idokep(CBaseHostClass):
         elif cItem['title'] == "Hőtérkép":
             menu = self.cm.ph.getDataBeetwenMarkers(data, 'Hőtérkép</a>', '</ul>', False)[1]
             list = self.cm.ph.getAllItemsBeetwenMarkers(menu, '<li>', '</li>', False)
-            list.pop(0)
-            list.pop(0)
-            list.pop(0)
-            list.pop(0)
+            list.pop(0), list.pop(0), list.pop(0), list.pop(0), list.pop(0)
             for i in list:
                 title = self.cm.ph.getDataBeetwenMarkers(i, '">', '</a>', False)[1]
                 url = self.cm.ph.getDataBeetwenMarkers(i, '<a href="', '">', False)[1]
@@ -303,16 +300,14 @@ class Idokep(CBaseHostClass):
             menu = self.cm.ph.getDataBeetwenMarkers(data, 'Radar</a>', '</ul>', False)[1]
             list = self.cm.ph.getAllItemsBeetwenMarkers(menu, '<li>', '</li>', False)
             list.pop(0)
-            list.pop(0)
-            list.pop(0)
             list.pop(-1)
             for i in list:
                 title = self.cm.ph.getDataBeetwenMarkers(i, '">', '</a>', False)[1]
                 url = self.cm.ph.getDataBeetwenMarkers(i, '<a href="', '">', False)[1]
                 category = 'list_items'
-                if list.index(i) == 0:
+                if list.index(i) == 0 or list.index(i) == 1:
                     picture = False
-                if list.index(i) == 1:
+                if list.index(i) == 2:
                     category = 'list_riaszt'
                 if "https:" not in url:
                     url = "https://www.idokep.hu" + url
