@@ -1,3 +1,5 @@
+#2025.10.02.
+Összetevők frissítve, előkészítés új funkciókra
 #2025.07.25.
 Pannon RTV javítva, IdőKép javítva
 #2025.07.11.

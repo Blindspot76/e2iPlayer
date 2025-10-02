@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2024-08-16 by Blindspot - modified iptvhostgroups
+# 2025-10-02 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -277,7 +277,6 @@ class IPTVHostsGroups:
         
         for h in HOST_AND_GROUPS:
             for g in HOST_AND_GROUPS[h]:
-                #printDBG("adding %s in group %s" % (h, g))
                 
                 if not g in self.PREDEFINED_HOSTS:
                     self.PREDEFINED_HOSTS[g]=[h]
