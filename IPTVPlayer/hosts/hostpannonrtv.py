@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# WhiteWolf - 2025.07.04. 
+# WhiteWolf - 2026.01.24. 
 ###################################################
 HOST_VERSION = "1.1"
 ###################################################
@@ -169,7 +169,7 @@ class Pannon(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts:
             return
-        content = self.cm.ph.getDataBeetwenMarkers(data,'<section id="content">','<div class="node-article-full__field-tags">')[1]
+        content = self.cm.ph.getDataBeetwenMarkers(data,'<section id="content">','<div class="node-article-full__links">')[1]
         images = self.cm.ph.getAllItemsBeetwenMarkers(content,'data-src="','"', False)
         text = re.findall('''<p>(.+?)</p>|<p.+?>(.+?)</p>''', content)
         if text == []:
