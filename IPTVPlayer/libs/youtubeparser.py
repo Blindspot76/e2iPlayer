@@ -162,7 +162,18 @@ class YouTubeParser():
             # use best audio
             for item in dashVideoLists:
                 item = dict(item)
-                item["url"] = decorateUrl("merge://audio_url|video_url", {'audio_url': dashAudioLists[0]['url'], 'video_url': ensure_str(item['url'])})
+
+                printDBG("========== DASH TEST ==========")
+                printDBG("AUDIO URL:")
+                printDBG(dashAudioLists[0]['url'])
+
+                printDBG("VIDEO URL:")
+                printDBG(item['url'])
+                printDBG("===============================")
+
+                item["url"] = decorateUrl("merge://audio_url|video_url", {
+                    'audio_url': dashAudioLists[0]['url'],
+                    'video_url': ensure_str(item['url'])})
                 dashList.append(item)
 
         # try to get hls format with alternative method

@@ -51,7 +51,15 @@ class FilmVilag(CBaseHostClass):
                url = url [-1]
             if "https:" not in url:
                 url = "https:" + url
+            url = url.replace('&amp;','&')
             printDBG('LEKÉRT LINK: '+url)
+            if 'php' in url:
+                sts, data2 = self.getPage(url)                        
+                if not sts: return
+                printDBG('PHP ADATOK: '+data2)
+                url = self.cm.ph.getSearchGroups(data2, 'hls":["]([^"]+?)["]')[0]
+                url = url.replace('\/','/').replace('&amp;','&')
+                printDBG('LEKÉRT LINK PHP KÓDBÓL: '+url)
         else:
            url = cItem['url']
            if "https:" not in url:

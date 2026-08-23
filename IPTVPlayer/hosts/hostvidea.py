@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2026-01-24 by WhiteWolf
+# 2026-08-22 by WhiteWolf
 ###################################################
-HOST_VERSION = "1.3"
+HOST_VERSION = "1.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -64,10 +64,8 @@ class videa(CBaseHostClass):
         self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = self.cm.getDefaultHeader()
         self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S/LTElNjM/JT8/XyypIBwBrnxCf'))
-        self.MAIN_URL = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y/LTElN1MsoBQAy9gXg'))
-        self.vmk = self.MAIN_URL + zlib.decompress(base64.b64decode('eJzTz04sSU3PL8pMzAYAGM8EUg=='))
-        self.vmcs = self.MAIN_URL + zlib.decompress(base64.b64decode('eJzTTy5OLMkvykvMBgAUvAP2'))
-        self.vmkrs = self.MAIN_URL + zlib.decompress(base64.b64decode('eJzTL8tMSc2Pz04tSi1OLQYAKFYFmA=='))
+        self.MAIN_URL = 'https://videa.hu'
+        self.vmkrs = self.MAIN_URL + '/kereses'
         self.vivn = GetIPTVPlayerVerstion()
         self.porv = self.gits()
         self.pbtp = '-'
@@ -104,13 +102,13 @@ class videa(CBaseHostClass):
             if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()            
             tab_kat = 'videa_kategoriak'
-            desc_kat = self.getdvdsz(tab_kat, 'Videa kategóriáinak megjelenítése...')
+            desc_kat = self.getdvdsz(tab_kat, 'Videa kategóriáinak megjelenítése')
             tab_csat = 'videa_csatornak'
-            desc_csat = self.getdvdsz(tab_csat, 'Videa csatornáinak megjelenítése...')
+            desc_csat = self.getdvdsz(tab_csat, 'Videa csatornáinak megjelenítése')
             tab_search = 'videa_kereses'
             desc_search = self.getdvdsz(tab_search, 'Keresés...')
             tab_search_hist = 'videa_kereses_elozmeny'
-            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
+            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között')
             MAIN_CAT_TAB = [{'category':'list_main', 'title': 'Kategóriák', 'tab_id':tab_kat, 'desc':desc_kat},
                             {'category':'list_main', 'title': 'Csatornák', 'tab_id':tab_csat, 'desc':desc_csat},
                             {'category':'search', 'title': _('Search'), 'search_item':True, 'tab_id':tab_search, 'desc':desc_search},
@@ -150,18 +148,17 @@ class videa(CBaseHostClass):
             sts, data = self.getPage(url_ere)
             if not sts: return
             if len(data) == 0: return
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'id="menu-categories"', '</ul>')[1]
-            if len(data) == 0: return
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
-            if len(data) == 0: return
+            data = data.split('class="category-item">')
+            if len(data): del data[0]
+            else: return
             for item in data:
                 url = self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0]
                 if url.startswith('/'):
                     url = url_ere + url
                 if not self.cm.isValidUrl(url):
                     continue
-                title = self.cleanHtmlStr(item).capitalize()
-                desc = self.getdvdsz(url, '"' + title + '"  kategória videóinak megjelenítése...')
+                title = self.cm.ph.getSearchGroups(item, 'text"[>]([^"^\']+?)[<]')[0].capitalize()
+                desc = self.getdvdsz(url, '"' + title + '" kategória videóinak megjelenítése')
                 icon = ''
                 params = MergeDicts(cItem, {'good_for_fav': False, 'category':'list_second', 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID})
                 mlt.append(params)
@@ -180,9 +177,10 @@ class videa(CBaseHostClass):
             sts, data = self.getPage(url_ere)
             if not sts: return
             if len(data) == 0: return
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'id="menu-channels"', '</ul>')[1]
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'title list-opener">', '</ul>')[1]
             if len(data) == 0: return
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+            data = data.split('<li>')
+            if len(data): del data[0]
             if len(data) == 0: return
             for item in data:
                 url = self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0]
@@ -190,8 +188,8 @@ class videa(CBaseHostClass):
                     url = url_ere + url
                 if not self.cm.isValidUrl(url):
                     continue
-                title = self.cleanHtmlStr(item).capitalize()
-                desc = self.getdvdsz(url, '"' + title + '"  csatorna videóinak megjelenítése...')
+                title = self.cm.ph.getSearchGroups(item, 'text"[>]([^"^\']+?)[<]')[0].capitalize()
+                desc = self.getdvdsz(url, '"' + title + '"  csatorna videóinak megjelenítése')
                 icon = ''
                 params = MergeDicts(cItem, {'good_for_fav': False, 'category':'list_second', 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID})
                 mlt.append(params)
@@ -225,17 +223,17 @@ class videa(CBaseHostClass):
             if tabID == 'videa_kategoriak':
                 url = cItem['url']
                 self.susn('2', '12', url)
-                VK_CAT_TAB = [{'category':'list_items', 'title': 'Feltöltés ideje szerint', 'url':url+'?sort=0&interval=0&category=0&usergroup=0&page=1', 'desc':''},
-                              {'category':'list_items', 'title': 'Nézettség szerint', 'url':url+'?sort=1&interval=0&category=0&usergroup=0&page=1', 'desc':''},
-                              {'category':'list_items', 'title': 'Név szerint', 'url':url+'?sort=3&interval=0&category=0&usergroup=0&page=1', 'desc':''}
+                VK_CAT_TAB = [{'category':'list_items', 'title': 'Feltöltés ideje szerint', 'url':url+'?page=1', 'desc':''},
+                              {'category':'list_items', 'title': 'Nézettség szerint', 'url':url+'?popular&page=1', 'desc':''},
+                              {'category':'list_items', 'title': 'Legrégebbi elöl', 'url':url+'?oldest&page=1', 'desc':''}
                              ]
                 self.listsTab(VK_CAT_TAB, cItem)
             elif tabID == 'videa_csatornak':
                 url = cItem['url']
                 self.susn('2', '12', url)
-                VCS_CAT_TAB = [{'category':'list_items', 'title': 'Feltöltés ideje szerint', 'url':url+'?sort=0&interval=0&category=0&usergroup=0&page=1', 'desc':''},
-                               {'category':'list_items', 'title': 'Nézettség szerint', 'url':url+'?sort=1&interval=0&category=0&usergroup=0&page=1', 'desc':''},
-                               {'category':'list_items', 'title': 'Név szerint', 'url':url+'?sort=3&interval=0&category=0&usergroup=0&page=1', 'desc':''}
+                VCS_CAT_TAB = [{'category':'list_items', 'title': 'Feltöltés ideje szerint', 'url':url+'?page=1', 'desc':''},
+                               {'category':'list_items', 'title': 'Nézettség szerint', 'url':url+'?popular&page=1', 'desc':''},
+                               {'category':'list_items', 'title': 'Legrégebbi elöl', 'url':url+'?oldest&page=1', 'desc':''}
                               ]
                 self.listsTab(VCS_CAT_TAB, cItem)
             else:
@@ -292,65 +290,115 @@ class videa(CBaseHostClass):
         try:
             url_ere = cItem['url']
             page = cItem.get('page', 1)
-            if page > 0 and 'page=' in url_ere:
-                idx1 = url_ere.rfind('page=')
-                if -1 < idx1:
-                    url_ere = url_ere[:idx1].strip()
-                    url_ere = url_ere + 'page=' + str(page)
+            searchMode = cItem.get('search_mode', False)
+            printDBG('Videa listItems: searchMode=%s url=%s' % (searchMode, url_ere))
+
+            if not searchMode:
+                if page > 0 and 'page=' in url_ere:
+                    idx1 = url_ere.rfind('page=')
+                    if -1 < idx1:
+                        url_ere = url_ere[:idx1].strip()
+                        url_ere = url_ere + 'page=' + str(page)
+
             sts, data = self.getPage(url_ere)
-            if not sts: return
-            if len(data) == 0: return
-            nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<i class="vicon-kisnyil-bal">', '<i class="vicon-kisnyil-jobb">')[1]
-            if '' != self.cm.ph.getSearchGroups(nextPage, 'page=(%s)[^0-9]' % (page+1))[0]: nextPage = True
-            else: nextPage = False
-            #data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="list-menu-row-order-links">', '<div class="main-menu">')[1]
-            #if len(data) == 0: return
-            #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="col-xxs-12 col-xs-6 col-sm-4 col-lg-2 col-video"', '<i class="vicon-szem video-stat-footer">')
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="col-xxs-12 col-xs-6 col-sm-4 col-lg-2 col-video"', '</span></div>')
-            if len(data) == 0: return
+            printDBG('Videa listItems: getPage sts=%s data_len=%s' % (sts, len(data)))
+
+            if not sts:
+                return
+
+            nextPage = False
+
+            if not searchMode:
+                nextPage = self.cm.ph.getSearchGroups(data, 'next"\shref=[\'"]([^"^\']+?)[\'"]')[0]
+                if nextPage:
+                    nextPage = True
+            data = data.split('class="col video-item">')
+            printDBG('Videa listItems: video blocks=%s' % len(data))
+            if len(data):
+                del data[0]
+            lastItemId = ''
             for item in data:
-                temp_url = self.cm.ph.getDataBeetwenMarkers(item, '<div class="panel-video-title">', '</div>', False)[1]
-                url = self.cm.ph.getSearchGroups(temp_url, 'href=[\'"]([^"^\']+?)[\'"]')[0]
-                if not self.cm.isValidUrl(url): continue
-                temp_icon = self.cm.ph.getDataBeetwenMarkers(item, ' <a class="video-link', '</a>')[1]
-                icon = self.cm.ph.getSearchGroups(temp_icon, '''src=['"]([^"^']+?)['"]''')[0]
+                itemId = self.cm.ph.getSearchGroups(item,'''data-item-id=['"]([^"']+?)['"]''')[0]
+                if itemId != '':
+                    lastItemId = itemId
+                url = self.cm.ph.getSearchGroups(item,'<a\shref=[\'"]([^"^\']+?)[\'"]\sa')[0]
+                if not self.cm.isValidUrl(url):
+                    continue
+                icon = self.cm.ph.getSearchGroups(item,'''data-image=['"]([^"^']+?)['"]''')[0]
                 if icon == '':
                     icon = self.DEFAULT_ICON_URL
                 else:
-                    if icon.startswith('/'): icon = self.MAIN_URL + icon
-                vszrz = self.cm.ph.getDataBeetwenMarkers(item, '<div class="panel-video-text"', '</a>')[1]
+                    if icon.startswith('/'):
+                        icon = self.MAIN_URL + icon
+                vszrz = self.cm.ph.getSearchGroups(item,'''aria-label=['"]([^"^']+?)['"].+\n.+href''')[0]
+                if not vszrz:
+                    vszrz = self.cm.ph.getSearchGroups(item,'''uploader.{,50}[>]([^"^']+?)[<]/a''')[0]
+                if not vszrz:
+                    vszrz = self.cm.ph.getSearchGroups(item,'''tagok[/]([^"^']+?)[-"]''')[0]
                 if len(self.vszkzrs) > 0:
-                    if self.check_string(vszrz,self.vszkzrs): continue
-                vhz = self.cm.ph.getDataBeetwenMarkers(item, '<span class="label label-black video-length">', '</span>', False)[1]
-                vmsg = self.cm.ph.getDataBeetwenMarkers(item, '<span class="video-hd">', '</span>', False)[1]
+                    if self.check_string(vszrz, self.vszkzrs):
+                        continue
+                vhz = self.cm.ph.getSearchGroups(item,'''length"[>]([0-9:]+?)[<]''')[0]
+                vmsg = self.cm.ph.getDataBeetwenMarkers(item,'div class="hd">','</div>',False)[1]
                 if vmsg != '':
                     vmsg = '  |  ' + vmsg
-                title = self.cleanHtmlStr(temp_url).strip()
-                if title == '': continue 
-                ftlv = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<i class="vicon-ora"></i>', '</span>', False)[1]).strip()
-                desc = 'Feltöltve: ' + ftlv + '  |  Időtartam: ' + vhz + vmsg + '\n\nCím: ' + title
-                params = MergeDicts(cItem, {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tps':'0'})
+                title = self.cm.ph.getSearchGroups(item,'''aria-label=['"]([^"^']+?)['"].+\n.+div''')[0]
+                if title == '':
+                    continue
+                ftlv = self.cm.ph.getSearchGroups(item,'''uploaded-at"[>]([^"^']+?)[<]''')[0]
+                desc = title + '\n' + 'Időtartam: ' + vhz + vmsg + '\nSzerző: ' + vszrz + '\nFeltöltve: ' + ftlv
+                params = MergeDicts(cItem, {'good_for_fav': False, 'title': title, 'url': url, 'icon': icon, 'desc': desc, 'tps': '0'})
                 self.addVideo(params)
-            if nextPage:
+
+            printDBG('Videa listItems: lastItemId=%s' % lastItemId)
+
+            if searchMode:
+                if lastItemId != '':
+                    searchPattern = cItem.get('search_pattern', '')
+                    lazyUrl = self.MAIN_URL + '/lazy/kereses/' + urllib.quote_plus(searchPattern) + '?cacheId=' + urllib.quote_plus(searchPattern) + '&lastItemId=' + urllib.quote_plus(lastItemId) + '&itemCount=432&sort=0'
+                    printDBG('Videa listItems: LAZY URL=%s' % lazyUrl)
+
+                    params = dict(cItem)
+                    params.update({'title': _("Next page"), 'url': lazyUrl, 'category': 'list_items', 'search_mode': True, 'desc': 'Nyugi...\nVan még további tartalom, lapozz tovább!'})
+                    printDBG('Videa listItems: ADD NEXT PAGE')
+                    self.addDir(params)
+                else:
+                    printDBG('Videa listItems: NO LAST ITEM ID')
+
+            elif nextPage:
                 params = dict(cItem)
-                params.update({'title':_("Next page"), 'page':page+1, 'desc':'Nyugi...\nVan még további tartalom, lapozz tovább!!!'})
+                params.update({'title': _("Next page"), 'page': page + 1, 'desc': 'Nyugi...\nVan még további tartalom, lapozz tovább!'})
                 self.addDir(params)
+
         except Exception:
+            printDBG('Videa listItems ERROR')
             return
             
     def getLinksForVideo(self, cItem):
         videoUrls = []
-        url = cItem['url']
-        baseUrl = strwithmeta(url)
-        sts, data = self.cm.getPage(baseUrl)
+        baseUrl = strwithmeta(cItem['url'])
+        sts, data = self.getPage(baseUrl)
+        if not sts:
+            printDBG("Videa: getPage failed [%s]" % baseUrl)
+            return videoUrls
         url = self.cm.ph.getDataBeetwenMarkers(data, '"embedURL": "', '"', False)[1]
+        printDBG("Videa: embedURL [%s]" % url)
+
+        if not url:
+            printDBG("Videa: embedURL NOT FOUND")
+            return videoUrls
+
         url = url.replace("/v/", "?v=").replace("?autoplay=1", "&autoplay=0")
+
         uri = urlparser.decorateParamsFromUrl(url)
+
+        printDBG("Videa: URI [%s]" % uri)
+
         protocol = uri.meta.get('iptv_proto', '')
-        
-        printDBG("PROTOCOL [%s] " % protocol)
-        
-        urlSupport = self.up.checkHostSupport( uri )
+        printDBG("Videa: PROTOCOL [%s]" % protocol)
+
+        urlSupport = self.up.checkHostSupport(uri)
+        printDBG("Videa: HOST SUPPORT [%s]" % urlSupport)
         if 1 == urlSupport:
             retTab = self.up.getVideoLinkExt( uri )
             videoUrls.extend(retTab)
@@ -403,7 +451,7 @@ class videa(CBaseHostClass):
         return bv
         
     def malvadst(self, i_md='', i_hgk='', i_mpu=''):
-        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        uhe = 'http://www.figyelmeztetes.hu/hely/sata/vansatdb.php'
         pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu}
         t_s = ''
         temp_vn = ''
@@ -430,7 +478,7 @@ class videa(CBaseHostClass):
             return t_s
             
     def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip='', i_mpdb=''):
-        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        uhe = 'http://www.figyelmeztetes.hu/hely/muta/mutasatdb.php'
         t_s = []
         try:
             if i_md != '' and i_hgk != '' and i_mptip != '':
@@ -477,7 +525,7 @@ class videa(CBaseHostClass):
             return []
         
     def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl='', i_mpnzs=''):
-        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        uhe = 'http://www.figyelmeztetes.hu/hely/muta/mutasatdb.php'
         try:
             if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
             if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
@@ -500,7 +548,7 @@ class videa(CBaseHostClass):
             return
             
     def suskrbt(self, i_md='', i_hgk='', i_mpsz=''):
-        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzwbywERxYklKkl5BRgEAD/4T/Q=='))
+        uhe = 'http://www.figyelmeztetes.hu/hely/kete/ketesatdb.php'
         try:
             if i_mpsz != '' and len(i_mpsz) > 1:
                 if len(i_mpsz) > 80:
@@ -516,7 +564,7 @@ class videa(CBaseHostClass):
             return
             
     def susn(self, i_md='', i_hgk='', i_mpu=''):
-        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        uhe = 'http://www.figyelmeztetes.hu/hely/sata/vansatdb.php'
         pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu, 'hv':self.vivn, 'orv':self.porv, 'bts':self.pbtp}
         try:
             if i_md != '' and i_hgk != '' and i_mpu != '':
@@ -527,7 +575,7 @@ class videa(CBaseHostClass):
             
     def malvadkiszrz(self):
         bv = []
-        ukszrz = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUnZmXoFGQUAO30U7Q=='))
+        ukszrz = 'http://www.figyelmeztetes.hu/hely/muta/mutasatdbki.php'
         try:
             sts, data = self.cm.getPage(ukszrz)
             if not sts: return []
@@ -542,7 +590,7 @@ class videa(CBaseHostClass):
             
     def malvadkrttmk(self, i_md='', i_hgk=''):
         bv = []
-        ukszrz = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzwbywERxYklKkl5BRgEAD/4T/Q=='))
+        ukszrz = 'http://www.figyelmeztetes.hu/hely/kete/ketesatdb.php'
         try:
             if i_md != '' and i_hgk != '':
                 i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
@@ -585,9 +633,13 @@ class videa(CBaseHostClass):
         try:
             self.suskrbt('2', '12', searchPattern)
             cItem = dict(cItem)
-            cItem['url'] = self.vmkrs + '/' + urllib.quote_plus(searchPattern) + '?sort=0&interval=0&category=0&usergroup=0&page=1'
+            cItem['url'] = self.vmkrs + '/' + urllib.quote_plus(searchPattern) + '?page=1'
+            cItem['search_pattern'] = searchPattern
+            cItem['search_mode'] = True
+            printDBG('Videa search: searchPattern=%s url=%s' % (searchPattern, cItem['url']))
             self.listItems(cItem)
         except Exception:
+            printDBG('Videa search ERROR: listSearchResult')
             return
             
     def Vdakstmk(self, baseItem={'name': 'history', 'category': 'search'}, desc_key='plot', desc_base=(_("Type: ")), tabID='' ):

@@ -698,6 +698,7 @@ class urlparser:
                        'vivo.sx':               self.pp.parserVIVOSX        ,
                        'vkprime.com':           self.pp.parserONLYSTREAM    ,
                        'vk.com':                self.pp.parserVK            ,
+                       'vkvd298.okcdn.ru':      self.pp.parserVK            ,
                        'vodlocker.com':         self.pp.parserVODLOCKER     ,
                        'vod-share.com':         self.pp.parserVODSHARECOM   ,
                        'voe.sx':                self.pp.parserVOESX,
@@ -10757,23 +10758,20 @@ class pageParser(CaptchaHelper):
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         return False
+    
     ####STARTVIDEA####
     def parserVIDEAHU(self, url):
         printDBG("parserVIDEAHU url[%s]\n" % url)
         def rc4(cipher_text, key):
             def compat_ord(c):
                 return c if isinstance(c, int) else ord(c)
-                
             res = b''
-
             key_len = len(key)
             S = list(range(256))
-
             j = 0
             for i in range(256):
                 j = (j + S[i] + ord(key[i % key_len])) % 256
                 S[i], S[j] = S[j], S[i]
-
             i = 0
             j = 0
             for m in range(len(cipher_text)):
@@ -10782,12 +10780,10 @@ class pageParser(CaptchaHelper):
                 S[i], S[j] = S[j], S[i]
                 k = S[(S[i] + S[j]) % 256]
                 res += struct.pack('B', k ^ compat_ord(cipher_text[m]))
-
             try:
                 return res.decode()
             except:
                 return res
-
         STATIC_SECRET = 'xHb0ZvME5q8CBcoQi6AngerDu3FGO9fkUlwPmLVY_RTzj2hJIS4NasXWKy1td7p'
         sts, video_page = self.cm.getPage(url)
         if '/player' in url:
@@ -10798,12 +10794,14 @@ class pageParser(CaptchaHelper):
             player_url = urlparse.urljoin(url, player_url)
             sts, player_page = self.cm.getPage(player_url)
         nonce = re.search(r'_xt\s*=\s*"([^"]+)"', player_page).group(1)
+        printDBG('NONCE: ' + str(nonce))
         l = nonce[:32]
         s = nonce[32:]
         result = ''
         for i in range(0, 32):
             result += s[i - (STATIC_SECRET.index(l[i]) - 31)]
         query = parse_qs(urlparse(player_url).query)
+        printDBG('QUERY: ' + str(query))
         random_seed = ''
         for i in range(8):
             random_seed += random_choice(string.ascii_letters + string.digits)
@@ -10821,18 +10819,32 @@ class pageParser(CaptchaHelper):
         all = self.cm.ph.getDataBeetwenMarkers(videaXml, "<video_sources", "</video_sources>", False)[1]
         videos = self.cm.ph.getAllItemsBeetwenMarkers(all, '<video_source', '</video_source>')
         names = self.cm.ph.getAllItemsBeetwenMarkers(all, 'name="', '"', False)
-        hashes = self.cm.ph.getDataBeetwenMarkers(videaXml, '<hash_values>', '</hash_values>', False)[1]
-        hashes = self.cm.ph.getAllItemsBeetwenMarkers(hashes, "<hash_value_", "</")
         for i in videos:
-            url = self.cm.ph.getDataBeetwenMarkers(i, '">', '</', False)[1]
-            hash = self.cm.ph.getDataBeetwenMarkers(hashes[videos.index(i)], ">", "<", False)[1]
+            video_url = self.cm.ph.getDataBeetwenMarkers(i, '">', '</', False)[1]
+            video_url = video_url.replace('&amp;', '&')
             expire = self.cm.ph.getDataBeetwenMarkers(i, 'exp="', '"', False)[1]
-            printDBG(url)
-            printDBG(hash)
+            if not expire:
+                expire = self.cm.ph.getDataBeetwenMarkers(i, 'expires=', '&', False)[1]
+            if 'md5=' in video_url:
+                final = video_url
+            else:
+                hashes = self.cm.ph.getDataBeetwenMarkers(videaXml, '<hash_values>', '</hash_values>', False)[1]
+                hash_items = self.cm.ph.getAllItemsBeetwenMarkers(hashes, "<hash_value_", "</")
+                video_index = videos.index(i)
+                if video_index >= len(hash_items):
+                    printDBG("Videa: hash missing for video index [%s]" % video_index)
+                    continue
+                hash = self.cm.ph.getDataBeetwenMarkers(hash_items[video_index], ">", "<", False)[1]
+                if not hash:
+                    printDBG("Videa: hash empty for video index [%s]" % video_index)
+                    continue
+                final = "%s?md5=%s&expires=%s" % (video_url, hash, expire)
+            printDBG(video_url)
             printDBG(expire)
-            final = "%s?md5=%s&expires=%s" % (url, hash, expire)
             printDBG(final)
-            sources.append({'name':names[videos.index(i)], 'url': "https:" + final})
+            if not final.startswith('http'):
+                final = "https:" + final
+            sources.append({'name':names[videos.index(i)], 'url':final})
         return sources
     ####ENDVIDEA####
         

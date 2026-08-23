@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Blindspot - 2024-12-21
+# Blindspot - 2026-07-15
 ###################################################
 # LOCAL import
 ###################################################
@@ -98,6 +98,41 @@ class Youtube(CBaseHostClass):
         self.ytp = YouTubeParser()
         self.currFileHost = None
 
+    def getJsonObject(self, text, marker):
+       start = text.find(marker)
+       if start < 0:
+           return None
+       start = text.find('{', start)
+       if start < 0:
+           return None
+       level = 0
+       in_string = False
+       escape = False
+       for i in range(start, len(text)):
+           c = text[i]
+           if escape:
+               escape = False
+               continue
+           if c == '\\':
+               escape = True
+               continue
+           if c == '"':
+               in_string = not in_string
+               continue
+           if in_string:
+               continue
+           if c == '{':
+               level += 1
+           elif c == '}':
+               level -= 1
+               if level == 0:
+                   try:
+                       return json.loads(text[start:i+1])
+                   except Exception as e:
+                       printDBG("JSON ERROR: %s" % e)
+                       return None
+       return None
+       
     def _getCategory(self, url):
         printDBG("Youtube._getCategory")
         if '/playlist?list=' in url:
@@ -176,55 +211,101 @@ class Youtube(CBaseHostClass):
         category = cItem.get("category", '')
         url = cItem.get("url", '')
         page = cItem.get("page", '1')
-
         if "playlists" == category:
             self.currList = self.ytp.getListPlaylistsItems(url, category, page, cItem)
 
         for idx in range(len(self.currList)):
             if self.currList[idx]['category'] in ["channel", "playlist", "movie", "traylist"]:
                 self.currList[idx]['good_for_fav'] = True
-
+    
     def listFeeds(self, cItem):
-        printDBG('Youtube.listFeeds cItem[%s]' % (cItem))
-        if cItem['category'] == "feeds_video":
-            sts, data = self.cm.getPage(cItem['url'])
-            data2 = self.cm.ph.getAllItemsBeetwenMarkers(data, "videoRenderer", "watchEndpoint")
-            for item in data2:
-                url = "https://www.youtube.com/watch?v=" + self.cm.ph.getDataBeetwenMarkers(item, 'videoId":"', '","thumbnail":', False) [1]
-                icon = self.cm.ph.getDataBeetwenMarkers(item, '},{"url":"', '==', False) [1]
-                title = self.cm.ph.getDataBeetwenMarkers(item, '"title":{"runs":[{"text":"', '"}]', False) [1]
-                desc = "Készítette: " + self.cm.ph.getDataBeetwenMarkers(item, 'longBylineText":{"runs":[{"text":"', '","navigationEndpoint"', False) [1] + "\n" + "Megjelent " + self.cm.ph.getDataBeetwenMarkers(item, '"publishedTimeText":{"simpleText":"', '"},"lengthText":', False) [1] + "\n" + "Videó hossza: " + self.cm.ph.getDataBeetwenMarkers(item, '"lengthText":{"accessibility":{"accessibilityData":{"label":"', '"}},"simpleText":', False) [1] + "\n" + self.cm.ph.getDataBeetwenMarkers(item, '"viewCountText":{"simpleText":"', '"},"navigationEndpoint":', False) [1]
-                params = {'title':title, 'url': url, 'icon': icon, 'desc': desc}
+        printDBG('Youtube.listFeeds cItem[%s]' % cItem)
+        if cItem.get('category') == "feeds_video":
+            if 'page_data' in cItem:
+                sts = True
+                data = cItem['page_data']
+            else:
+                sts, data = self.cm.getPage(cItem['url'])
+            tokens = re.findall(r'"token":"([^"]+)"', data)
+            itcts = re.findall(r'"clickTrackingParams":"([^"]+)"', data)
+            nextToken = tokens[-1] if tokens else ""
+            itct = itcts[-1] if itcts else ""
+            printDBG("NEXT TOKEN[%s]" % nextToken)
+            printDBG("NEXT ITCT[%s]" % itct)
+            if nextToken:
+                pos = data.find(nextToken)
+                printDBG("TOKEN FOUND AT[%d]" % pos)
+                printDBG(data[max(0, pos-500):pos+800])
+            grid = self.cm.ph.getDataBeetwenMarkers(data, '"richGridRenderer":{', 'PageType,a.ytCommand', False)[1]
+            if not grid:
+                grid = self.cm.ph.getDataBeetwenMarkers(data, '"richGridRenderer":{', 'continuationItemRenderer', False)[1]
+            printDBG("GRID LEN[%s]" % len(grid))
+            items = grid.split('richItemRenderer')
+            if len(items) > 1:
+                del items[0]
+            printDBG("ITEM COUNT[%s]" % len(items))
+            for item in items:
+                videoId = self.cm.ph.getSearchGroups(item, '''videoId":["]([^"^']+)['"]''', 1, True)[0]
+                if not videoId:
+                    continue
+                url = "https://www.youtube.com/watch?v=" + videoId
+                icon = self.cm.ph.getSearchGroups(item, '''url":["]([^"^']+)['"],"width":336''', 1, True)[0]
+                title = self.cm.ph.getSearchGroups(item, '''"lockupMetadataViewModel":{"title":{"content":"([^"]+)''', 1, True)[0]
+                if not title:
+                    title = self.cm.ph.getSearchGroups(item, '''label":["]([^"^']+)['"]''', 1, True)[0]
+                if len(title) <= 3:
+                    title = self.cm.ph.getSearchGroups(item, '''content":"((?:\\\\.|[^"])*)''', 1, True)[0]
+                title = title.replace('&quot;', '"')
+                title = title.replace('\\u0026', '&')
+                printDBG("ADD VIDEO id[%s] title[%s]" % (videoId, title))
+                params = {'title': title, 'url': url, 'icon': icon, 'desc': ''}
                 self.addVideo(params)
+            if nextToken:
+                params = {'type': 'more', 'category': 'feeds_next_page', 'title': 'Next Page', 'url': cItem['url'], 'continuation': nextToken, 'itct': itct}
+                printDBG("CREATE NEXT PAGE[%s]" % params)
+                self.addDir(params)
+        
+        elif cItem.get('category') == "feeds_next_page":
+            printDBG("NEXT PAGE CLICK cItem[%s]" % cItem)
+            continuation = cItem.get('continuation', '')
+            itct = cItem.get('itct', '')
+            if not continuation:
+                printDBG("ERROR NO CONTINUATION")
+                return
+            post_data = {"continuation": continuation, "context": {"client": {"clientName": "WEB", "clientVersion": "2.20250331.00.00", "hl": "en", "gl": "US"}, "clickTracking": {"clickTrackingParams": itct}}}
+            post_data = json.dumps(post_data)
+            url = "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
+            params = {"header": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Content-Type": "application/json"}, "raw_post_data": True}
+            printDBG("NEXT REQUEST URL[%s]" % url)
+            printDBG("NEXT POST LEN[%s]" % len(post_data))
+            sts, data = self.cm.getPage(url, params, post_data)
+            printDBG("NEXT RESPONSE sts[%s] len[%s]" % (sts, len(data)))
+            if not sts:
+                printDBG("NEXT REQUEST FAILED")
+                return
+            printDBG("NEXT richItemRenderer[%s]" % ("YES" if "richItemRenderer" in data else "NO"))
+            printDBG("NEXT videoRenderer[%s]" % ("YES" if "videoRenderer" in data else "NO"))
+            printDBG("NEXT gridVideoRenderer[%s]" % ("YES" if "gridVideoRenderer" in data else "NO"))
+            printDBG("NEXT continuationItems[%s]" % ("YES" if "continuationItems" in data else "NO"))
+            self.listFeeds({'category': 'feeds_video', 'url': cItem.get('url', ''), 'page_data': data})
+
         else:
-           title = "Trending videos"
-           url = "https://www.youtube.com/feed/trending"
-           params = {'category':'feeds_video','title':title, 'url': url}
-           self.addDir(params)
-           title = "Music"
-           url = "https://www.youtube.com/feed/trending?bp=4gINGgt5dG1hX2NoYXJ0cw%3D%3D"
-           params = {'category':'feeds_video','title':title, 'url': url}
-           self.addDir(params)
-           title = "Gaming"
-           url = "https://www.youtube.com/feed/trending?bp=4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D"
-           params = {'category':'feeds_video','title':title, 'url': url}
-           self.addDir(params)
-           title = "Films"
-           url = "https://www.youtube.com/feed/trending?bp=4gIKGgh0cmFpbGVycw%3D%3D"
-           params = {'category':'feeds_video','title':title, 'url': url}
-           self.addDir(params)
-           title = _("Live")
-           url = "https://www.youtube.com/channel/UC4R8DWoMoI7CAwX8_LjQHig"
-           params = {'category': 'feeds_video', 'title': title, 'url': url}
-           self.addDir(params)
-           title = _("News")
-           url = "https://www.youtube.com/channel/UCYfdidRxbB8Qhf0Nx7ioOYw"
-           params = {'category': 'feeds_video', 'title': title, 'url': url}
-           self.addDir(params)
-           title = _("Sport")
-           url = "https://www.youtube.com/channel/UCEgdi0XIXXZ-qJOFPf4JSKw"
-           params = {'category': 'feeds_video', 'title': title, 'url': url}
-           self.addDir(params)
+          title = "YouTube videos test"
+          url = "https://www.youtube.com/channel/UCBR8-60-B28hp2BmDPdntcQ/videos"
+          params = {'category':'feeds_video','title':title, 'url': url}
+          self.addDir(params)
+          title = "Music"
+          url = "https://www.youtube.com/@YouTubeMusic/videos"
+          params = {'category':'feeds_video','title':title, 'url': url}
+          self.addDir(params)
+          title = "Gaming"
+          url = "https://www.youtube.com/@YouTubeGaming/videos"
+          params = {'category':'feeds_video','title':title, 'url': url}
+          self.addDir(params)
+          title = _("Podcasts")
+          url = "https://www.youtube.com/podcasts"
+          params = {'category': 'feeds_video', 'title': title, 'url': url}
+          self.addDir(params)
 
     def listSubItems(self, cItem):
         printDBG("Youtube.listSubItems")

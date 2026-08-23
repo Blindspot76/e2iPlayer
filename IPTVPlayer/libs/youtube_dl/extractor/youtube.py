@@ -502,16 +502,18 @@ class YoutubeIE(object):
                 videoKey = 'video_id'
                 videoInfoparams = {}
 
-                http_params = {'header': {'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip', 'Content-Type': 'application/json', 'Origin': 'https://www.youtube.com', 'X-YouTube-Client-Name': '3', 'X-YouTube-Client-Version': '19.29.37'}}
+                http_params = {'header': {'User-Agent': 'com.google.android.youtube/20.10.38 (Linux; U; Android 13)', 'Content-Type': 'application/json', 'Origin': 'https://www.youtube.com'}}
+                post_data = json_dumps({'videoId': video_id, 'context': { 'client': { 'clientName': 'ANDROID', 'clientVersion': '20.10.38', 'androidSdkVersion': 33, 'osName': 'Android', 'osVersion': '13', 'hl': GetDefaultLang()}}})
                 http_params['raw_post_data'] = True
-                post_data = "{'videoId': '%s', 'params': 'Q0FFU0FnZ0M=', 'context': {'client': {'hl': '%s', 'clientVersion': '19.29.37', 'clientName': 'ANDROID', 'androidSdkVersion': 30, 'osName': 'Android', 'osVersion': '11',}}}" % (video_id, GetDefaultLang())
                 sts, video_webpage = self.cm.getPage(url, http_params, post_data)
+                printDBG("YT PLAYER RESPONSE END: %s" % str(video_webpage)[-1000:])
                 if sts:
                     if allowAgeGate and 'LOGIN_REQUIRED' in video_webpage:
                         http_params['header']['X-YouTube-Client-Name'] = '85'
                         post_data = "{'videoId': '%s', 'thirdParty': 'https://www.youtube.com/', 'context': {'client': {'clientName': 'TVHTML5_SIMPLY_EMBEDDED_PLAYER', 'clientVersion': '2.0', 'clientScreen': 'EMBED'}}}" % video_id
                         sts, video_webpage = self.cm.getPage(url, http_params, post_data)
                     player_response = json_loads(video_webpage)
+                    printDBG("YT KEYS: %s" % player_response.keys())
                 else:
                     url = 'http://www.youtube.com/watch?v=%s&bpctr=9999999999&has_verified=1&' % video_id
                     sts, video_webpage = self.cm.getPage(url)
@@ -520,8 +522,10 @@ class YoutubeIE(object):
                             video_webpage, self._YT_INITIAL_PLAYER_RESPONSE_RE,
                             video_id, 'initial player response')
                 printDBG("_real_extract tries %s" % tries)
-                if player_response['playabilityStatus']['status'] == 'OK':
-                    break
+                if player_response:
+                    printDBG("YT PLAYABILITY: %s" % player_response.get('playabilityStatus'))
+                    if player_response.get('streamingData'):
+                        break
 
         if not sts:
             raise ExtractorError('Unable to download video webpage')
