@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2026-08-22 by WhiteWolf
+# 2026-08-26 by Blindspot
 ###################################################
-HOST_VERSION = "1.5"
+HOST_VERSION = "1.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -291,36 +291,38 @@ class videa(CBaseHostClass):
             url_ere = cItem['url']
             page = cItem.get('page', 1)
             searchMode = cItem.get('search_mode', False)
-            printDBG('Videa listItems: searchMode=%s url=%s' % (searchMode, url_ere))
-
-            if not searchMode:
+            channelMode = cItem.get('channel_mode', False)
+            if not searchMode and '/csatornak/' in url_ere:
+                channelMode = True
+                url_ere = re.sub(r'[?&]page=\d+', '', url_ere)
+                printDBG('Videa CHANNEL: load url=%s' % url_ere)
+            elif not searchMode and not channelMode:
                 if page > 0 and 'page=' in url_ere:
                     idx1 = url_ere.rfind('page=')
                     if -1 < idx1:
                         url_ere = url_ere[:idx1].strip()
                         url_ere = url_ere + 'page=' + str(page)
-
+            printDBG('Videa listItems: searchMode=%s channelMode=%s url=%s page=%s' % (searchMode, channelMode, url_ere, page))
             sts, data = self.getPage(url_ere)
             printDBG('Videa listItems: getPage sts=%s data_len=%s' % (sts, len(data)))
-
-            if not sts:
-                return
-
+            if not sts: return
+            printDBG('Videa listItems: loaded url=%s' % url_ere)
             nextPage = False
-
-            if not searchMode:
+            if not searchMode and not channelMode:
                 nextPage = self.cm.ph.getSearchGroups(data, 'next"\shref=[\'"]([^"^\']+?)[\'"]')[0]
                 if nextPage:
                     nextPage = True
             data = data.split('class="col video-item">')
-            printDBG('Videa listItems: video blocks=%s' % len(data))
-            if len(data):
-                del data[0]
+            if len(data): 
+               data = data[1:37]
+               itemCount = self.cm.ph.getSearchGroups(url_ere, 'itemCount=([0-9]+)')[0]
+               if itemCount:
+                   count = int(itemCount) + 36
+               else:
+                   count = 36
             lastItemId = ''
             for item in data:
-                itemId = self.cm.ph.getSearchGroups(item,'''data-item-id=['"]([^"']+?)['"]''')[0]
-                if itemId != '':
-                    lastItemId = itemId
+                lastItemId = self.cm.ph.getSearchGroups(data[-1],'''data-item-id=['"]([^"']+?)['"]''')[0]
                 url = self.cm.ph.getSearchGroups(item,'<a\shref=[\'"]([^"^\']+?)[\'"]\sa')[0]
                 if not self.cm.isValidUrl(url):
                     continue
@@ -350,21 +352,38 @@ class videa(CBaseHostClass):
                 params = MergeDicts(cItem, {'good_for_fav': False, 'title': title, 'url': url, 'icon': icon, 'desc': desc, 'tps': '0'})
                 self.addVideo(params)
 
-            printDBG('Videa listItems: lastItemId=%s' % lastItemId)
+            printDBG('LastItemId=%s' % lastItemId)
 
             if searchMode:
                 if lastItemId != '':
                     searchPattern = cItem.get('search_pattern', '')
                     lazyUrl = self.MAIN_URL + '/lazy/kereses/' + urllib.quote_plus(searchPattern) + '?cacheId=' + urllib.quote_plus(searchPattern) + '&lastItemId=' + urllib.quote_plus(lastItemId) + '&itemCount=432&sort=0'
-                    printDBG('Videa listItems: LAZY URL=%s' % lazyUrl)
-
+                    printDBG('LAZY URL=%s' % lazyUrl)
                     params = dict(cItem)
                     params.update({'title': _("Next page"), 'url': lazyUrl, 'category': 'list_items', 'search_mode': True, 'desc': 'Nyugi...\nVan még további tartalom, lapozz tovább!'})
                     printDBG('Videa listItems: ADD NEXT PAGE')
                     self.addDir(params)
                 else:
                     printDBG('Videa listItems: NO LAST ITEM ID')
-
+            elif channelMode:
+                if lastItemId != '':
+                    lazyUrl = None
+                    printDBG('Current lazyUrl=%s' % lazyUrl)
+                    printDBG('Current lastItemId=%s' % lastItemId)
+                    channelUrl = re.sub('[?&]page=\d+', '', url_ere)
+                    channelUrl = re.sub('[?]cacheId.+', '', url_ere)
+                    printDBG('CHANNEL URL: '+ channelUrl)
+                    if '/lazy/csatornak/' not in channelUrl:
+                        channelUrl = channelUrl.replace('/csatornak/', '/lazy/csatornak/')
+                    printDBG('Channel URL=%s' % channelUrl)
+                    lazyUrl = "%s?cacheId=&lastItemId=%s&itemCount=%s&sort=0" % (channelUrl, urllib.quote_plus(lastItemId), count)
+                    printDBG('NEXT LAZY URL=%s' % lazyUrl)
+                    params = dict(cItem)
+                    params.update({'title': _("Next page"), 'url': lazyUrl, 'category': 'list_items', 'search_mode': False, 'channel_mode': True, 'channel_lazy_url': channelUrl, 'desc': 'Nyugi...\nVan még további tartalom, lapozz tovább!'})
+                    printDBG('ADD NEXT PAGE URL=%s' % lazyUrl)
+                    self.addDir(params)
+                else:
+                    printDBG('CHANNEL: NO LAST ITEM ID')
             elif nextPage:
                 params = dict(cItem)
                 params.update({'title': _("Next page"), 'page': page + 1, 'desc': 'Nyugi...\nVan még további tartalom, lapozz tovább!'})
@@ -389,14 +408,10 @@ class videa(CBaseHostClass):
             return videoUrls
 
         url = url.replace("/v/", "?v=").replace("?autoplay=1", "&autoplay=0")
-
         uri = urlparser.decorateParamsFromUrl(url)
-
         printDBG("Videa: URI [%s]" % uri)
-
         protocol = uri.meta.get('iptv_proto', '')
         printDBG("Videa: PROTOCOL [%s]" % protocol)
-
         urlSupport = self.up.checkHostSupport(uri)
         printDBG("Videa: HOST SUPPORT [%s]" % urlSupport)
         if 1 == urlSupport:

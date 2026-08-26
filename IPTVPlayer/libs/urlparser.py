@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2026.01.24.
+# Modified by Blindspot # 2026.08.26.
 ###################################################
 # LOCAL import
 ###################################################
@@ -10845,7 +10845,17 @@ class pageParser(CaptchaHelper):
             if not final.startswith('http'):
                 final = "https:" + final
             sources.append({'name':names[videos.index(i)], 'url':final})
+        if not sources:
+            audio_sources = self.cm.ph.getAllItemsBeetwenMarkers(videaXml,'<audio_source','</audio_source>')
+            for i in audio_sources:
+                 audio_url = self.cm.ph.getDataBeetwenMarkers(i, '">', '</', False)[1].replace('&amp;', '&')
+                 if audio_url:
+                     if not audio_url.startswith('http'):
+                         audio_url = 'https:' + audio_url
+                     printDBG('Videa: AUDIO ONLY URL=[%s]' % audio_url)
+                     sources.append({'name': 'Audio','url': audio_url})
         return sources
+        
     ####ENDVIDEA####
         
     def parserAFLAMYZCOM(self, baseUrl):
