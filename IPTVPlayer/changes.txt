@@ -1,3 +1,6 @@
+#2026.08.28.
+VIDEA.HU frissítve (Automatikus minőségválasztó hozzáadva)
+XXX Host Prémium változat hozzáadva
 #2026.08.26.
 VIDEA.HU frissítve (PODCAST támogatás hozzáadva, Csatornák lapozása javítva)
 #2026.08.23.
