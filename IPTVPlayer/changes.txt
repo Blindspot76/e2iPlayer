@@ -1,3 +1,5 @@
+#2026.09.06.
+URLPARSER frissítve
 #2026.09.05.
 VIDEA.HU frissítve (VideaTon, VideaKid hozzáadva)
 #2026.09.04.

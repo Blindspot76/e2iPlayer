@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Modified by Blindspot # 2026.08.28.
+# Modified by Blindspot # 2026.09.06.
 ###################################################
 # LOCAL import
 ###################################################
@@ -642,6 +642,7 @@ class urlparser:
                        'vidcloud.net':          self.pp.parserVIDCLOUD      ,
                        'vidcloud9.com':         self.pp.parserVIDCLOUD9     ,
                        'videa.hu':              self.pp.parserVIDEAHU       ,
+                       'videakid.hu':           self.pp.parserVIDEAHU       ,
                        'vidembed.cc':           self.pp.parserVIDEMBED     ,
                        'vidembed.io':           self.pp.parserVIDEMBED     ,
                        'vidembed.me':           self.pp.parserVIDEMBED     ,
